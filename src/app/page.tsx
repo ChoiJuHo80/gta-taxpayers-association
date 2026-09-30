@@ -1,13 +1,26 @@
 'use client';
 
 import Link from 'next/link';
-import { Shield, FileText, CheckCircle2, ArrowRight, Phone, Share2, Sparkles, Lock, MapPin } from 'lucide-react';
+import { Shield, FileText, CheckCircle2, ArrowRight, Phone, Share2, Sparkles, Lock, MapPin, X, Plus, Bell } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { translations, Language } from '@/lib/i18n';
+import { Notice } from '@/lib/db';
 
 export default function Home() {
   const [copied, setCopied] = useState(false);
   const [lang, setLang] = useState<Language>('en'); // Default to English per Brochure standard
+  const [showNoticePopup, setShowNoticePopup] = useState(true);
+  const [latestNotices, setLatestNotices] = useState<Notice[]>([
+    {
+      id: 'NOT-000',
+      title: 'About Login',
+      category: 'Notice',
+      content: '',
+      isPinned: true,
+      views: 12396,
+      createdAt: '2007-02-15',
+    }
+  ]);
 
   useEffect(() => {
     const savedLang = (localStorage.getItem('gta_lang') as Language) || 'en';
@@ -18,6 +31,17 @@ export default function Home() {
     };
 
     window.addEventListener('langChange' as any, handleLangChange);
+
+    // Fetch latest notices for popup
+    fetch('/api/notices')
+      .then(res => res.json())
+      .then(json => {
+        if (json.success && json.data.length > 0) {
+          setLatestNotices(json.data.slice(0, 3));
+        }
+      })
+      .catch(err => console.error(err));
+
     return () => window.removeEventListener('langChange' as any, handleLangChange);
   }, []);
 
@@ -42,12 +66,79 @@ export default function Home() {
   };
 
   return (
-    <div className="space-y-16 pb-20">
+    <div className="space-y-16 pb-20 relative">
       
+      {/* Top-Left Floating Notice Quick Shortcut Popup (Matches Old Site Layout) */}
+      {showNoticePopup && (
+        <div className="fixed top-24 left-4 sm:left-8 z-40 w-72 sm:w-80 bg-white rounded-2xl shadow-2xl border-2 border-sky-400 overflow-hidden animate-in fade-in slide-in-from-left-4 duration-300">
+          {/* Header Bar */}
+          <div className="bg-sky-50 px-4 py-2.5 border-b border-sky-200 flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <Bell className="w-4 h-4 text-sky-600 animate-bounce" />
+              <span className="font-extrabold text-sky-950 text-sm tracking-wide">Notice</span>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Link
+                href="/notices"
+                className="text-[11px] font-bold text-red-600 hover:text-red-700 hover:underline flex items-center space-x-0.5"
+              >
+                <span>+ MORE</span>
+              </Link>
+              <button
+                onClick={() => setShowNoticePopup(false)}
+                className="text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+                title="Close Popup"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Notice Quick List */}
+          <div className="p-3.5 space-y-2 max-h-48 overflow-y-auto">
+            {latestNotices.map((n) => (
+              <Link
+                key={n.id}
+                href="/notices"
+                className="block group border-b border-slate-100 pb-2 last:border-0 last:pb-0"
+              >
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-slate-800 group-hover:text-sky-600 truncate max-w-[180px]">
+                    ▪ {n.title}
+                  </span>
+                  <span className="font-mono text-[10px] text-slate-400 shrink-0 ml-2">
+                    {n.createdAt.split(' ')[0]}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Bottom Footer bar */}
+          <div className="bg-slate-50 px-3 py-1.5 border-t border-slate-200 text-right">
+            <button
+              onClick={() => setShowNoticePopup(false)}
+              className="text-[11px] text-slate-500 hover:text-slate-800 font-semibold"
+            >
+              [ ✕ 닫기 / Close ]
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Hero Banner Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-gta-900 via-gta-800 to-gta-900 text-white pt-16 pb-24 px-4 sm:px-6 lg:px-8 shadow-xl">
         <div className="absolute inset-0 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:16px_16px] opacity-10"></div>
         <div className="max-w-7xl mx-auto relative z-10">
+          
+          {/* Main Slogan Banner (Easy and Prompt Tax Solution) */}
+          <div className="text-center mb-8">
+            <div className="inline-block bg-gradient-to-r from-sky-400 via-blue-200 to-cyan-300 bg-clip-text text-transparent font-black italic text-2xl sm:text-3xl lg:text-4xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] tracking-wide">
+              Easy and Prompt Tax Solution
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
@@ -55,6 +146,7 @@ export default function Home() {
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 <span>{t.heroBadge}</span>
               </div>
+
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
                 {t.heroTitle1}<br />
                 <span className="bg-gradient-to-r from-blue-300 via-sky-200 to-amber-300 bg-clip-text text-transparent">
@@ -62,6 +154,7 @@ export default function Home() {
                 </span><br />
                 {t.heroTitle3}
               </h1>
+
               <p className="text-lg text-slate-300 max-w-2xl font-normal leading-relaxed">
                 {t.heroSub}
               </p>
@@ -124,6 +217,33 @@ export default function Home() {
             </div>
 
           </div>
+        </div>
+      </section>
+
+      {/* Special Highlight Banner: Benefit of GTA Members */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-sky-900 text-white p-8 rounded-3xl shadow-xl border border-purple-500/30 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 text-center md:text-left">
+            <div className="inline-flex items-center space-x-1.5 text-purple-300 text-xs font-extrabold tracking-wider uppercase bg-purple-500/20 px-3 py-1 rounded-full border border-purple-400/30">
+              <span>› Benefit of GTA Members ‹</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+              A 3% Additional Tax Deduction & Convenient Website
+            </h2>
+            <p className="text-sm text-slate-300">
+              {lang === 'ko'
+                ? '거제 납세자 회원 가입 시 3% 추가 세액 공제 혜택과 원스톱 온라인 세무 상담 웹사이트를 편리하게 이용하실 수 있습니다.'
+                : 'Enjoy an exclusive 3% additional tax deduction for GTA members alongside our convenient, automated tax management website.'}
+            </p>
+          </div>
+
+          <Link
+            href="/about?tab=benefit"
+            className="bg-white text-purple-950 hover:bg-purple-100 font-extrabold text-sm px-6 py-3.5 rounded-2xl shadow-lg transition-all shrink-0 flex items-center space-x-2"
+          >
+            <span>{lang === 'ko' ? '혜택 자세히 보기' : 'Learn Member Benefits'}</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </section>
 
