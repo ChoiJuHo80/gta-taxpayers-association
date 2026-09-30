@@ -7,14 +7,17 @@ import { translations, Language } from '@/lib/i18n';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [lang, setLang] = useState<Language>('ko'); // Default to Korean
+  const [lang, setLang] = useState<Language>('en'); // Default to English for Foreign Taxpayers
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const savedLang = localStorage.getItem('gta_lang') as Language;
     if (savedLang) {
       setLang(savedLang);
     } else {
-      localStorage.setItem('gta_lang', 'ko');
+      localStorage.setItem('gta_lang', 'en');
     }
   }, []);
 
@@ -24,7 +27,6 @@ export default function Header() {
     window.dispatchEvent(new CustomEvent('langChange', { detail: newLang }));
   };
 
-  // Handle Mouse Enter with immediate open & clear pending close timeout
   const handleMouseEnter = (name: string) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -33,7 +35,6 @@ export default function Header() {
     setActiveDropdown(name);
   };
 
-  // Handle Mouse Leave with 300ms graceful buffer time
   const handleMouseLeave = () => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -58,7 +59,7 @@ export default function Header() {
             <div className="whitespace-nowrap">
               <div className="flex items-center space-x-2">
                 <span className="font-extrabold text-xl sm:text-2xl text-gta-900 tracking-tight">
-                  {lang === 'ko' ? 'GTA' : 'GTA Korea'}
+                  GTA Korea
                 </span>
                 <span className="bg-amber-100 text-amber-800 text-[11px] font-semibold px-2 py-0.5 rounded-full border border-amber-300">
                   {t.publicTax}
@@ -88,7 +89,6 @@ export default function Header() {
                 <ChevronDown className="w-4 h-4 text-slate-400 group-hover:rotate-180 transition-transform duration-200" />
               </Link>
 
-              {/* Invisible Safety Bridge + Dropdown Container */}
               {activeDropdown === 'about' && (
                 <div 
                   className="absolute top-full left-0 -mt-2 pt-2 w-56 z-50 animate-in fade-in slide-in-from-top-1 duration-150"

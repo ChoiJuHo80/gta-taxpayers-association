@@ -10,10 +10,10 @@ export default function AdminPage() {
   const [adminPassword, setAdminPassword] = useState('');
   const [adminId, setAdminId] = useState('');
   const [authError, setAuthError] = useState('');
-  const [lang, setLang] = useState<Language>('ko'); // Default to Korean
+  const [lang, setLang] = useState<Language>('en'); // Default to English for Foreign Taxpayers
 
   useEffect(() => {
-    const savedLang = (localStorage.getItem('gta_lang') as Language) || 'ko';
+    const savedLang = (localStorage.getItem('gta_lang') as Language) || 'en';
     setLang(savedLang);
 
     const handleLangChange = (e: CustomEvent<Language>) => {
