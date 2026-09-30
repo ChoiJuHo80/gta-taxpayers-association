@@ -114,6 +114,12 @@ export default function Header() {
                     >
                       📍 {t.navLocation}
                     </Link>
+                    <Link
+                      href="/notices"
+                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
+                    >
+                      📢 Notice
+                    </Link>
                   </div>
                 </div>
               )}
@@ -346,6 +352,9 @@ export default function Header() {
               </Link>
               <Link href="/about?tab=location" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-sm font-semibold text-slate-700">
                 📍 {t.navLocation}
+              </Link>
+              <Link href="/notices" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-sm font-semibold text-slate-700">
+                📢 Notice
               </Link>
             </div>
           </div>

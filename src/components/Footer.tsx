@@ -61,6 +61,7 @@ export default function Footer() {
               <li><Link href="/about?tab=introduction" className="hover:text-white transition-colors">↳ {t.navIntroduction}</Link></li>
               <li><Link href="/about?tab=benefit" className="hover:text-white transition-colors">↳ {t.navBenefit}</Link></li>
               <li><Link href="/about?tab=location" className="hover:text-white transition-colors">↳ {t.navLocation}</Link></li>
+              <li><Link href="/notices" className="hover:text-white transition-colors">↳ Notice</Link></li>
               <li className="font-bold text-slate-200 mt-2">{t.catTaxLaw}</li>
               <li><Link href="/tax-law?tab=korean-tax-law" className="hover:text-white transition-colors">↳ {t.navKoreanTaxLaw}</Link></li>
               <li><Link href="/tax-law?tab=treaties" className="hover:text-white transition-colors">↳ {t.navTreaties}</Link></li>
