@@ -15,6 +15,33 @@ export default function NoticesPage() {
   const [viewMode, setViewMode] = useState<'classic' | 'modern'>('classic');
   const [lang, setLang] = useState<Language>('en'); // Default to English for Foreign Taxpayers
 
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const seconds = String(d.getSeconds()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
+    return dateStr.replace('T', ' ').replace(/\..*$/, '');
+  };
+
+  const formatDateShort = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    return dateStr.split('T')[0].split(' ')[0];
+  };
+
   useEffect(() => {
     const savedLang = (localStorage.getItem('gta_lang') as Language) || 'en';
     setLang(savedLang);
@@ -174,7 +201,7 @@ export default function NoticesPage() {
                 </div>
 
                 <div className="text-slate-400 font-mono text-xs flex items-center space-x-4">
-                  <span>{selectedNotice.createdAt}</span>
+                  <span>{formatDateShort(selectedNotice.createdAt)}</span>
                   <span>|</span>
                   <span className="font-bold text-blue-600">hit : {selectedNotice.views}</span>
                 </div>
@@ -271,7 +298,7 @@ export default function NoticesPage() {
                             </div>
                           </td>
                           <td className="px-4 py-3.5 text-center font-mono text-xs text-slate-500">
-                            {notice.createdAt.split(' ')[0]}
+                            {formatDateShort(notice.createdAt)}
                           </td>
                           <td className="px-4 py-3.5 text-center font-mono text-xs text-slate-600 font-bold">
                             {notice.views}
@@ -304,7 +331,7 @@ export default function NoticesPage() {
                         {notice.category}
                       </span>
                     </div>
-                    <span className="text-xs font-mono text-slate-400">{notice.createdAt.split(' ')[0]}</span>
+                    <span className="text-xs font-mono text-slate-400">{formatDateShort(notice.createdAt)}</span>
                   </div>
 
                   <h3 className="text-base font-bold text-slate-900 hover:text-blue-600 transition-colors">

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Shield, FileText, CheckCircle2, ArrowRight, Phone, Share2, Sparkles, Lock, MapPin, X, Plus, Bell } from 'lucide-react';
+import { Shield, FileText, CheckCircle2, ArrowRight, Phone, Share2, Sparkles, Lock, MapPin, X, Plus, Bell, ChevronDown, ChevronUp, Eye } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { translations, Language } from '@/lib/i18n';
 import { Notice } from '@/lib/db';
@@ -10,17 +10,32 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [lang, setLang] = useState<Language>('en'); // Default to English per Brochure standard
   const [showNoticePopup, setShowNoticePopup] = useState(true);
+  const [expandedNoticeId, setExpandedNoticeId] = useState<string | null>('NOT-000'); // Default expand About Login
   const [latestNotices, setLatestNotices] = useState<Notice[]>([
     {
       id: 'NOT-000',
       title: 'About Login',
+      author: 'GTA',
+      authorEmail: 'gta@gtakorea.org',
       category: 'Notice',
-      content: '',
+      content: 'Thank you for your joining GTA.(Geoje Taxpayers Association)\n\nIf you would like to check your Receipt for payment of tax,\nPlease Login to our website.\n\nNAME: Write down your full name with capital letters and blank such as your alien registration card. (or Membership Card ID)\n(ex: KIM SILVIA)\n\nNUMBER: Write down your Alien Registration Number with hyphen. (or Membership Card Password)\n(ex: 820012-3932521)',
       isPinned: true,
       views: 12396,
-      createdAt: '2007-02-15',
+      createdAt: '2007-02-15 17:26:36',
     }
   ]);
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    return dateStr.split('T')[0].split(' ')[0];
+  };
 
   useEffect(() => {
     const savedLang = (localStorage.getItem('gta_lang') as Language) || 'en';
@@ -37,7 +52,10 @@ export default function Home() {
       .then(res => res.json())
       .then(json => {
         if (json.success && json.data.length > 0) {
-          setLatestNotices(json.data.slice(0, 3));
+          setLatestNotices(json.data.slice(0, 5));
+          if (json.data[0]) {
+            setExpandedNoticeId(json.data[0].id);
+          }
         }
       })
       .catch(err => console.error(err));
@@ -68,26 +86,27 @@ export default function Home() {
   return (
     <div className="space-y-16 pb-20 relative">
       
-      {/* Top-Left Floating Notice Quick Shortcut Popup (Matches Old Site Layout) */}
+      {/* Top-Left Floating Notice Quick Shortcut Popup (Accordion Expandable) */}
       {showNoticePopup && (
-        <div className="fixed top-24 left-4 sm:left-8 z-40 w-72 sm:w-80 bg-white rounded-2xl shadow-2xl border-2 border-sky-400 overflow-hidden animate-in fade-in slide-in-from-left-4 duration-300">
+        <div className="fixed top-24 left-4 sm:left-8 z-40 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border-2 border-sky-400 overflow-hidden animate-in fade-in slide-in-from-left-4 duration-300">
+          
           {/* Header Bar */}
-          <div className="bg-sky-50 px-4 py-2.5 border-b border-sky-200 flex justify-between items-center">
+          <div className="bg-sky-50 px-4 py-3 border-b border-sky-200 flex justify-between items-center">
             <div className="flex items-center space-x-2">
-              <Bell className="w-4 h-4 text-sky-600 animate-bounce" />
-              <span className="font-extrabold text-sky-950 text-sm tracking-wide">Notice</span>
+              <Bell className="w-4.5 h-4.5 text-sky-600 animate-bounce" />
+              <span className="font-extrabold text-sky-950 text-base tracking-wide">Notice</span>
             </div>
             
             <div className="flex items-center space-x-2">
               <Link
                 href="/notices"
-                className="text-[11px] font-bold text-red-600 hover:text-red-700 hover:underline flex items-center space-x-0.5"
+                className="text-xs font-bold text-red-600 hover:text-red-700 hover:underline flex items-center space-x-0.5 bg-red-50 px-2 py-0.5 rounded border border-red-200"
               >
                 <span>+ MORE</span>
               </Link>
               <button
                 onClick={() => setShowNoticePopup(false)}
-                className="text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-200 transition-colors"
                 title="Close Popup"
               >
                 <X className="w-4 h-4" />
@@ -95,35 +114,77 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Notice Quick List */}
-          <div className="p-3.5 space-y-2 max-h-48 overflow-y-auto">
-            {latestNotices.map((n) => (
-              <Link
-                key={n.id}
-                href="/notices"
-                className="block group border-b border-slate-100 pb-2 last:border-0 last:pb-0"
-              >
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-slate-800 group-hover:text-sky-600 truncate max-w-[180px]">
-                    ▪ {n.title}
-                  </span>
-                  <span className="font-mono text-[10px] text-slate-400 shrink-0 ml-2">
-                    {n.createdAt.split(' ')[0]}
-                  </span>
+          {/* Notice Quick Accordion List */}
+          <div className="p-3 space-y-2 max-h-96 overflow-y-auto divide-y divide-slate-100">
+            {latestNotices.map((n) => {
+              const isExpanded = expandedNoticeId === n.id;
+              return (
+                <div key={n.id} className="pt-2 first:pt-0">
+                  
+                  {/* Clickable Header Row */}
+                  <div
+                    onClick={() => setExpandedNoticeId(isExpanded ? null : n.id)}
+                    className="flex justify-between items-center py-1.5 px-2 rounded-lg hover:bg-sky-50 transition-colors cursor-pointer group"
+                  >
+                    <div className="flex items-center space-x-2 overflow-hidden pr-2">
+                      <span className="text-sky-600 font-bold shrink-0">▪</span>
+                      <span className="font-bold text-xs sm:text-sm text-slate-800 group-hover:text-sky-600 truncate">
+                        {n.title}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <span className="font-mono text-[11px] text-slate-400">
+                        {formatDate(n.createdAt)}
+                      </span>
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-sky-600" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-sky-600" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Inline Expanded Content View */}
+                  {isExpanded && (
+                    <div className="mt-2 p-3.5 bg-slate-50 rounded-xl border border-sky-200 text-xs space-y-3 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 border-b border-slate-200 pb-1.5">
+                        <span>name : <strong className="text-slate-800">{n.author || 'GTA'}</strong></span>
+                        <span className="font-mono text-sky-600 font-bold">hit : {n.views}</span>
+                      </div>
+
+                      <div className="text-slate-700 whitespace-pre-wrap leading-relaxed font-sans text-xs">
+                        {n.content}
+                      </div>
+
+                      <div className="pt-1 flex justify-end">
+                        <Link
+                          href="/notices"
+                          className="inline-flex items-center space-x-1 text-[11px] font-bold text-sky-700 hover:text-sky-900 hover:underline"
+                        >
+                          <Eye className="w-3 h-3" />
+                          <span>전체 게시판에서 확인 →</span>
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
-              </Link>
-            ))}
+              );
+            })}
           </div>
 
           {/* Bottom Footer bar */}
-          <div className="bg-slate-50 px-3 py-1.5 border-t border-slate-200 text-right">
+          <div className="bg-slate-50 px-4 py-2 border-t border-slate-200 flex justify-between items-center text-xs">
+            <span className="text-slate-400 text-[11px]">GTA Official Notice</span>
             <button
               onClick={() => setShowNoticePopup(false)}
-              className="text-[11px] text-slate-500 hover:text-slate-800 font-semibold"
+              className="text-[11px] text-slate-500 hover:text-slate-900 font-bold"
             >
               [ ✕ 닫기 / Close ]
             </button>
           </div>
+
         </div>
       )}
 
