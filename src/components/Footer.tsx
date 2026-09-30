@@ -6,10 +6,10 @@ import { useState, useEffect } from 'react';
 import { translations, Language } from '@/lib/i18n';
 
 export default function Footer() {
-  const [lang, setLang] = useState<Language>('en'); // Default English
+  const [lang, setLang] = useState<Language>('ko'); // Default to Korean
 
   useEffect(() => {
-    const savedLang = (localStorage.getItem('gta_lang') as Language) || 'en';
+    const savedLang = (localStorage.getItem('gta_lang') as Language) || 'ko';
     setLang(savedLang);
 
     const handleLangChange = (e: CustomEvent<Language>) => {

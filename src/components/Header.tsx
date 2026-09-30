@@ -7,18 +7,14 @@ import { translations, Language } from '@/lib/i18n';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [lang, setLang] = useState<Language>('en'); // Default to English
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  
-  // Timeout ref for smooth mouse exit delay (prevents instant popup closure)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [lang, setLang] = useState<Language>('ko'); // Default to Korean
 
   useEffect(() => {
     const savedLang = localStorage.getItem('gta_lang') as Language;
     if (savedLang) {
       setLang(savedLang);
     } else {
-      localStorage.setItem('gta_lang', 'en');
+      localStorage.setItem('gta_lang', 'ko');
     }
   }, []);
 
