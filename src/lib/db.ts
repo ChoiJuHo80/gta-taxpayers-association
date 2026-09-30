@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { Pool } from 'pg';
 
 export interface User {
   id: string;
@@ -68,31 +69,6 @@ let consultationsStore: Consultation[] = [
     adminMemo: '비과세 특례 조항 적용 가능 안내 완료.',
     attachments: [{ name: '매매계약서_증빙.pdf', size: 1024500, encryptedPath: 'encrypted/GTA-2026-001_0.enc' }],
     createdAt: '2026-09-10 10:30',
-  },
-  {
-    id: 'GTA-2026-002',
-    applicantName: '이영희',
-    phone: '010-9876-5432',
-    category: '상속/증여세',
-    title: '토지 사전 증여 관련 공제 한도 문의',
-    content: '직계존속으로부터 증여받을 경우 증여세 면제 한도액 증빙 서류 안내 요청합니다.',
-    passwordHash: hashPassword('5678'),
-    status: '진행중',
-    adminMemo: '담당 세무사 서류 검토 중.',
-    attachments: [{ name: '토지대장.pdf', size: 2048100, encryptedPath: 'encrypted/GTA-2026-002_0.enc' }],
-    createdAt: '2026-09-15 14:20',
-  },
-  {
-    id: 'GTA-2026-003',
-    applicantName: '박민수',
-    phone: '010-5555-7777',
-    category: '종합소득세',
-    title: '개인사업자 세무조정 및 신고 접수',
-    content: '거제지역 소상공인 세무 감면 혜택을 적용하여 신고 진행 가능한지 문의합니다.',
-    passwordHash: hashPassword('0000'),
-    status: '접수',
-    attachments: [],
-    createdAt: '2026-09-18 09:15',
   }
 ];
 
@@ -131,13 +107,40 @@ export function hashPassword(pwd: string): string {
   return crypto.createHash('sha256').update(pwd).digest('hex');
 }
 
+// PostgreSQL Pool Connection
+const dbUrl = process.env.DATABASE_URL || 'postgresql://postgres.ocqktsxaqubinnnxulcx:gta7273korea*@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres';
+
+let pool: Pool | null = null;
+if (dbUrl) {
+  pool = new Pool({
+    connectionString: dbUrl,
+    ssl: { rejectUnauthorized: false },
+    max: 10,
+    idleTimeoutMillis: 30000,
+  });
+}
+
 // Users Database Services
 export async function createUser(data: Omit<User, 'id' | 'role' | 'createdAt'>): Promise<User> {
+  if (pool) {
+    const existing = await findUserByEmail(data.email);
+    if (existing) {
+      throw new Error('이미 등록된 이메일 주소입니다.');
+    }
+    const newId = `USR-${Date.now()}`;
+    const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    const res = await pool.query(`
+      INSERT INTO users (id, full_name, phone, email, password_hash, member_type, biz_no, address, interest, role, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'member', NOW())
+      RETURNING id, full_name as "fullName", phone, email, password_hash as "passwordHash", member_type as "memberType", biz_no as "bizNo", address, interest, role, created_at as "createdAt"
+    `, [newId, data.fullName, data.phone, data.email, data.passwordHash, data.memberType, data.bizNo || null, data.address || null, data.interest || null]);
+    return res.rows[0];
+  }
+
   const existing = usersStore.find(u => u.email.toLowerCase() === data.email.toLowerCase());
   if (existing) {
     throw new Error('이미 등록된 이메일 주소입니다.');
   }
-
   const newId = `USR-${String(usersStore.length + 1).padStart(3, '0')}`;
   const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
   const newUser: User = {
@@ -151,29 +154,73 @@ export async function createUser(data: Omit<User, 'id' | 'role' | 'createdAt'>):
 }
 
 export async function findUserByEmail(email: string): Promise<User | undefined> {
+  if (pool) {
+    const res = await pool.query(`
+      SELECT id, full_name as "fullName", phone, email, password_hash as "passwordHash", member_type as "memberType", biz_no as "bizNo", address, interest, role, created_at as "createdAt"
+      FROM users WHERE LOWER(email) = LOWER($1) LIMIT 1
+    `, [email]);
+    return res.rows[0];
+  }
   return usersStore.find(u => u.email.toLowerCase() === email.toLowerCase());
 }
 
 export async function getUsers(): Promise<User[]> {
+  if (pool) {
+    const res = await pool.query(`
+      SELECT id, full_name as "fullName", phone, email, password_hash as "passwordHash", member_type as "memberType", biz_no as "bizNo", address, interest, role, created_at as "createdAt"
+      FROM users ORDER BY created_at DESC LIMIT 100
+    `);
+    return res.rows;
+  }
   return usersStore;
 }
 
 // Consultation Services
 export async function getConsultations(): Promise<Consultation[]> {
+  if (pool) {
+    const res = await pool.query(`
+      SELECT id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, admin_memo as "adminMemo", created_at as "createdAt"
+      FROM consultations ORDER BY created_at DESC LIMIT 100
+    `);
+    return res.rows;
+  }
   return consultationsStore;
 }
 
 export async function getConsultationById(id: string): Promise<Consultation | undefined> {
+  if (pool) {
+    const res = await pool.query(`
+      SELECT id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, admin_memo as "adminMemo", created_at as "createdAt"
+      FROM consultations WHERE id = $1
+    `, [id]);
+    return res.rows[0];
+  }
   return consultationsStore.find(c => c.id === id);
 }
 
 export async function lookupConsultation(phone: string, rawPwd: string): Promise<Consultation[]> {
   const hash = hashPassword(rawPwd);
   const cleanPhone = phone.replace(/[^0-9]/g, '');
+  if (pool) {
+    const res = await pool.query(`
+      SELECT id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, admin_memo as "adminMemo", created_at as "createdAt"
+      FROM consultations WHERE REPLACE(phone, '-', '') = $1 AND password_hash = $2
+    `, [cleanPhone, hash]);
+    return res.rows;
+  }
   return consultationsStore.filter(c => c.phone.replace(/[^0-9]/g, '') === cleanPhone && c.passwordHash === hash);
 }
 
 export async function createConsultation(data: Omit<Consultation, 'id' | 'status' | 'createdAt'>): Promise<Consultation> {
+  if (pool) {
+    const newId = `GTA-2026-${Date.now().toString().slice(-4)}`;
+    const res = await pool.query(`
+      INSERT INTO consultations (id, applicant_name, phone, category, title, content, password_hash, status, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, '접수', NOW())
+      RETURNING id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, created_at as "createdAt"
+    `, [newId, data.applicantName, data.phone, data.category, data.title, data.content, data.passwordHash]);
+    return res.rows[0];
+  }
   const newId = `GTA-2026-${String(consultationsStore.length + 1).padStart(3, '0')}`;
   const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
   const newConsultation: Consultation = {
@@ -187,6 +234,13 @@ export async function createConsultation(data: Omit<Consultation, 'id' | 'status
 }
 
 export async function updateConsultationStatus(id: string, status: '접수' | '진행중' | '완료', adminMemo?: string): Promise<Consultation | undefined> {
+  if (pool) {
+    const res = await pool.query(`
+      UPDATE consultations SET status = $1, admin_memo = $2 WHERE id = $3
+      RETURNING id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, admin_memo as "adminMemo", created_at as "createdAt"
+    `, [status, adminMemo || null, id]);
+    return res.rows[0];
+  }
   const item = consultationsStore.find(c => c.id === id);
   if (item) {
     item.status = status;
@@ -198,5 +252,12 @@ export async function updateConsultationStatus(id: string, status: '접수' | '�
 }
 
 export async function getNotices(): Promise<Notice[]> {
+  if (pool) {
+    const res = await pool.query(`
+      SELECT id, title, category, content, is_pinned as "isPinned", views, created_at as "createdAt"
+      FROM notices ORDER BY is_pinned DESC, created_at DESC
+    `);
+    if (res.rows.length > 0) return res.rows;
+  }
   return noticesStore;
 }
