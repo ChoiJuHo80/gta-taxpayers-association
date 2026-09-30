@@ -38,12 +38,16 @@ export default function AdminPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminPassword === '9999' || adminPassword === 'gta2026') {
+    const cleanId = adminId.trim().toLowerCase();
+    const validId = !cleanId || cleanId === 'deokang7' || cleanId === 'admin';
+    const validPw = adminPassword === 'gta7273' || adminPassword === '9999' || adminPassword === 'gta2026' || adminPassword === '8992';
+
+    if (validId && validPw) {
       setAuthenticated(true);
       setAuthError('');
       fetchConsultations();
     } else {
-      setAuthError(lang === 'ko' ? '관리자 암호가 일치하지 않습니다. (기본 암호: 9999)' : 'Invalid Admin Password. (Test PW: 9999)');
+      setAuthError(lang === 'ko' ? '관리자 아이디 또는 암호가 일치하지 않습니다. (ID: deokang7 / PW: gta7273)' : 'Invalid Admin ID or Password. (ID: deokang7 / PW: gta7273)');
     }
   };
 
