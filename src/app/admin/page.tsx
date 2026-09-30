@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Lock, Shield, ArrowRight, FileSpreadsheet, RefreshCw, Search, Building2, UserCheck, KeyRound, AlertCircle } from 'lucide-react';
-import { Consultation } from '@/lib/db';
+import { Consultation, Notice } from '@/lib/db';
 import { translations, Language } from '@/lib/i18n';
+import { Plus, Trash2, Pin, Megaphone, MessageSquare } from 'lucide-react';
 
 export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
@@ -11,6 +12,8 @@ export default function AdminPage() {
   const [adminId, setAdminId] = useState('');
   const [authError, setAuthError] = useState('');
   const [lang, setLang] = useState<Language>('en'); // Default to English for Foreign Taxpayers
+
+  const [activeTab, setActiveTab] = useState<'consultations' | 'notices'>('consultations');
 
   useEffect(() => {
     const savedLang = (localStorage.getItem('gta_lang') as Language) || 'en';
@@ -27,6 +30,7 @@ export default function AdminPage() {
   const t = translations[lang];
 
   const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('전체');
   const [filterStatus, setFilterStatus] = useState<string>('전체');
@@ -35,6 +39,15 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editStatus, setEditStatus] = useState<'접수' | '진행중' | '완료'>('접수');
   const [editMemo, setEditMemo] = useState('');
+
+  // Notice Creation Modal State
+  const [showNoticeModal, setShowNoticeModal] = useState(false);
+  const [newNoticeTitle, setNewNoticeTitle] = useState('');
+  const [newNoticeCategory, setNewNoticeCategory] = useState<'Notice' | '공지' | '세무자료' | 'FAQ'>('Notice');
+  const [newNoticeAuthor, setNewNoticeAuthor] = useState('GTA');
+  const [newNoticeAuthorEmail, setNewNoticeAuthorEmail] = useState('gta@gtakorea.org');
+  const [newNoticeContent, setNewNoticeContent] = useState('');
+  const [newNoticeIsPinned, setNewNoticeIsPinned] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +59,7 @@ export default function AdminPage() {
       setAuthenticated(true);
       setAuthError('');
       fetchConsultations();
+      fetchNotices();
     } else {
       setAuthError(lang === 'ko' ? '관리자 아이디 또는 암호가 일치하지 않습니다. (ID: deokang7 / PW: gta7273)' : 'Invalid Admin ID or Password. (ID: deokang7 / PW: gta7273)');
     }
@@ -63,6 +77,68 @@ export default function AdminPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchNotices = async () => {
+    try {
+      const res = await fetch('/api/notices');
+      const json = await res.json();
+      if (json.success) {
+        setNotices(json.data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleCreateNotice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNoticeTitle.trim() || !newNoticeContent.trim()) {
+      alert(lang === 'ko' ? '제목과 내용을 입력해주세요.' : 'Please enter title and content.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/notices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newNoticeTitle,
+          category: newNoticeCategory,
+          author: newNoticeAuthor,
+          authorEmail: newNoticeAuthorEmail,
+          content: newNoticeContent,
+          isPinned: newNoticeIsPinned,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        alert(lang === 'ko' ? '공지사항이 성공적으로 등록되었습니다.' : 'Notice posted successfully.');
+        setShowNoticeModal(false);
+        setNewNoticeTitle('');
+        setNewNoticeContent('');
+        setNewNoticeIsPinned(false);
+        fetchNotices();
+      } else {
+        alert(json.error || 'Failed to post notice');
+      }
+    } catch (err) {
+      alert('Error creating notice');
+    }
+  };
+
+  const handleDeleteNotice = async (id: string) => {
+    if (!confirm(lang === 'ko' ? '해당 공지사항을 삭제하시겠습니까?' : 'Are you sure you want to delete this notice?')) return;
+    try {
+      const res = await fetch(`/api/notices/${id}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (json.success) {
+        fetchNotices();
+      }
+    } catch (err) {
+      alert('Error deleting notice');
     }
   };
 
@@ -288,7 +364,7 @@ export default function AdminPage() {
 
         <div className="flex items-center space-x-3">
           <button
-            onClick={fetchConsultations}
+            onClick={() => { fetchConsultations(); fetchNotices(); }}
             className="bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -312,122 +388,350 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <div className="text-xs font-bold text-slate-500">{lang === 'ko' ? '전체 상담 접수' : 'Total Consultations'}</div>
-          <div className="text-2xl font-black text-slate-900 mt-1">{totalCount}</div>
-        </div>
-        <div className="bg-blue-50 p-5 rounded-xl border border-blue-200 shadow-sm">
-          <div className="text-xs font-bold text-blue-700">{lang === 'ko' ? '신규 미처리 (접수)' : 'New Received'}</div>
-          <div className="text-2xl font-black text-blue-900 mt-1">{pendingCount}</div>
-        </div>
-        <div className="bg-amber-50 p-5 rounded-xl border border-amber-200 shadow-sm">
-          <div className="text-xs font-bold text-amber-700">{lang === 'ko' ? '세무사 검토 중' : 'In Progress'}</div>
-          <div className="text-2xl font-black text-amber-900 mt-1">{inProgressCount}</div>
-        </div>
-        <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-200 shadow-sm">
-          <div className="text-xs font-bold text-emerald-700">{lang === 'ko' ? '상담 답변 완료' : 'Completed'}</div>
-          <div className="text-2xl font-black text-emerald-900 mt-1">{completedCount}</div>
-        </div>
+      {/* Navigation Tabs */}
+      <div className="flex space-x-3 border-b border-slate-200 pb-2">
+        <button
+          onClick={() => setActiveTab('consultations')}
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+            activeTab === 'consultations'
+              ? 'bg-gta-900 text-white shadow-md'
+              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <MessageSquare className="w-4 h-4" />
+          <span>{lang === 'ko' ? '💬 세무 상담 관리 (EMR)' : '💬 Tax Consultations (EMR)'}</span>
+          <span className="bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
+            {consultations.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('notices')}
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+            activeTab === 'notices'
+              ? 'bg-gta-900 text-white shadow-md'
+              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <Megaphone className="w-4 h-4" />
+          <span>{lang === 'ko' ? '📢 공지사항 게시판 관리' : '📢 Notice Board Management'}</span>
+          <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
+            {notices.length}
+          </span>
+        </button>
       </div>
 
-      {/* Filters Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-xs font-bold text-slate-600">{lang === 'ko' ? '상태 필터:' : 'Status Filter:'}</span>
-          {['전체', '접수', '진행중', '완료'].map(st => (
-            <button
-              key={st}
-              onClick={() => setFilterStatus(st)}
-              className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                filterStatus === st ? 'bg-gta-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              {st}
-            </button>
-          ))}
-        </div>
+      {/* Tab 1: Consultations EMR */}
+      {activeTab === 'consultations' && (
+        <>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+              <div className="text-xs font-bold text-slate-500">{lang === 'ko' ? '전체 상담 접수' : 'Total Consultations'}</div>
+              <div className="text-2xl font-black text-slate-900 mt-1">{totalCount}</div>
+            </div>
+            <div className="bg-blue-50 p-5 rounded-xl border border-blue-200 shadow-sm">
+              <div className="text-xs font-bold text-blue-700">{lang === 'ko' ? '신규 미처리 (접수)' : 'New Received'}</div>
+              <div className="text-2xl font-black text-blue-900 mt-1">{pendingCount}</div>
+            </div>
+            <div className="bg-amber-50 p-5 rounded-xl border border-amber-200 shadow-sm">
+              <div className="text-xs font-bold text-amber-700">{lang === 'ko' ? '세무사 검토 중' : 'In Progress'}</div>
+              <div className="text-2xl font-black text-amber-900 mt-1">{inProgressCount}</div>
+            </div>
+            <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-200 shadow-sm">
+              <div className="text-xs font-bold text-emerald-700">{lang === 'ko' ? '상담 답변 완료' : 'Completed'}</div>
+              <div className="text-2xl font-black text-emerald-900 mt-1">{completedCount}</div>
+            </div>
+          </div>
 
-        <div className="relative w-full md:w-64">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-          <input
-            type="text"
-            placeholder={lang === 'ko' ? '이름 / 연락처 / 제목 검색' : 'Search Name / Phone / Title'}
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-300 text-xs"
-          />
-        </div>
-      </div>
-
-      {/* Consultations Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-100 text-slate-700 text-xs uppercase font-bold border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4">{lang === 'ko' ? '접수번호' : 'ID'}</th>
-                <th className="px-6 py-4">{lang === 'ko' ? '신청자 / 연락처' : 'Applicant / Phone'}</th>
-                <th className="px-6 py-4">{lang === 'ko' ? '세무 유형' : 'Category'}</th>
-                <th className="px-6 py-4">{lang === 'ko' ? '제목 & 내용' : 'Title & Content'}</th>
-                <th className="px-6 py-4">{lang === 'ko' ? '처리 상태' : 'Status'}</th>
-                <th className="px-6 py-4 text-right">{lang === 'ko' ? '관리 / 수정' : 'Action'}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {filtered.map(item => (
-                <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 font-mono text-xs font-bold text-slate-600">{item.id}</td>
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-slate-900">{item.applicantName}</div>
-                    <div className="text-xs text-slate-500">{item.phone}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-xs font-bold text-gta-800 bg-gta-50 px-2 py-0.5 rounded border border-gta-200">
-                      {item.category}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 max-w-xs">
-                    <div className="font-bold text-slate-900 truncate">{item.title}</div>
-                    <div className="text-xs text-slate-500 line-clamp-1">{item.content}</div>
-                    {item.adminMemo && (
-                      <div className="text-xs text-blue-700 font-medium mt-1 bg-blue-50 p-1.5 rounded">
-                        💬 {lang === 'ko' ? '세무사 메모:' : 'Note:'} {item.adminMemo}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                        item.status === '완료'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : item.status === '진행중'
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}
-                    >
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => {
-                        setEditingId(item.id);
-                        setEditStatus(item.status);
-                        setEditMemo(item.adminMemo || '');
-                      }}
-                      className="bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold px-3 py-1.5 rounded-lg"
-                    >
-                      {lang === 'ko' ? '상태 변경' : 'Edit Status'}
-                    </button>
-                  </td>
-                </tr>
+          {/* Filters Bar */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xs font-bold text-slate-600">{lang === 'ko' ? '상태 필터:' : 'Status Filter:'}</span>
+              {['전체', '접수', '진행중', '완료'].map(st => (
+                <button
+                  key={st}
+                  onClick={() => setFilterStatus(st)}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold ${
+                    filterStatus === st ? 'bg-gta-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {st}
+                </button>
               ))}
-            </tbody>
-          </table>
+            </div>
+
+            <div className="relative w-full md:w-64">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                placeholder={lang === 'ko' ? '이름 / 연락처 / 제목 검색' : 'Search Name / Phone / Title'}
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-300 text-xs"
+              />
+            </div>
+          </div>
+
+          {/* Consultations Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-100 text-slate-700 text-xs uppercase font-bold border-b border-slate-200">
+                  <tr>
+                    <th className="px-6 py-4">{lang === 'ko' ? '접수번호' : 'ID'}</th>
+                    <th className="px-6 py-4">{lang === 'ko' ? '신청자 / 연락처' : 'Applicant / Phone'}</th>
+                    <th className="px-6 py-4">{lang === 'ko' ? '세무 유형' : 'Category'}</th>
+                    <th className="px-6 py-4">{lang === 'ko' ? '제목 & 내용' : 'Title & Content'}</th>
+                    <th className="px-6 py-4">{lang === 'ko' ? '처리 상태' : 'Status'}</th>
+                    <th className="px-6 py-4 text-right">{lang === 'ko' ? '관리 / 수정' : 'Action'}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {filtered.map(item => (
+                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4 font-mono text-xs font-bold text-slate-600">{item.id}</td>
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-slate-900">{item.applicantName}</div>
+                        <div className="text-xs text-slate-500">{item.phone}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-xs font-bold text-gta-800 bg-gta-50 px-2 py-0.5 rounded border border-gta-200">
+                          {item.category}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 max-w-xs">
+                        <div className="font-bold text-slate-900 truncate">{item.title}</div>
+                        <div className="text-xs text-slate-500 line-clamp-1">{item.content}</div>
+                        {item.adminMemo && (
+                          <div className="text-xs text-blue-700 font-medium mt-1 bg-blue-50 p-1.5 rounded">
+                            💬 {lang === 'ko' ? '세무사 메모:' : 'Note:'} {item.adminMemo}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                            item.status === '완료'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : item.status === '진행중'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => {
+                            setEditingId(item.id);
+                            setEditStatus(item.status);
+                            setEditMemo(item.adminMemo || '');
+                          }}
+                          className="bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold px-3 py-1.5 rounded-lg"
+                        >
+                          {lang === 'ko' ? '상태 변경' : 'Edit Status'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Tab 2: Notice Board Management */}
+      {activeTab === 'notices' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">
+                {lang === 'ko' ? '공지사항 및 세무 자료 목록' : 'Notices & Announcements Manager'}
+              </h2>
+              <p className="text-xs text-slate-500">
+                {lang === 'ko' ? '새 공지사항을 작성하거나 기존 게시글을 등록/삭제할 수 있습니다.' : 'Publish new announcements or manage existing notice posts.'}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowNoticeModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-lg flex items-center space-x-2 transition-all shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{lang === 'ko' ? '+ 새 공지사항 작성하기' : '+ Post New Notice'}</span>
+            </button>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <thead className="bg-slate-100 text-slate-700 text-xs uppercase font-bold border-b border-slate-200">
+                  <tr>
+                    <th className="px-4 py-3.5 text-center w-16">Status</th>
+                    <th className="px-4 py-3.5 w-32">Category</th>
+                    <th className="px-6 py-3.5">Title</th>
+                    <th className="px-4 py-3.5 w-32">Author</th>
+                    <th className="px-4 py-3.5 text-center w-36">Date</th>
+                    <th className="px-4 py-3.5 text-center w-24">Hits</th>
+                    <th className="px-4 py-3.5 text-right w-24">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {notices.map(n => (
+                    <tr key={n.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3.5 text-center">
+                        {n.isPinned && (
+                          <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center space-x-1">
+                            <Pin className="w-3 h-3" />
+                            <span>HOT</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2 py-0.5 rounded border border-blue-200">
+                          {n.category}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3.5 font-bold text-slate-900">
+                        {n.title}
+                      </td>
+                      <td className="px-4 py-3.5 text-xs text-slate-600">
+                        {n.author || 'GTA'}
+                      </td>
+                      <td className="px-4 py-3.5 text-center font-mono text-xs text-slate-500">
+                        {n.createdAt.split(' ')[0]}
+                      </td>
+                      <td className="px-4 py-3.5 text-center font-mono text-xs font-bold text-slate-700">
+                        {n.views}
+                      </td>
+                      <td className="px-4 py-3.5 text-right">
+                        <button
+                          onClick={() => handleDeleteNotice(n.id)}
+                          className="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-lg transition-colors"
+                          title="Delete Notice"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Notice Creation Modal */}
+      {showNoticeModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-xl w-full space-y-5">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <h3 className="text-lg font-bold text-slate-900">
+                {lang === 'ko' ? '새 공지사항 작성' : 'Post New Notice / Announcement'}
+              </h3>
+              <button
+                onClick={() => setShowNoticeModal(false)}
+                className="text-slate-400 hover:text-slate-600 text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateNotice} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  {lang === 'ko' ? '공지 제목 (Subject)' : 'Notice Title / Subject'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder={lang === 'ko' ? '예: About Login / 2026년 세무 상담 안내' : 'e.g. About Login / Free Tax Counseling Notice'}
+                  value={newNoticeTitle}
+                  onChange={e => setNewNoticeTitle(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {lang === 'ko' ? '카테고리' : 'Category'}
+                  </label>
+                  <select
+                    value={newNoticeCategory}
+                    onChange={e => setNewNoticeCategory(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm"
+                  >
+                    <option value="Notice">Notice</option>
+                    <option value="공지">공지사항</option>
+                    <option value="세무자료">세무자료</option>
+                    <option value="FAQ">FAQ</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {lang === 'ko' ? '작성자 이름 (Author)' : 'Author Name'}
+                  </label>
+                  <input
+                    type="text"
+                    value={newNoticeAuthor}
+                    onChange={e => setNewNoticeAuthor(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  {lang === 'ko' ? '공지 내용 (Content)' : 'Notice Content'}
+                </label>
+                <textarea
+                  rows={6}
+                  required
+                  placeholder={lang === 'ko' ? '공지사항 상세 내용을 입력하세요.' : 'Enter detailed notice content.'}
+                  value={newNoticeContent}
+                  onChange={e => setNewNoticeContent(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500"
+                ></textarea>
+              </div>
+
+              <div className="flex items-center space-x-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="pinNotice"
+                  checked={newNoticeIsPinned}
+                  onChange={e => setNewNoticeIsPinned(e.target.checked)}
+                  className="rounded text-blue-600 focus:ring-blue-500"
+                />
+                <label htmlFor="pinNotice" className="text-xs font-bold text-slate-700 cursor-pointer">
+                  {lang === 'ko' ? '상단 고정 (HOT 공지 표시)' : 'Pin to Top (Mark as HOT Notice)'}
+                </label>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowNoticeModal(false)}
+                  className="px-4 py-2 bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
+                >
+                  {lang === 'ko' ? '취소' : 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-blue-600 text-white font-extrabold text-xs rounded-xl hover:bg-blue-700 shadow-lg"
+                >
+                  {lang === 'ko' ? '공지사항 등록하기' : 'Publish Notice'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editingId && (

@@ -32,7 +32,9 @@ export interface Consultation {
 export interface Notice {
   id: string;
   title: string;
-  category: '공지' | '세무자료' | 'FAQ';
+  author?: string;
+  authorEmail?: string;
+  category: '공지' | '세무자료' | 'FAQ' | 'Notice';
   content: string;
   isPinned: boolean;
   views: number;
@@ -254,10 +256,58 @@ export async function updateConsultationStatus(id: string, status: '접수' | '�
 export async function getNotices(): Promise<Notice[]> {
   if (pool) {
     const res = await pool.query(`
-      SELECT id, title, category, content, is_pinned as "isPinned", views, created_at as "createdAt"
+      SELECT id, title, author, author_email as "authorEmail", category, content, is_pinned as "isPinned", views, created_at as "createdAt"
       FROM notices ORDER BY is_pinned DESC, created_at DESC
     `);
     if (res.rows.length > 0) return res.rows;
   }
   return noticesStore;
+}
+
+export async function getNoticeById(id: string): Promise<Notice | undefined> {
+  if (pool) {
+    await pool.query(`UPDATE notices SET views = views + 1 WHERE id = $1`, [id]);
+    const res = await pool.query(`
+      SELECT id, title, author, author_email as "authorEmail", category, content, is_pinned as "isPinned", views, created_at as "createdAt"
+      FROM notices WHERE id = $1
+    `, [id]);
+    if (res.rows.length > 0) return res.rows[0];
+  }
+  const notice = noticesStore.find(n => n.id === id);
+  if (notice) notice.views += 1;
+  return notice;
+}
+
+export async function createNotice(data: Omit<Notice, 'id' | 'views' | 'createdAt'>): Promise<Notice> {
+  const newId = `NOT-${Date.now()}`;
+  const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+  if (pool) {
+    const res = await pool.query(`
+      INSERT INTO notices (id, title, author, author_email, category, content, is_pinned, views, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 0, NOW())
+      RETURNING id, title, author, author_email as "authorEmail", category, content, is_pinned as "isPinned", views, created_at as "createdAt"
+    `, [newId, data.title, data.author || 'GTA', data.authorEmail || 'gta@gtakorea.org', data.category, data.content, data.isPinned]);
+    return res.rows[0];
+  }
+  const newNotice: Notice = {
+    ...data,
+    id: newId,
+    views: 0,
+    createdAt: now,
+  };
+  noticesStore.unshift(newNotice);
+  return newNotice;
+}
+
+export async function deleteNotice(id: string): Promise<boolean> {
+  if (pool) {
+    await pool.query(`DELETE FROM notices WHERE id = $1`, [id]);
+    return true;
+  }
+  const idx = noticesStore.findIndex(n => n.id === id);
+  if (idx !== -1) {
+    noticesStore.splice(idx, 1);
+    return true;
+  }
+  return false;
 }
