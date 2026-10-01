@@ -78,6 +78,8 @@ export default function Footer() {
               <li><Link href="/tax-guide?tab=income-tax-table" className="hover:text-white transition-colors">↳ {t.navIncomeTaxTable}</Link></li>
               <li><Link href="/tax-guide?tab=tax-deduction" className="hover:text-white transition-colors">↳ {t.navTaxDeduction}</Link></li>
               <li className="font-bold text-slate-200 mt-2">{t.catTaxService}</li>
+              <li><Link href="/consult" className="hover:text-white transition-colors">↳ {t.navApplicationForm}</Link></li>
+              <li><Link href="/consult/lookup" className="hover:text-white transition-colors">↳ {t.navCheckReceipt}</Link></li>
               <li><Link href="/contact" className="hover:text-white transition-colors">↳ {t.navContactUs}</Link></li>
             </ul>
           </div>

@@ -23,6 +23,8 @@ export const translations = {
     navIncomeTaxTable: 'Income tax table',
     navTaxDeduction: 'Tax deduction item',
     navContactUs: 'Contact us',
+    navApplicationForm: 'Application Form',
+    navCheckReceipt: 'Check My Receipt',
 
     // General Nav links
     navLookup: '상담 조회',
@@ -164,6 +166,8 @@ export const translations = {
     navIncomeTaxTable: 'Income tax table',
     navTaxDeduction: 'Tax deduction item',
     navContactUs: 'Contact us',
+    navApplicationForm: 'Application Form',
+    navCheckReceipt: 'Check My Receipt',
 
     // General Nav links
     navLookup: 'Status Lookup',
