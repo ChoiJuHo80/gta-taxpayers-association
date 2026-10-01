@@ -49,16 +49,18 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 glass-panel shadow-sm border-b border-slate-200 w-full bg-white/95 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20 gap-4">
+        
+        {/* Row 1: Brand Logo & Top Actions */}
+        <div className="flex justify-between items-center h-16 sm:h-18 gap-4 border-b border-slate-100">
           
           {/* Brand Logo */}
           <Link href="/" className="flex items-center space-x-3 group shrink-0">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-gta-700 via-gta-500 to-blue-400 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-200 shrink-0">
-              <Shield className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-gta-700 via-gta-500 to-blue-400 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-200 shrink-0">
+              <Shield className="w-5.5 h-5.5 text-white" />
             </div>
             <div className="whitespace-nowrap">
               <div className="flex items-center space-x-2">
-                <span className="font-extrabold text-xl sm:text-2xl text-gta-900 tracking-tight">
+                <span className="font-extrabold text-xl text-gta-900 tracking-tight">
                   GTA Korea
                 </span>
                 <span className="bg-amber-100 text-amber-800 text-[11px] font-semibold px-2 py-0.5 rounded-full border border-amber-300">
@@ -70,197 +72,6 @@ export default function Header() {
               </span>
             </div>
           </Link>
-
-          {/* Desktop Dropdown Navigation */}
-          <nav className="hidden lg:flex items-center h-full space-x-1 font-bold text-sm text-slate-700">
-            
-            {/* ABOUT US */}
-            <div 
-              className="relative h-full flex items-center group"
-              onMouseEnter={() => handleMouseEnter('about')}
-              onMouseLeave={handleMouseLeave}
-            >
-              <Link
-                href="/about"
-                className="px-3.5 py-2.5 rounded-xl hover:bg-slate-100 hover:text-gta-600 transition-colors flex items-center space-x-1"
-              >
-                <Building className="w-4 h-4 text-gta-500 mr-1" />
-                <span>{t.catAbout}</span>
-                <ChevronDown className="w-4 h-4 text-slate-400 group-hover:rotate-180 transition-transform duration-200" />
-              </Link>
-
-              {activeDropdown === 'about' && (
-                <div 
-                  className="absolute top-full left-0 -mt-2 pt-2 w-56 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
-                  onMouseEnter={() => handleMouseEnter('about')}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  <div className="bg-white rounded-2xl shadow-xl border border-slate-200 py-2.5 space-y-0.5">
-                    <Link
-                      href="/about?tab=introduction"
-                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
-                    >
-                      📌 {t.navIntroduction}
-                    </Link>
-                    <Link
-                      href="/about?tab=benefit"
-                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
-                    >
-                      🎁 {t.navBenefit}
-                    </Link>
-                    <Link
-                      href="/about?tab=location"
-                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
-                    >
-                      📍 {t.navLocation}
-                    </Link>
-                    <Link
-                      href="/notices"
-                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
-                    >
-                      📢 Notice
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Tax Law */}
-            <div 
-              className="relative h-full flex items-center group"
-              onMouseEnter={() => handleMouseEnter('taxlaw')}
-              onMouseLeave={handleMouseLeave}
-            >
-              <Link
-                href="/tax-law"
-                className="px-3.5 py-2.5 rounded-xl hover:bg-slate-100 hover:text-gta-600 transition-colors flex items-center space-x-1"
-              >
-                <Scale className="w-4 h-4 text-gta-500 mr-1" />
-                <span>{t.catTaxLaw}</span>
-                <ChevronDown className="w-4 h-4 text-slate-400 group-hover:rotate-180 transition-transform duration-200" />
-              </Link>
-
-              {activeDropdown === 'taxlaw' && (
-                <div 
-                  className="absolute top-full left-0 -mt-2 pt-2 w-64 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
-                  onMouseEnter={() => handleMouseEnter('taxlaw')}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  <div className="bg-white rounded-2xl shadow-xl border border-slate-200 py-2.5 space-y-0.5">
-                    <Link
-                      href="/tax-law?tab=korean-tax-law"
-                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
-                    >
-                      ⚖️ {t.navKoreanTaxLaw}
-                    </Link>
-                    <Link
-                      href="/tax-law?tab=treaties"
-                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
-                    >
-                      🌐 {t.navTreaties}
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Tax Guide */}
-            <div 
-              className="relative h-full flex items-center group"
-              onMouseEnter={() => handleMouseEnter('taxguide')}
-              onMouseLeave={handleMouseLeave}
-            >
-              <Link
-                href="/tax-guide"
-                className="px-3.5 py-2.5 rounded-xl hover:bg-slate-100 hover:text-gta-600 transition-colors flex items-center space-x-1"
-              >
-                <BookOpen className="w-4 h-4 text-gta-500 mr-1" />
-                <span>{t.catTaxGuide}</span>
-                <ChevronDown className="w-4 h-4 text-slate-400 group-hover:rotate-180 transition-transform duration-200" />
-              </Link>
-
-              {activeDropdown === 'taxguide' && (
-                <div 
-                  className="absolute top-full left-0 -mt-2 pt-2 w-72 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
-                  onMouseEnter={() => handleMouseEnter('taxguide')}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  <div className="bg-white rounded-2xl shadow-xl border border-slate-200 py-2.5 space-y-0.5">
-                    <Link
-                      href="/tax-guide?tab=tax-flow"
-                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
-                    >
-                      🔄 {t.navTaxFlow}
-                    </Link>
-                    <Link
-                      href="/tax-guide?tab=necessary-docs"
-                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
-                    >
-                      📂 {t.navNecessaryDocs}
-                    </Link>
-                    <Link
-                      href="/tax-guide?tab=income-tax-table"
-                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
-                    >
-                      📊 {t.navIncomeTaxTable}
-                    </Link>
-                    <Link
-                      href="/tax-guide?tab=tax-deduction"
-                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
-                    >
-                      💡 {t.navTaxDeduction}
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Tax Service -> Contact us */}
-            <div 
-              className="relative h-full flex items-center group"
-              onMouseEnter={() => handleMouseEnter('taxservice')}
-              onMouseLeave={handleMouseLeave}
-            >
-              <Link
-                href="/contact"
-                className="px-3.5 py-2.5 rounded-xl hover:bg-slate-100 hover:text-gta-600 transition-colors flex items-center space-x-1"
-              >
-                <Mail className="w-4 h-4 text-gta-500 mr-1" />
-                <span>{t.catTaxService}</span>
-                <ChevronDown className="w-4 h-4 text-slate-400 group-hover:rotate-180 transition-transform duration-200" />
-              </Link>
-
-              {activeDropdown === 'taxservice' && (
-                <div 
-                  className="absolute top-full left-0 -mt-2 pt-2 w-56 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
-                  onMouseEnter={() => handleMouseEnter('taxservice')}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  <div className="bg-white rounded-2xl shadow-xl border border-slate-200 py-2.5 space-y-0.5">
-                    <Link
-                      href="/contact"
-                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
-                    >
-                      ✉️ {t.navContactUs}
-                    </Link>
-                    <Link
-                      href="/consult"
-                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
-                    >
-                      📝 {t.navFreeConsult}
-                    </Link>
-                    <Link
-                      href="/consult/lookup"
-                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
-                    >
-                      🔍 {t.navLookup}
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-
-          </nav>
 
           {/* Action CTA & Language Switcher */}
           <div className="hidden sm:flex items-center space-x-2.5 shrink-0 whitespace-nowrap">
@@ -335,6 +146,198 @@ export default function Header() {
           </div>
 
         </div>
+
+        {/* Row 2: Sub-Navigation Bar (Single-line menu with larger icons) */}
+        <nav className="hidden lg:flex items-center h-12 space-x-4 font-extrabold text-sm text-slate-800">
+          
+          {/* ABOUT US */}
+          <div 
+            className="relative h-full flex items-center group"
+            onMouseEnter={() => handleMouseEnter('about')}
+            onMouseLeave={handleMouseLeave}
+          >
+            <Link
+              href="/about"
+              className="px-4 py-2 rounded-xl hover:bg-slate-100 hover:text-gta-600 transition-colors flex items-center space-x-2 whitespace-nowrap"
+            >
+              <Building className="w-5.5 h-5.5 text-gta-600 shrink-0" />
+              <span className="whitespace-nowrap tracking-wide text-sm font-extrabold">{t.catAbout}</span>
+              <ChevronDown className="w-4 h-4 text-slate-400 group-hover:rotate-180 transition-transform duration-200" />
+            </Link>
+
+            {activeDropdown === 'about' && (
+              <div 
+                className="absolute top-full left-0 -mt-1 pt-1 w-56 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
+                onMouseEnter={() => handleMouseEnter('about')}
+                onMouseLeave={handleMouseLeave}
+              >
+                <div className="bg-white rounded-2xl shadow-xl border border-slate-200 py-2.5 space-y-0.5">
+                  <Link
+                    href="/about?tab=introduction"
+                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
+                  >
+                    📌 {t.navIntroduction}
+                  </Link>
+                  <Link
+                    href="/about?tab=benefit"
+                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
+                  >
+                    🎁 {t.navBenefit}
+                  </Link>
+                  <Link
+                    href="/about?tab=location"
+                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
+                  >
+                    📍 {t.navLocation}
+                  </Link>
+                  <Link
+                    href="/notices"
+                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
+                  >
+                    📢 Notice
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Tax Law */}
+          <div 
+            className="relative h-full flex items-center group"
+            onMouseEnter={() => handleMouseEnter('taxlaw')}
+            onMouseLeave={handleMouseLeave}
+          >
+            <Link
+              href="/tax-law"
+              className="px-4 py-2 rounded-xl hover:bg-slate-100 hover:text-gta-600 transition-colors flex items-center space-x-2 whitespace-nowrap"
+            >
+              <Scale className="w-5.5 h-5.5 text-gta-600 shrink-0" />
+              <span className="whitespace-nowrap tracking-wide text-sm font-extrabold">{t.catTaxLaw}</span>
+              <ChevronDown className="w-4 h-4 text-slate-400 group-hover:rotate-180 transition-transform duration-200" />
+            </Link>
+
+            {activeDropdown === 'taxlaw' && (
+              <div 
+                className="absolute top-full left-0 -mt-1 pt-1 w-64 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
+                onMouseEnter={() => handleMouseEnter('taxlaw')}
+                onMouseLeave={handleMouseLeave}
+              >
+                <div className="bg-white rounded-2xl shadow-xl border border-slate-200 py-2.5 space-y-0.5">
+                  <Link
+                    href="/tax-law?tab=korean-tax-law"
+                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
+                  >
+                    ⚖️ {t.navKoreanTaxLaw}
+                  </Link>
+                  <Link
+                    href="/tax-law?tab=treaties"
+                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
+                  >
+                    🌐 {t.navTreaties}
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Tax Guide */}
+          <div 
+            className="relative h-full flex items-center group"
+            onMouseEnter={() => handleMouseEnter('taxguide')}
+            onMouseLeave={handleMouseLeave}
+          >
+            <Link
+              href="/tax-guide"
+              className="px-4 py-2 rounded-xl hover:bg-slate-100 hover:text-gta-600 transition-colors flex items-center space-x-2 whitespace-nowrap"
+            >
+              <BookOpen className="w-5.5 h-5.5 text-gta-600 shrink-0" />
+              <span className="whitespace-nowrap tracking-wide text-sm font-extrabold">{t.catTaxGuide}</span>
+              <ChevronDown className="w-4 h-4 text-slate-400 group-hover:rotate-180 transition-transform duration-200" />
+            </Link>
+
+            {activeDropdown === 'taxguide' && (
+              <div 
+                className="absolute top-full left-0 -mt-1 pt-1 w-72 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
+                onMouseEnter={() => handleMouseEnter('taxguide')}
+                onMouseLeave={handleMouseLeave}
+              >
+                <div className="bg-white rounded-2xl shadow-xl border border-slate-200 py-2.5 space-y-0.5">
+                  <Link
+                    href="/tax-guide?tab=tax-flow"
+                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
+                  >
+                    🔄 {t.navTaxFlow}
+                  </Link>
+                  <Link
+                    href="/tax-guide?tab=necessary-docs"
+                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
+                  >
+                    📂 {t.navNecessaryDocs}
+                  </Link>
+                  <Link
+                    href="/tax-guide?tab=income-tax-table"
+                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
+                  >
+                    📊 {t.navIncomeTaxTable}
+                  </Link>
+                  <Link
+                    href="/tax-guide?tab=tax-deduction"
+                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
+                  >
+                    💡 {t.navTaxDeduction}
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Tax Service -> Contact us */}
+          <div 
+            className="relative h-full flex items-center group"
+            onMouseEnter={() => handleMouseEnter('taxservice')}
+            onMouseLeave={handleMouseLeave}
+          >
+            <Link
+              href="/contact"
+              className="px-4 py-2 rounded-xl hover:bg-slate-100 hover:text-gta-600 transition-colors flex items-center space-x-2 whitespace-nowrap"
+            >
+              <Mail className="w-5.5 h-5.5 text-gta-600 shrink-0" />
+              <span className="whitespace-nowrap tracking-wide text-sm font-extrabold">{t.catTaxService}</span>
+              <ChevronDown className="w-4 h-4 text-slate-400 group-hover:rotate-180 transition-transform duration-200" />
+            </Link>
+
+            {activeDropdown === 'taxservice' && (
+              <div 
+                className="absolute top-full left-0 -mt-1 pt-1 w-56 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
+                onMouseEnter={() => handleMouseEnter('taxservice')}
+                onMouseLeave={handleMouseLeave}
+              >
+                <div className="bg-white rounded-2xl shadow-xl border border-slate-200 py-2.5 space-y-0.5">
+                  <Link
+                    href="/contact"
+                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
+                  >
+                    ✉️ {t.navContactUs}
+                  </Link>
+                  <Link
+                    href="/consult"
+                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
+                  >
+                    📝 {t.navFreeConsult}
+                  </Link>
+                  <Link
+                    href="/consult/lookup"
+                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
+                  >
+                    🔍 {t.navLookup}
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+        </nav>
+
       </div>
 
       {/* Mobile Drawer Navigation */}

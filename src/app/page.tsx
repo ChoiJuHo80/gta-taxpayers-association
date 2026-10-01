@@ -85,7 +85,7 @@ export default function Home() {
       
       {/* Top-Left Floating Notice Quick Shortcut Popup (Accordion Expandable) */}
       {showNoticePopup && (
-        <div className="fixed top-24 left-4 sm:left-8 z-40 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border-2 border-sky-400 overflow-hidden animate-in fade-in slide-in-from-left-4 duration-300">
+        <div className="fixed top-36 left-4 sm:left-8 z-40 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border-2 border-sky-400 overflow-hidden animate-in fade-in slide-in-from-left-4 duration-300">
           
           {/* Header Bar */}
           <div className="bg-sky-50 px-4 py-3 border-b border-sky-200 flex justify-between items-center">
