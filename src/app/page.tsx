@@ -10,7 +10,7 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [lang, setLang] = useState<Language>('en'); // Default to English per Brochure standard
   const [showNoticePopup, setShowNoticePopup] = useState(true);
-  const [expandedNoticeId, setExpandedNoticeId] = useState<string | null>('NOT-000'); // Default expand About Login
+  const [expandedNoticeId, setExpandedNoticeId] = useState<string | null>(null); // Default collapsed
   const [latestNotices, setLatestNotices] = useState<Notice[]>([
     {
       id: 'NOT-000',
@@ -53,9 +53,6 @@ export default function Home() {
       .then(json => {
         if (json.success && json.data.length > 0) {
           setLatestNotices(json.data.slice(0, 5));
-          if (json.data[0]) {
-            setExpandedNoticeId(json.data[0].id);
-          }
         }
       })
       .catch(err => console.error(err));
