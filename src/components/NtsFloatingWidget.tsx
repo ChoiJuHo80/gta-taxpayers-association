@@ -7,7 +7,7 @@ export default function NtsFloatingWidget() {
   const [minimized, setMinimized] = useState(false);
 
   return (
-    <div className="fixed bottom-6 right-4 sm:top-36 sm:bottom-auto sm:right-8 z-40 animate-in slide-in-from-bottom-5 sm:slide-in-from-top-5 duration-300">
+    <div className="fixed bottom-6 right-4 sm:top-52 sm:bottom-auto sm:right-8 z-40 animate-in slide-in-from-bottom-5 sm:slide-in-from-top-5 duration-300">
       {!minimized ? (
         <div className="bg-white/95 backdrop-blur-md border-2 border-amber-400 p-3 sm:p-3.5 rounded-2xl shadow-2xl flex items-center space-x-3 text-xs font-bold text-slate-900 group hover:shadow-amber-500/20 hover:border-amber-500 transition-all">
           

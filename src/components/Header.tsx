@@ -107,15 +107,6 @@ export default function Header() {
               <span>{t.navSignUp}</span>
             </Link>
 
-            {/* Free Tax Counsel Button */}
-            <Link
-              href="/consult"
-              className="bg-gradient-to-r from-gta-600 to-gta-500 hover:from-gta-700 hover:to-gta-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center space-x-1.5 whitespace-nowrap shrink-0"
-            >
-              <FileText className="w-3.5 h-3.5 shrink-0" />
-              <span>{t.navFreeConsult}</span>
-            </Link>
-
             {/* Admin Link */}
             <Link
               href="/admin"
