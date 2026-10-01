@@ -3,6 +3,7 @@ import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import NtsFloatingWidget from '@/components/NtsFloatingWidget';
+import ConsultFloatingWidget from '@/components/ConsultFloatingWidget';
 
 export const metadata: Metadata = {
   title: ':: GTA (Geoje Taxpayers Committee) Official Website',
@@ -21,6 +22,7 @@ export default function RootLayout({
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        <ConsultFloatingWidget />
         <NtsFloatingWidget />
       </body>
     </html>
