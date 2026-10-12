@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Shield, Phone, Mail, MapPin } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { translations, Language } from '@/lib/i18n';
+import GtaLogo from '@/components/GtaLogo';
 
 export default function Footer() {
   const [lang, setLang] = useState<Language>('en'); // Default to English for Foreign Taxpayers
@@ -29,11 +30,8 @@ export default function Footer() {
           
           {/* Col 1: Brand Info */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-lg bg-gta-500 flex items-center justify-center text-white">
-                <Shield className="w-6 h-6" />
-              </div>
-              <span className="font-extrabold text-xl text-white tracking-tight">{t.footerBrand}</span>
+            <div className="bg-white p-2.5 rounded-xl inline-block shadow-md">
+              <GtaLogo size="sm" />
             </div>
             <p className="text-xs text-slate-400 leading-relaxed max-w-md">
               {t.footerDesc}
@@ -61,7 +59,7 @@ export default function Footer() {
               <li><Link href="/about?tab=introduction" className="hover:text-white transition-colors">↳ {t.navIntroduction}</Link></li>
               <li><Link href="/about?tab=benefit" className="hover:text-white transition-colors">↳ {t.navBenefit}</Link></li>
               <li><Link href="/about?tab=location" className="hover:text-white transition-colors">↳ {t.navLocation}</Link></li>
-              <li><Link href="/notices" className="hover:text-white transition-colors">↳ Notice</Link></li>
+
               <li className="font-bold text-slate-200 mt-2">{t.catTaxLaw}</li>
               <li><Link href="/tax-law?tab=korean-tax-law" className="hover:text-white transition-colors">↳ {t.navKoreanTaxLaw}</Link></li>
               <li><Link href="/tax-law?tab=treaties" className="hover:text-white transition-colors">↳ {t.navTreaties}</Link></li>

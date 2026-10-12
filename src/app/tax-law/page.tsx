@@ -114,14 +114,11 @@ function TaxLawContent() {
           </div>
 
           <div className="bg-white p-8 md:p-10 rounded-3xl border border-slate-200 shadow-md space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-4 gap-2">
+            <div className="border-b border-slate-200 pb-4">
               <h3 className="text-2xl font-extrabold text-slate-900 flex items-center space-x-2">
                 <Scale className="w-6 h-6 text-gta-600" />
                 <span>Progressive Tax Rate vs Flat Tax Rate</span>
               </h3>
-              <span className="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
-                Foreign Expatriate Taxation Choice
-              </span>
             </div>
 
             <div className="overflow-x-auto">

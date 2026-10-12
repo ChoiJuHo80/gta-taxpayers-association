@@ -176,30 +176,15 @@ function TaxGuideContent() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-slate-900 to-gta-900 text-white p-8 rounded-3xl shadow-xl flex flex-col sm:flex-row justify-between items-center gap-6">
-            <div className="space-y-2">
-              <span className="bg-amber-400 text-slate-950 font-bold text-xs px-3 py-1 rounded-full uppercase">
-                Transparent Service Fees
-              </span>
-              <h3 className="text-2xl font-black">GTA Service Charges</h3>
-              <p className="text-slate-300 text-xs">
-                Official fixed service fee schedule for individual taxpayers and expatriate members.
-              </p>
+          {/* Service Fee Info (Compact layout at bottom of tab) */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-600 gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-bold text-slate-800">GTA Service Fee:</span>
+              <span>Monthly Tax Service: <strong className="text-slate-900 font-mono">KRW 30,000</strong>/month</span>
+              <span className="text-slate-300">|</span>
+              <span>Final Tax Return: <strong className="text-slate-900 font-mono">KRW 20,000</strong>/year</span>
             </div>
-            
-            <div className="flex flex-wrap gap-4 text-center">
-              <div className="bg-white/10 p-4 rounded-2xl border border-white/20 min-w-40">
-                <div className="text-xs text-slate-300">Monthly Tax Service</div>
-                <div className="text-2xl font-black text-amber-400 mt-1">KRW 30,000</div>
-                <div className="text-[10px] text-slate-400">per person / month</div>
-              </div>
-
-              <div className="bg-white/10 p-4 rounded-2xl border border-white/20 min-w-40">
-                <div className="text-xs text-slate-300">Final Tax Return</div>
-                <div className="text-2xl font-black text-blue-400 mt-1">KRW 20,000</div>
-                <div className="text-[10px] text-slate-400">per person / once a year</div>
-              </div>
-            </div>
+            <span className="text-[11px] text-slate-400">* Standard fixed fee schedule for expatriate tax filing</span>
           </div>
         </div>
       )}
@@ -216,35 +201,46 @@ function TaxGuideContent() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-gta-600 text-white flex items-center justify-center font-bold text-sm">01</div>
-                <h3 className="font-bold text-slate-900 text-base">GTA Application Form</h3>
-                <p className="text-xs text-slate-600">Completed admission form with basic applicant details, workplace, and dependent info.</p>
+            {/* Vertical List of Necessary Documents */}
+            <div className="flex flex-col space-y-3">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-start sm:items-center space-x-4 hover:border-slate-300 transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-gta-600 text-white flex items-center justify-center font-bold text-xs shrink-0">01</div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-slate-900 text-sm">GTA Application Form</h3>
+                  <p className="text-xs text-slate-600">Completed admission form with basic applicant details, workplace, and dependent info.</p>
+                </div>
               </div>
 
-              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-gta-600 text-white flex items-center justify-center font-bold text-sm">02</div>
-                <h3 className="font-bold text-slate-900 text-base">Alien Registration Card (ARC)</h3>
-                <p className="text-xs text-slate-600">A clear copy of the front and back side of your Alien Registration Card.</p>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-start sm:items-center space-x-4 hover:border-slate-300 transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-gta-600 text-white flex items-center justify-center font-bold text-xs shrink-0">02</div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-slate-900 text-sm">Alien Registration Card (ARC)</h3>
+                  <p className="text-xs text-slate-600">A clear copy of the front and back side of your Alien Registration Card.</p>
+                </div>
               </div>
 
-              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-gta-600 text-white flex items-center justify-center font-bold text-sm">03</div>
-                <h3 className="font-bold text-slate-900 text-base">Marriage Certificate</h3>
-                <p className="text-xs text-slate-600">Required if married to claim dependent spouse basic deduction.</p>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-start sm:items-center space-x-4 hover:border-slate-300 transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-gta-600 text-white flex items-center justify-center font-bold text-xs shrink-0">03</div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-slate-900 text-sm">Marriage Certificate</h3>
+                  <p className="text-xs text-slate-600">Required if married to claim dependent spouse basic deduction.</p>
+                </div>
               </div>
 
-              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-gta-600 text-white flex items-center justify-center font-bold text-sm">04</div>
-                <h3 className="font-bold text-slate-900 text-base">Child's Birth Certificate</h3>
-                <p className="text-xs text-slate-600">Required for dependent children below 20 years of age.</p>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-start sm:items-center space-x-4 hover:border-slate-300 transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-gta-600 text-white flex items-center justify-center font-bold text-xs shrink-0">04</div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-slate-900 text-sm">Child's Birth Certificate</h3>
+                  <p className="text-xs text-slate-600">Required for dependent children below 20 years of age.</p>
+                </div>
               </div>
 
-              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-gta-600 text-white flex items-center justify-center font-bold text-sm">05</div>
-                <h3 className="font-bold text-slate-900 text-base">Salary Statements / Pay Slips</h3>
-                <p className="text-xs text-slate-600">Pay-slip or employment contract to verify Class B wage and income amount.</p>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-start sm:items-center space-x-4 hover:border-slate-300 transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-gta-600 text-white flex items-center justify-center font-bold text-xs shrink-0">05</div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-slate-900 text-sm">Salary Statements / Pay Slips</h3>
+                  <p className="text-xs text-slate-600">Pay-slip or employment contract to verify Class B wage and income amount.</p>
+                </div>
               </div>
             </div>
 

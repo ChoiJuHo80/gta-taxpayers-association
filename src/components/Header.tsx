@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { Shield, ChevronDown, Menu, X, Lock, Globe, UserPlus, FileText, Mail, Building, Scale, BookOpen } from 'lucide-react';
 import { translations, Language } from '@/lib/i18n';
+import GtaLogo from '@/components/GtaLogo';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -54,23 +55,8 @@ export default function Header() {
         <div className="flex justify-between items-center h-16 sm:h-18 gap-4 border-b border-slate-100">
           
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center space-x-3 group shrink-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-gta-700 via-gta-500 to-blue-400 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-200 shrink-0">
-              <Shield className="w-5.5 h-5.5 text-white" />
-            </div>
-            <div className="whitespace-nowrap">
-              <div className="flex items-center space-x-2">
-                <span className="font-extrabold text-xl text-gta-900 tracking-tight">
-                  GTA Korea
-                </span>
-                <span className="bg-amber-100 text-amber-800 text-[11px] font-semibold px-2 py-0.5 rounded-full border border-amber-300">
-                  {t.publicTax}
-                </span>
-              </div>
-              <span className="text-[11px] text-slate-500 font-medium block">
-                {t.brandName}
-              </span>
-            </div>
+          <Link href="/" className="flex items-center group shrink-0">
+            <GtaLogo size="md" />
           </Link>
 
           {/* Action CTA & Language Switcher */}
@@ -181,12 +167,7 @@ export default function Header() {
                   >
                     📍 {t.navLocation}
                   </Link>
-                  <Link
-                    href="/notices"
-                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
-                  >
-                    📢 Notice
-                  </Link>
+
                 </div>
               </div>
             )}
@@ -347,9 +328,7 @@ export default function Header() {
               <Link href="/about?tab=location" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-sm font-semibold text-slate-700">
                 📍 {t.navLocation}
               </Link>
-              <Link href="/notices" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-sm font-semibold text-slate-700">
-                📢 Notice
-              </Link>
+
             </div>
           </div>
 

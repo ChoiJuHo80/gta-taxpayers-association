@@ -266,7 +266,7 @@ function AboutContent() {
             <div className="h-96 rounded-2xl overflow-hidden relative border border-slate-300 shadow-md">
               <iframe
                 title="GTA Office Google Maps Location"
-                src={`https://maps.google.com/maps?q=34.8806,128.6211&hl=${lang === 'en' ? 'en' : 'ko'}&z=15&output=embed`}
+                src={`https://maps.google.com/maps?q=34.8875,128.6929&hl=${lang === 'en' ? 'en' : 'ko'}&z=16&output=embed`}
                 className="w-full h-full border-0"
                 loading="lazy"
                 allowFullScreen
@@ -317,7 +317,7 @@ function AboutContent() {
 
             <div className="pt-2 text-center sm:text-right">
               <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=34.8806,128.6211&hl=${lang}`}
+                href={`https://www.google.com/maps/dir/?api=1&destination=34.8875,128.6929&hl=${lang}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center space-x-2 bg-gta-600 hover:bg-gta-700 text-white font-bold text-xs px-6 py-3 rounded-xl shadow transition-colors"

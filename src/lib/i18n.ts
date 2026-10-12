@@ -2,8 +2,8 @@ export type Language = 'ko' | 'en';
 
 export const translations = {
   ko: {
-    brandName: 'GTA 거제 납세자 대책위원회',
-    brandSub: 'Geoje Taxpayers Committee',
+    brandName: 'GTA 거제시 납세자회 (GTA)',
+    brandSub: 'Geoje Taxpayers Association',
     publicTax: '공익 세무',
 
     // Main Navigation Top Categories
@@ -122,7 +122,7 @@ export const translations = {
     footerAddress: '경상남도 거제시 거제대로 3696 #107',
 
     // Admin Page
-    adminSplashTitle: 'GTA 거제 납세자 대책위원회',
+    adminSplashTitle: 'GTA 거제시 납세자회 (GTA)',
     adminSplashSub: '통합 세무 관리 시스템 (Integrated EMR/LMS)',
     adminBadge: '통합 정보 시스템 전용 포털',
     adminHeroTitle1: '신뢰받는 공익 세무,',
@@ -136,17 +136,17 @@ export const translations = {
     adminLoginTitle: '관리자 로그인',
     adminLoginSub: '등록된 관리자 계정 아이디와 암호를 입력하십시오.',
     adminLabelId: '관리자 계정 ID / 사번',
-    adminPlaceholderId: 'admin 또는 관리자 사번',
+    adminPlaceholderId: 'gtakorea (또는 관리자 ID)',
     adminLabelPw: '비밀번호 (PASSWORD)',
-    adminPlaceholderPw: '비밀번호 입력 (기본: gta7273)',
+    adminPlaceholderPw: '비밀번호 입력 (PW: 1201)',
     adminRemember: '아이디 저장',
     adminForgot: '암호 재설정 문의',
     adminBtnSignIn: '시스템 로그인 →',
     adminSecFooter: 'SSL 256bit Secure Encrypted Portal',
   },
   en: {
-    brandName: 'Geoje Taxpayers Committee (GTA)',
-    brandSub: 'Geoje Taxpayers Committee',
+    brandName: 'Geoje Taxpayers Association (GTA)',
+    brandSub: 'Geoje Taxpayers Association',
     publicTax: 'Public Tax',
 
     // Main Navigation Top Categories
@@ -179,7 +179,7 @@ export const translations = {
     // Hero
     heroBadge: '2026 Official Geoje Taxpayer Rights Protection Platform',
     heroTitle1: 'Fair Tax Administration,',
-    heroTitle2: 'Geoje Taxpayers Committee',
+    heroTitle2: 'Geoje Taxpayers Association',
     heroTitle3: 'is with you.',
     heroSub: 'Access free tax consultation and updated tax law information safely and quickly with certified tax accountants.',
     heroBtnApply: 'Apply for Free Tax Counseling',
@@ -194,7 +194,7 @@ export const translations = {
 
     // Services
     serviceTitle: 'Core Customized Services',
-    serviceSub: 'Essential tax welfare services provided by the Geoje Taxpayers Committee.',
+    serviceSub: 'Essential tax welfare services provided by the Geoje Taxpayers Association.',
     svc1Title: '1:1 Online Tax Counseling',
     svc1Desc: 'Professional tax accountants directly review complex tax issues such as Capital Gains Tax, Income Tax, and Inheritance/Gift Tax for free.',
     svc1Btn: 'Apply for Counseling',
@@ -209,7 +209,7 @@ export const translations = {
 
     // Location
     mapTag: 'Location & Contact Info',
-    mapTitle: 'Geoje Taxpayers Committee Office Location',
+    mapTitle: 'Geoje Taxpayers Association Office Location',
     mapDesc: 'If in-person consultation is required, we support office visits via advance appointment.',
     mapAddrHeader: 'Address',
     mapAddr: '#107, 3696 Geoje-daero, Geoje-city, Gyeongsangnam-do, Korea',
@@ -234,7 +234,7 @@ export const translations = {
 
     // Member Registration (Sign-Up)
     signUpBadge: 'GTA Member Sign-Up',
-    signUpTitle: 'Geoje Taxpayers Committee Registration',
+    signUpTitle: 'Geoje Taxpayers Association Registration',
     signUpSub: 'Register as a member to receive 1:1 dedicated tax consultation and tax-saving resources.',
     memberTypeIndividual: 'Individual Taxpayer Member',
     memberTypeCorporate: 'Business / Corporate Member',
@@ -253,7 +253,7 @@ export const translations = {
     registerSuccess: 'Registration completed successfully! Enjoy 1:1 free tax counseling services.',
 
     // Footer
-    footerBrand: 'Geoje Taxpayers Committee (GTA)',
+    footerBrand: 'Geoje Taxpayers Association (GTA)',
     footerDesc: 'We work together to protect taxpayer rights and ensure fair tax administration in Geoje. Providing expert tax counseling and updated tax resources.',
     footerQuickLinks: 'QUICK LINKS',
     footerAbout: 'About GTA & History',
@@ -265,7 +265,7 @@ export const translations = {
     footerAddress: '#107, 3696 Geoje-daero, Geoje-city, Gyeongsangnam-do, Korea',
 
     // Admin Page
-    adminSplashTitle: 'GTA Geoje Taxpayers Committee',
+    adminSplashTitle: 'GTA Geoje Taxpayers Association',
     adminSplashSub: 'Integrated Tax Management Portal (EMR/LMS)',
     adminBadge: 'Dedicated Enterprise Information Portal',
     adminHeroTitle1: 'Trusted Public Tax Services,',
@@ -279,9 +279,9 @@ export const translations = {
     adminLoginTitle: 'Administrator Sign-In',
     adminLoginSub: 'Please enter your authorized admin account ID and password.',
     adminLabelId: 'ADMIN ACCOUNT ID / EMPLOYEE ID',
-    adminPlaceholderId: 'Enter admin ID or employee ID',
+    adminPlaceholderId: 'gtakorea (or admin ID)',
     adminLabelPw: 'PASSWORD',
-    adminPlaceholderPw: 'Enter password (Default: gta7273)',
+    adminPlaceholderPw: 'Enter password (PW: 1201)',
     adminRemember: 'Remember Me',
     adminForgot: 'Password Reset Inquiry',
     adminBtnSignIn: 'Sign In to Portal →',

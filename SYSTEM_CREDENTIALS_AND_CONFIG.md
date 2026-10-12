@@ -14,8 +14,8 @@
 
 ## 2. 🔐 신규 웹사이트 관리자 (Admin) 로그인 정보
 * **관리자 페이지 URL**: `https://gta-taxpayers-association.vercel.app/admin`
-* **관리자 ID**: **`deokang7`** (또는 `admin`)
-* **관리자 비밀번호**: **`gta7273`** *(기존 카페24 계정과 동일하게 통합 설정)*
+* **관리자 ID**: **`gtakorea`** (또는 `deokang7`)
+* **관리자 비밀번호**: **`1201`** *(변경 완료)*
 
 ---
 
@@ -86,3 +86,5 @@
 * **2026-09-30**: 카페24 DB 비밀번호 `gta7273korea*`로 재설정 및 DB 백업 파일(`deokang7-20260930.dump`, 62.7MB) SFTP(포트 3822) 다운로드 완료
 * **2026-09-30**: Supabase 신규 PostgreSQL DB 생성 (`ChoiJuHo80's Project`, 서울 리전) 및 4,934건 데이터 100% 마이그레이션 완료
 * **2026-09-30**: 관리자(Admin) 로그인 아이디/비밀번호를 `deokang7 / gta7273`으로 최종 변경 적용 완료
+* **2026-10-13**: 고객사 수정 요청 8건 반영 (공식 로고 GTA Geoje Taxpayers Association 적용, 지도 좌표 경남 거제대로 3696 실위치 수정, 공지 팝업창 및 Notice 메뉴 삭제, 세법 배지 삭제, 서비스 수수료 표기 축소, 제출서류 세로 배열, Application Form 관리자 전용 전환 및 Contact Us 페이지 워드 다운로드 일원화, 관리자 계정 `gtakorea / 1201` 변경)
+

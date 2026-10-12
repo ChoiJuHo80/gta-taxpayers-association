@@ -1,10 +1,34 @@
 'use client';
 
-import { useState } from 'react';
-import { Shield, FileText, Upload, Lock, CheckCircle2, AlertCircle, Download, Calendar, User, Building, Phone, Mail, DollarSign } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Shield, FileText, Upload, Lock, CheckCircle2, AlertCircle, Download, Calendar, User, Building, Phone, Mail, DollarSign, KeyRound, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ConsultPage() {
+  const [isAdminAuthorized, setIsAdminAuthorized] = useState(false);
+  const [adminPinInput, setAdminPinInput] = useState('');
+  const [adminPinError, setAdminPinError] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isLogged = sessionStorage.getItem('gta_admin_logged') === 'true';
+      if (isLogged) {
+        setIsAdminAuthorized(true);
+      }
+    }
+  }, []);
+
+  const handleAdminVerify = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (adminPinInput === '1201' || adminPinInput === 'gta7273') {
+      setIsAdminAuthorized(true);
+      sessionStorage.setItem('gta_admin_logged', 'true');
+      setAdminPinError('');
+    } else {
+      setAdminPinError('Invalid Admin Passcode. Only authorized GTA staff can create admission records.');
+    }
+  };
+
   const [formData, setFormData] = useState({
     applicantName: '',
     nationality: '',
@@ -250,42 +274,114 @@ export default function ConsultPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
       
-      {/* Top Banner & Official Form Header */}
-      <div className="bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-slate-200 space-y-6">
-        
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-6 gap-4">
-          <div>
-            <div className="inline-flex items-center space-x-2 text-gta-600 font-bold text-xs bg-gta-50 px-3 py-1 rounded-full mb-2">
-              <Lock className="w-3.5 h-3.5" />
-              <span>SSL 256-bit Encrypted Admission Portal</span>
+      {/* If NOT admin authorized: Show General Member Guidance & Admin Login Gate */}
+      {!isAdminAuthorized ? (
+        <div className="space-y-8">
+          {/* General Member Guidance Card */}
+          <div className="bg-white p-8 md:p-12 rounded-3xl shadow-sm border border-slate-200 text-center space-y-6 max-w-3xl mx-auto">
+            <div className="w-16 h-16 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center mx-auto shadow-md">
+              <FileText className="w-8 h-8" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 uppercase tracking-tight">
-              APPLICATION FOR ADMISSION TO GEOJE TAXPAYERS ASSOCIATION
-            </h1>
-            <p className="text-xs font-mono text-slate-500 mt-1">
-              Tel: (055) 688-2141 &nbsp;|&nbsp; Fax: (055) 688-2142 &nbsp;|&nbsp; www.gtakorea.org
+            
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-sky-700 bg-sky-50 px-3 py-1 rounded-full uppercase border border-sky-200">
+                Notice for General Members & Expatriates
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+                Application Form Submission Notice
+              </h1>
+              <p className="text-slate-600 text-sm leading-relaxed max-w-xl mx-auto">
+                Direct online web input is strictly managed by authorized GTA staff. General taxpayers should download the official Word (.doc) application form on the <strong>Contact Us</strong> page, fill it out, and submit it to GTA via Email (<strong>gta@gtakorea.org</strong>) or Fax.
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row justify-center gap-4">
+              <Link
+                href="/contact"
+                className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-extrabold text-sm px-6 py-3.5 rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                <span>Go to Contact Us & Download Form (.DOC)</span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleDownloadWordForm}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm px-6 py-3.5 rounded-xl border border-slate-300 transition-all flex items-center justify-center space-x-2 cursor-pointer"
+              >
+                <span>Direct Download (.DOC)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Admin Verification Gate */}
+          <div className="bg-slate-900 text-white p-8 rounded-3xl shadow-xl max-w-md mx-auto space-y-4 border border-slate-800">
+            <div className="flex items-center space-x-2.5 text-xs text-amber-400 font-bold uppercase">
+              <KeyRound className="w-4 h-4" />
+              <span>GTA Staff Administrator Mode</span>
+            </div>
+            <h3 className="text-lg font-black text-white">Administrator Access Only</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              If you are a GTA staff administrator writing and uploading an admission record directly to the database, enter your passcode below:
             </p>
-          </div>
 
-          {/* Download Official Word Form Button */}
-          <button
-            onClick={handleDownloadWordForm}
-            className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-lg flex items-center space-x-2 transition-all shrink-0 group"
-          >
-            <Download className="w-4 h-4 group-hover:bounce" />
-            <span>DOWNLOAD FORM (.DOC)</span>
-          </button>
+            <form onSubmit={handleAdminVerify} className="space-y-3 pt-1">
+              <input
+                type="password"
+                required
+                placeholder="Enter Admin Passcode (e.g. 1201)"
+                value={adminPinInput}
+                onChange={e => setAdminPinInput(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:ring-2 focus:ring-blue-500 font-mono"
+              />
+              {adminPinError && (
+                <div className="text-xs text-red-400 font-semibold">{adminPinError}</div>
+              )}
+              <button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow"
+              >
+                Authorize Administrator Mode
+              </button>
+            </form>
+          </div>
         </div>
+      ) : (
+        /* Top Banner & Official Form Header (Admin Mode Authorized) */
+        <div className="bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-slate-200 space-y-6">
+          
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-6 gap-4">
+            <div>
+              <div className="inline-flex items-center space-x-2 text-emerald-700 font-bold text-xs bg-emerald-50 px-3 py-1 rounded-full mb-2 border border-emerald-200">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Authorized GTA Administrator Entry Portal</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 uppercase tracking-tight">
+                APPLICATION FOR ADMISSION TO GEOJE TAXPAYERS ASSOCIATION
+              </h1>
+              <p className="text-xs font-mono text-slate-500 mt-1">
+                Tel: (055) 688-2141 &nbsp;|&nbsp; Fax: (055) 688-2142 &nbsp;|&nbsp; www.gtakorea.org
+              </p>
+            </div>
 
-        {errorMsg && (
-          <div className="p-4 bg-red-50 text-red-700 rounded-xl border border-red-200 flex items-center space-x-3 text-sm font-semibold">
-            <AlertCircle className="w-5 h-5 shrink-0 text-red-500" />
-            <span>{errorMsg}</span>
+            {/* Download Official Word Form Button */}
+            <button
+              onClick={handleDownloadWordForm}
+              className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-lg flex items-center space-x-2 transition-all shrink-0 group cursor-pointer"
+            >
+              <Download className="w-4 h-4 group-hover:bounce" />
+              <span>DOWNLOAD FORM (.DOC)</span>
+            </button>
           </div>
-        )}
 
-        {/* Official Admission Form */}
-        <form onSubmit={handleSubmit} className="space-y-8">
+          {errorMsg && (
+            <div className="p-4 bg-red-50 text-red-700 rounded-xl border border-red-200 flex items-center space-x-3 text-sm font-semibold">
+              <AlertCircle className="w-5 h-5 shrink-0 text-red-500" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {/* Official Admission Form */}
+          <form onSubmit={handleSubmit} className="space-y-8">
           
           {/* Section 1 ~ 3: Personal Information */}
           <div className="space-y-4">
@@ -743,6 +839,7 @@ export default function ConsultPage() {
         </form>
 
       </div>
+      )}
     </div>
   );
 }

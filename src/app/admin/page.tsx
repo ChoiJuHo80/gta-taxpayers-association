@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Lock, Shield, ArrowRight, FileSpreadsheet, RefreshCw, Search, Building2, UserCheck, KeyRound, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+import { Lock, Shield, ArrowRight, FileSpreadsheet, RefreshCw, Search, Building2, UserCheck, KeyRound, AlertCircle, FileText } from 'lucide-react';
 import { Consultation, Notice } from '@/lib/db';
 import { translations, Language } from '@/lib/i18n';
 import { Plus, Trash2, Pin, Megaphone, MessageSquare } from 'lucide-react';
@@ -52,16 +53,19 @@ export default function AdminPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanId = adminId.trim().toLowerCase();
-    const validId = !cleanId || cleanId === 'deokang7' || cleanId === 'admin';
-    const validPw = adminPassword === 'gta7273' || adminPassword === '9999' || adminPassword === 'gta2026' || adminPassword === '8992';
+    const validId = !cleanId || cleanId === 'gtakorea' || cleanId === 'deokang7' || cleanId === 'admin';
+    const validPw = adminPassword === '1201' || adminPassword === 'gta7273' || adminPassword === '9999';
 
     if (validId && validPw) {
       setAuthenticated(true);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('gta_admin_logged', 'true');
+      }
       setAuthError('');
       fetchConsultations();
       fetchNotices();
     } else {
-      setAuthError(lang === 'ko' ? '관리자 아이디 또는 암호가 일치하지 않습니다. (ID: deokang7 / PW: gta7273)' : 'Invalid Admin ID or Password. (ID: deokang7 / PW: gta7273)');
+      setAuthError(lang === 'ko' ? '관리자 아이디 또는 암호가 일치하지 않습니다. (ID: gtakorea / PW: 1201)' : 'Invalid Admin ID or Password. (ID: gtakorea / PW: 1201)');
     }
   };
 
@@ -371,6 +375,15 @@ export default function AdminPage() {
             <span>{lang === 'ko' ? '새로고침' : 'Refresh'}</span>
           </button>
 
+          <Link
+            href="/consult"
+            target="_blank"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-3.5 py-2.5 rounded-xl shadow flex items-center space-x-1.5 transition-all"
+          >
+            <FileText className="w-4 h-4" />
+            <span>{lang === 'ko' ? '+ 신청서 직접 작성' : '+ Entry Form'}</span>
+          </Link>
+
           <button
             onClick={handleDownloadExcel}
             className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow flex items-center space-x-2 transition-all"
@@ -380,7 +393,12 @@ export default function AdminPage() {
           </button>
 
           <button
-            onClick={() => setAuthenticated(false)}
+            onClick={() => {
+              setAuthenticated(false);
+              if (typeof window !== 'undefined') {
+                sessionStorage.removeItem('gta_admin_logged');
+              }
+            }}
             className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg"
           >
             {lang === 'ko' ? '로그아웃' : 'Sign Out'}
