@@ -130,7 +130,7 @@ function TaxGuideContent() {
                 <span className="text-xs font-black text-gta-600 bg-gta-100 px-2.5 py-1 rounded-full">STEP 01</span>
                 <h3 className="font-bold text-slate-900 text-base pt-1">Joining the GTA</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Submit GTA application form with a copy of your alien registration card, marriage cert (if married), child birth cert, and salary pay-slips.
+                  Submit GTA application form with a copy of your KOR residence card, marriage cert (if married), child birth cert, and salary pay-slips.
                 </p>
               </div>
             </div>
@@ -207,15 +207,15 @@ function TaxGuideContent() {
                 <div className="w-8 h-8 rounded-lg bg-gta-600 text-white flex items-center justify-center font-bold text-xs shrink-0">01</div>
                 <div className="flex-1">
                   <h3 className="font-bold text-slate-900 text-sm">GTA Application Form</h3>
-                  <p className="text-xs text-slate-600">Completed admission form with basic applicant details, workplace, and dependent info.</p>
+                  <p className="text-xs text-slate-600">Completed admission form with basic applicant details and dependent info.</p>
                 </div>
               </div>
 
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-start sm:items-center space-x-4 hover:border-slate-300 transition-colors">
                 <div className="w-8 h-8 rounded-lg bg-gta-600 text-white flex items-center justify-center font-bold text-xs shrink-0">02</div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-slate-900 text-sm">Alien Registration Card (ARC)</h3>
-                  <p className="text-xs text-slate-600">A clear copy of the front and back side of your Alien Registration Card.</p>
+                  <h3 className="font-bold text-slate-900 text-sm">KOR Residence Card</h3>
+                  <p className="text-xs text-slate-600">A clear copy of the front and back side of your KOR residence card.</p>
                 </div>
               </div>
 

@@ -43,7 +43,7 @@ export default function ContactUsPage() {
             <td colspan="2"><b>1. Applicant's name:</b> (write in capital letters)</td>
           </tr>
           <tr>
-            <td><b>2. Alien Registration Number:</b></td>
+            <td><b>2. Registration Number:</b></td>
             <td><b>* Nationality:</b></td>
           </tr>
           <tr>
@@ -51,17 +51,16 @@ export default function ContactUsPage() {
             <td><b>e-mail:</b></td>
           </tr>
           <tr>
-            <td><b>4. Company:</b></td>
-            <td><b>5. Work place (Project Name):</b> (ex: DSME, SHI, HHI, STX)</td>
+            <td colspan="2"><b>4. Company:</b></td>
           </tr>
           <tr>
-            <td colspan="2"><b>6. Telephone number in Korea (Mobile):</b></td>
+            <td colspan="2"><b>5. Telephone number in Korea (Mobile):</b></td>
           </tr>
           <tr>
-            <td colspan="2"><b>7. Date of Stay & Work:</b> From ____/____/________ ~ To ____/____/________</td>
+            <td colspan="2"><b>6. Date of Stay & Work:</b> From ____/____/________ ~ To ____/____/________</td>
           </tr>
           <tr>
-            <td colspan="2" class="section-title">8. Exemption: Please check at least 1 item below.</td>
+            <td colspan="2" class="section-title">7. Exemption: Please check at least 1 item below.</td>
           </tr>
           <tr>
             <td colspan="2">
@@ -70,14 +69,17 @@ export default function ContactUsPage() {
               ※ Does your spouse have any form of income? (Yes / No)<br/>
               Number of children below 20 years of age: _____ (A copy of child's birth certificate is required)<br/>
               Child 1 Name: _____________________ DOB: ______________<br/>
-              Child 2 Name: _____________________ DOB: ______________
+              Child 2 Name: _____________________ DOB: ______________<br/>
+              Child 3 Name: _____________________ DOB: ______________<br/>
+              Child 4 Name: _____________________ DOB: ______________
             </td>
           </tr>
           <tr>
-            <td colspan="2" class="section-title">9. The Class B Income (USD, EUR, NOK, GBP, KRW)</td>
+            <td colspan="2" class="section-title">8. The Class B Income (USD, EURO, NOK, GBP, DKK, CAD, AUD, SGD, SEK, JPY, KRW)</td>
           </tr>
           <tr>
             <td colspan="2">
+              Currency: _____________________________________________<br/>
               ① Basic Salary per month: _________________________________<br/>
               ② Overseas allowance per month: ___________________________<br/>
               ③ Bonus per month: _____________________________________<br/>
@@ -86,8 +88,13 @@ export default function ContactUsPage() {
           </tr>
           <tr>
             <td colspan="2">
-              <b>10. Did you work for other company during the same year?</b> (Yes / No)<br/>
+              <b>9. Did you work for other company during the same year?</b> (Yes / No)<br/>
               <i>If Yes, you must submit a 'Receipt for wage and salary income Tax withholding' of your previous employment to GTA to avoid penalty tax.</i>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2">
+              <b>Remark:</b> _________________________________________________
             </td>
           </tr>
         </table>
@@ -162,7 +169,7 @@ export default function ContactUsPage() {
             GTA Admission Application Form (.DOC)
           </h2>
           <p className="text-slate-300 text-xs sm:text-sm max-w-2xl leading-relaxed">
-            Please download the official Word (.doc) form, fill in your details (Applicant info, ARC number, Workplace, Class B salary), and submit it to GTA via Email (gta@gtakorea.org) or Fax (+82-55-688-2142).
+            Please download the official Word (.doc) form, fill in your details (Applicant info, KOR residence card number, Company, Class B salary), and submit it to GTA via Email (gta@gtakorea.org) or Fax (+82-55-688-2142).
           </p>
         </div>
 

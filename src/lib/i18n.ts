@@ -177,12 +177,12 @@ export const translations = {
     navAdmin: 'Admin Portal',
 
     // Hero
-    heroBadge: '2026 Official Geoje Taxpayer Rights Protection Platform',
-    heroTitle1: 'Fair Tax Administration,',
-    heroTitle2: 'Geoje Taxpayers Association',
-    heroTitle3: 'is with you.',
-    heroSub: 'Access free tax consultation and updated tax law information safely and quickly with certified tax accountants.',
-    heroBtnApply: 'Apply for Free Tax Counseling',
+    heroBadge: 'Geoje Taxpayers Association (Since 2005)',
+    heroTitle1: 'Easy & Prompt',
+    heroTitle2: 'Tax Solution',
+    heroTitle3: '',
+    heroSub: 'Professional tax services for foreign residents and businesses in Korea',
+    heroBtnApply: 'Get Started',
     heroBtnShare: 'Share on SNS',
     heroShareCopied: 'URL Copied!',
     heroStatusTitle: 'Real-time Tax Counseling Status',

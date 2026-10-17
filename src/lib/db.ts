@@ -19,7 +19,7 @@ export interface Consultation {
   id: string;
   applicantName: string;
   phone: string;
-  category: '양도소득세' | '종합소득세' | '상속/증여세' | '지방세/재산세' | '기타 세무상담';
+  category: '양도소득세' | '종합소득세' | '상속/증여세' | '지방세/재산세' | '기타 세무상담' | 'Application Form';
   title: string;
   content: string;
   passwordHash: string;
@@ -41,6 +41,72 @@ export interface Notice {
   createdAt: string;
 }
 
+export interface ApplicationMember {
+  id: number;
+  name: string;
+  number: string;
+  address: string;
+  email: string;
+  company: string;
+  nationality: string;
+  phon: string;
+  date_from: string;
+  date_to: string;
+  married: string;
+  age: string;
+  spouse: string;
+  money_01: string;
+  money_02: string;
+  money_03: string;
+  money_04: string;
+  name2: string;
+  name3: string;
+  date_end: string;
+  family_txt: string;
+  other_worked: number;
+  remark: string;
+  receipt_count?: number;
+}
+
+export interface TaxReceipt {
+  id: number;
+  member_num: string;
+  management_no: string;
+  license_no: string;
+  association_name: string;
+  chairman_name: string;
+  resident_no1: string;
+  address1: string;
+  name: string;
+  resident_no2: string;
+  address2: string;
+  taxation_period: string;
+  local_name: string;
+  local_basicsalary: string;
+  local_bonus: string;
+  local_income: string;
+  local_totalsalary: string;
+  overseas_name: string;
+  overseas_basicsalary: string;
+  overseas_bonus: string;
+  overseas_income: string;
+  overseas_totalsalary: string;
+  total_basicsalary: string;
+  total_bonus: string;
+  total_income: string;
+  total_totalsalary: string;
+  total_salary: string;
+  computed_tax: string;
+  deduction_overseas: string;
+  deduction_deduction: string;
+  payable_income: string;
+  payable_resident: string;
+  payable_special: string;
+  reg_date: string;
+  reg_name: string;
+  non_taxable_salary: string;
+}
+
 // Global Store Simulation for Development & Hybrid DB fallback
 let usersStore: User[] = [
   {
@@ -48,9 +114,9 @@ let usersStore: User[] = [
     fullName: '최주호',
     phone: '055-688-2141',
     email: 'admin@gtakorea.org',
-    passwordHash: hashPassword('9999'),
+    passwordHash: hashPassword('8992'),
     memberType: 'corporate',
-    bizNo: '612-82-00000',
+    bizNo: '612-80-03137',
     address: '경상남도 거제시 거제대로 3696 #107',
     interest: '법인 및 외국인 세무',
     role: 'admin',
@@ -130,7 +196,6 @@ export async function createUser(data: Omit<User, 'id' | 'role' | 'createdAt'>):
       throw new Error('이미 등록된 이메일 주소입니다.');
     }
     const newId = `USR-${Date.now()}`;
-    const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
     const res = await pool.query(`
       INSERT INTO users (id, full_name, phone, email, password_hash, member_type, biz_no, address, interest, role, created_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'member', NOW())
@@ -170,11 +235,470 @@ export async function getUsers(): Promise<User[]> {
   if (pool) {
     const res = await pool.query(`
       SELECT id, full_name as "fullName", phone, email, password_hash as "passwordHash", member_type as "memberType", biz_no as "bizNo", address, interest, role, created_at as "createdAt"
-      FROM users ORDER BY created_at DESC LIMIT 100
+      FROM users ORDER BY created_at DESC LIMIT 200
     `);
     return res.rows;
   }
   return usersStore;
+}
+
+// =========================================================================
+// Legacy & Active Member Services (applicationform table: 5,213+ members)
+// =========================================================================
+export async function searchMembers(params: {
+  query?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ members: ApplicationMember[]; total: number; page: number; limit: number }> {
+  const page = Math.max(1, params.page || 1);
+  const limit = Math.min(200, Math.max(1, params.limit || 30));
+  const offset = (page - 1) * limit;
+  const q = (params.query || '').trim();
+
+  if (pool) {
+    if (q) {
+      const likeQ = `%${q}%`;
+      const cleanQ = `%${q.replace(/-/g, '')}%`;
+      const countRes = await pool.query(
+        `SELECT COUNT(*) FROM applicationform
+         WHERE name ILIKE $1
+            OR number ILIKE $1
+            OR REPLACE(number, '-', '') ILIKE $2
+            OR company ILIKE $1
+            OR phon ILIKE $1
+            OR email ILIKE $1
+            OR CAST(id AS TEXT) = $3`,
+        [likeQ, cleanQ, q]
+      );
+      const total = parseInt(countRes.rows[0].count, 10);
+
+      const res = await pool.query(
+        `SELECT a.*,
+                (SELECT COUNT(*) FROM receipt r WHERE r.member_num = CAST(a.id AS TEXT))::int AS receipt_count
+         FROM applicationform a
+         WHERE a.name ILIKE $1
+            OR a.number ILIKE $1
+            OR REPLACE(a.number, '-', '') ILIKE $2
+            OR a.company ILIKE $1
+            OR a.phon ILIKE $1
+            OR a.email ILIKE $1
+            OR CAST(a.id AS TEXT) = $3
+         ORDER BY a.id DESC
+         LIMIT $4 OFFSET $5`,
+        [likeQ, cleanQ, q, limit, offset]
+      );
+      return { members: res.rows, total, page, limit };
+    } else {
+      const countRes = await pool.query(`SELECT COUNT(*) FROM applicationform`);
+      const total = parseInt(countRes.rows[0].count, 10);
+      const res = await pool.query(
+        `SELECT a.*,
+                (SELECT COUNT(*) FROM receipt r WHERE r.member_num = CAST(a.id AS TEXT))::int AS receipt_count
+         FROM applicationform a
+         ORDER BY a.id DESC
+         LIMIT $1 OFFSET $2`,
+        [limit, offset]
+      );
+      return { members: res.rows, total, page, limit };
+    }
+  }
+
+  return { members: [], total: 0, page, limit };
+}
+
+export async function getMemberById(id: number): Promise<ApplicationMember | undefined> {
+  if (pool) {
+    const res = await pool.query(`SELECT * FROM applicationform WHERE id = $1`, [id]);
+    return res.rows[0];
+  }
+  return undefined;
+}
+
+export async function createMember(data: Partial<ApplicationMember>): Promise<ApplicationMember> {
+  if (!pool) throw new Error('Database not connected');
+  const maxRes = await pool.query(`SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM applicationform`);
+  const nextId = maxRes.rows[0].next_id;
+  const nowUnix = String(Math.floor(Date.now() / 1000));
+
+  const res = await pool.query(
+    `INSERT INTO applicationform (
+      id, name, number, address, email, company, nationality, phon,
+      date_from, date_to, married, age, spouse,
+      money_01, money_02, money_03, money_04,
+      name2, name3, date_end, family_txt, other_worked, remark
+    ) VALUES (
+      $1,$2,$3,$4,$5,$6,$7,$8,
+      $9,$10,$11,$12,$13,
+      $14,$15,$16,$17,
+      $18,$19,$20,$21,$22,$23
+    ) RETURNING *`,
+    [
+      nextId,
+      (data.name || '').toUpperCase(),
+      data.number || '',
+      data.address || '',
+      data.email || '',
+      data.company || '',
+      data.nationality || '',
+      data.phon || '',
+      data.date_from || nowUnix,
+      data.date_to || nowUnix,
+      data.married || '1',
+      data.age || '',
+      data.spouse || '2',
+      data.money_01 || '0',
+      data.money_02 || '0',
+      data.money_03 || '0',
+      data.money_04 || '0',
+      data.name2 || (data.name || '').toUpperCase(),
+      data.name3 || data.number || '',
+      data.date_end || nowUnix,
+      data.family_txt || '',
+      data.other_worked || 0,
+      data.remark || ''
+    ]
+  );
+  return res.rows[0];
+}
+
+export async function updateMember(id: number, data: Partial<ApplicationMember>): Promise<ApplicationMember | undefined> {
+  if (!pool) throw new Error('Database not connected');
+  const existing = await getMemberById(id);
+  if (!existing) return undefined;
+
+  const res = await pool.query(
+    `UPDATE applicationform SET
+      name = $1,
+      number = $2,
+      address = $3,
+      email = $4,
+      company = $5,
+      nationality = $6,
+      phon = $7,
+      date_from = $8,
+      date_to = $9,
+      married = $10,
+      age = $11,
+      spouse = $12,
+      money_01 = $13,
+      money_02 = $14,
+      money_03 = $15,
+      money_04 = $16,
+      name2 = $17,
+      name3 = $18,
+      family_txt = $19,
+      other_worked = $20,
+      remark = $21
+     WHERE id = $22
+     RETURNING *`,
+    [
+      data.name ?? existing.name,
+      data.number ?? existing.number,
+      data.address ?? existing.address,
+      data.email ?? existing.email,
+      data.company ?? existing.company,
+      data.nationality ?? existing.nationality,
+      data.phon ?? existing.phon,
+      data.date_from ?? existing.date_from,
+      data.date_to ?? existing.date_to,
+      data.married ?? existing.married,
+      data.age ?? existing.age,
+      data.spouse ?? existing.spouse,
+      data.money_01 ?? existing.money_01,
+      data.money_02 ?? existing.money_02,
+      data.money_03 ?? existing.money_03,
+      data.money_04 ?? existing.money_04,
+      data.name2 ?? existing.name2,
+      data.name3 ?? existing.name3,
+      data.family_txt ?? existing.family_txt,
+      data.other_worked ?? existing.other_worked,
+      data.remark ?? existing.remark,
+      id
+    ]
+  );
+  return res.rows[0];
+}
+
+export async function deleteMember(id: number): Promise<boolean> {
+  if (!pool) return false;
+  await pool.query(`DELETE FROM applicationform WHERE id = $1`, [id]);
+  return true;
+}
+
+// =========================================================================
+// Tax Receipt Services (receipt table: 118,902+ receipts)
+// =========================================================================
+export async function lookupMemberAndReceipts(nameInput: string, regNoInput: string): Promise<{
+  member: ApplicationMember | null;
+  receipts: TaxReceipt[];
+}> {
+  if (!pool) return { member: null, receipts: [] };
+
+  const cleanName = nameInput.trim();
+  const cleanRegNo = regNoInput.trim().replace(/[-\s]/g, '');
+
+  // 1. Find matching member(s) in applicationform
+  const memRes = await pool.query(
+    `SELECT * FROM applicationform
+     WHERE (
+       UPPER(TRIM(name)) = UPPER($1)
+       OR UPPER(TRIM(name2)) = UPPER($1)
+     )
+     AND (
+       REPLACE(REPLACE(TRIM(number), '-', ''), ' ', '') = $2
+       OR REPLACE(REPLACE(TRIM(name3), '-', ''), ' ', '') = $2
+     )
+     ORDER BY id DESC`,
+    [cleanName, cleanRegNo]
+  );
+
+  const memberIds = memRes.rows.map(m => String(m.id));
+  const primaryMember: ApplicationMember | null = memRes.rows[0] || null;
+
+  // 2. Find receipts by member_num OR direct name + resident_no2 match
+  let receiptsRes;
+  if (memberIds.length > 0) {
+    receiptsRes = await pool.query(
+      `SELECT * FROM receipt
+       WHERE member_num = ANY($1::text[])
+          OR (
+            UPPER(TRIM(name)) = UPPER($2)
+            AND REPLACE(REPLACE(TRIM(resident_no2), '-', ''), ' ', '') = $3
+          )
+       ORDER BY id DESC
+       LIMIT 300`,
+      [memberIds, cleanName, cleanRegNo]
+    );
+  } else {
+    receiptsRes = await pool.query(
+      `SELECT * FROM receipt
+       WHERE UPPER(TRIM(name)) = UPPER($1)
+         AND REPLACE(REPLACE(TRIM(resident_no2), '-', ''), ' ', '') = $2
+       ORDER BY id DESC
+       LIMIT 300`,
+      [cleanName, cleanRegNo]
+    );
+  }
+
+  return {
+    member: primaryMember,
+    receipts: receiptsRes.rows,
+  };
+}
+
+export async function getReceipts(params: {
+  memberNum?: string;
+  query?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ receipts: TaxReceipt[]; total: number; page: number; limit: number }> {
+  if (!pool) return { receipts: [], total: 0, page: 1, limit: 30 };
+
+  const page = Math.max(1, params.page || 1);
+  const limit = Math.min(200, Math.max(1, params.limit || 30));
+  const offset = (page - 1) * limit;
+
+  if (params.memberNum) {
+    const countRes = await pool.query(
+      `SELECT COUNT(*) FROM receipt WHERE member_num = $1`,
+      [params.memberNum]
+    );
+    const total = parseInt(countRes.rows[0].count, 10);
+    const res = await pool.query(
+      `SELECT * FROM receipt WHERE member_num = $1 ORDER BY id DESC LIMIT $2 OFFSET $3`,
+      [params.memberNum, limit, offset]
+    );
+    return { receipts: res.rows, total, page, limit };
+  }
+
+  const q = (params.query || '').trim();
+  if (q) {
+    const likeQ = `%${q}%`;
+    const cleanQ = `%${q.replace(/-/g, '')}%`;
+    const countRes = await pool.query(
+      `SELECT COUNT(*) FROM receipt
+       WHERE name ILIKE $1
+          OR resident_no2 ILIKE $1
+          OR REPLACE(resident_no2, '-', '') ILIKE $2
+          OR overseas_name ILIKE $1
+          OR management_no ILIKE $1
+          OR member_num = $3`,
+      [likeQ, cleanQ, q]
+    );
+    const total = parseInt(countRes.rows[0].count, 10);
+    const res = await pool.query(
+      `SELECT * FROM receipt
+       WHERE name ILIKE $1
+          OR resident_no2 ILIKE $1
+          OR REPLACE(resident_no2, '-', '') ILIKE $2
+          OR overseas_name ILIKE $1
+          OR management_no ILIKE $1
+          OR member_num = $3
+       ORDER BY id DESC
+       LIMIT $4 OFFSET $5`,
+      [likeQ, cleanQ, q, limit, offset]
+    );
+    return { receipts: res.rows, total, page, limit };
+  }
+
+  const countRes = await pool.query(`SELECT COUNT(*) FROM receipt`);
+  const total = parseInt(countRes.rows[0].count, 10);
+  const res = await pool.query(
+    `SELECT * FROM receipt ORDER BY id DESC LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  );
+  return { receipts: res.rows, total, page, limit };
+}
+
+export async function createReceipt(data: Partial<TaxReceipt>): Promise<TaxReceipt> {
+  if (!pool) throw new Error('Database not connected');
+  const maxRes = await pool.query(`SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM receipt`);
+  const nextId = maxRes.rows[0].next_id;
+  const nowUnix = String(Math.floor(Date.now() / 1000));
+
+  const res = await pool.query(
+    `INSERT INTO receipt (
+      id, member_num, management_no, license_no, association_name, chairman_name,
+      resident_no1, address1, name, resident_no2, address2, taxation_period,
+      local_name, local_basicsalary, local_bonus, local_income, local_totalsalary,
+      overseas_name, overseas_basicsalary, overseas_bonus, overseas_income, overseas_totalsalary,
+      total_basicsalary, total_bonus, total_income, total_totalsalary, total_salary,
+      computed_tax, deduction_overseas, deduction_deduction,
+      payable_income, payable_resident, payable_special,
+      reg_date, reg_name, non_taxable_salary
+    ) VALUES (
+      $1,$2,$3,$4,$5,$6,
+      $7,$8,$9,$10,$11,$12,
+      $13,$14,$15,$16,$17,
+      $18,$19,$20,$21,$22,
+      $23,$24,$25,$26,$27,
+      $28,$29,$30,
+      $31,$32,$33,
+      $34,$35,$36
+    ) RETURNING *`,
+    [
+      nextId,
+      data.member_num || '',
+      data.management_no || '',
+      data.license_no || '612-80-03137',
+      data.association_name || 'Geoje Taxpayers Association',
+      data.chairman_name || 'Kim Se- Kwang',
+      data.resident_no1 || '710925-*******',
+      data.address1 || '#107, 3696 Geoje-daero, Geoje-si, Gyeongsangnam-do, Republic of Korea',
+      (data.name || '').toUpperCase(),
+      data.resident_no2 || '',
+      data.address2 || '',
+      data.taxation_period || nowUnix,
+      data.local_name || '',
+      data.local_basicsalary || '0',
+      data.local_bonus || '0',
+      data.local_income || '0',
+      data.local_totalsalary || '0',
+      data.overseas_name || '',
+      data.overseas_basicsalary || '0',
+      data.overseas_bonus || '0',
+      data.overseas_income || '0',
+      data.overseas_totalsalary || data.total_salary || '0',
+      data.total_basicsalary || data.overseas_basicsalary || '0',
+      data.total_bonus || data.overseas_bonus || '0',
+      data.total_income || data.overseas_income || '0',
+      data.total_totalsalary || data.total_salary || '0',
+      data.total_salary || '0',
+      data.computed_tax || '0',
+      data.deduction_overseas || '0',
+      data.deduction_deduction || '0',
+      data.payable_income || '0',
+      data.payable_resident || '0',
+      data.payable_special || '0',
+      data.reg_date || nowUnix,
+      data.reg_name || (data.name || '').toUpperCase(),
+      data.non_taxable_salary || ''
+    ]
+  );
+  return res.rows[0];
+}
+
+export async function updateReceipt(id: number, data: Partial<TaxReceipt>): Promise<TaxReceipt | undefined> {
+  if (!pool) throw new Error('Database not connected');
+  const existingRes = await pool.query(`SELECT * FROM receipt WHERE id = $1`, [id]);
+  const ex = existingRes.rows[0];
+  if (!ex) return undefined;
+
+  const res = await pool.query(
+    `UPDATE receipt SET
+      member_num = $1,
+      management_no = $2,
+      name = $3,
+      resident_no2 = $4,
+      address2 = $5,
+      taxation_period = $6,
+      local_name = $7,
+      local_basicsalary = $8,
+      local_bonus = $9,
+      local_income = $10,
+      local_totalsalary = $11,
+      overseas_name = $12,
+      overseas_basicsalary = $13,
+      overseas_bonus = $14,
+      overseas_income = $15,
+      overseas_totalsalary = $16,
+      total_basicsalary = $17,
+      total_bonus = $18,
+      total_income = $19,
+      total_totalsalary = $20,
+      total_salary = $21,
+      computed_tax = $22,
+      deduction_overseas = $23,
+      deduction_deduction = $24,
+      payable_income = $25,
+      payable_resident = $26,
+      payable_special = $27,
+      reg_date = $28,
+      reg_name = $29,
+      non_taxable_salary = $30
+     WHERE id = $31
+     RETURNING *`,
+    [
+      data.member_num ?? ex.member_num,
+      data.management_no ?? ex.management_no,
+      data.name ?? ex.name,
+      data.resident_no2 ?? ex.resident_no2,
+      data.address2 ?? ex.address2,
+      data.taxation_period ?? ex.taxation_period,
+      data.local_name ?? ex.local_name,
+      data.local_basicsalary ?? ex.local_basicsalary,
+      data.local_bonus ?? ex.local_bonus,
+      data.local_income ?? ex.local_income,
+      data.local_totalsalary ?? ex.local_totalsalary,
+      data.overseas_name ?? ex.overseas_name,
+      data.overseas_basicsalary ?? ex.overseas_basicsalary,
+      data.overseas_bonus ?? ex.overseas_bonus,
+      data.overseas_income ?? ex.overseas_income,
+      data.overseas_totalsalary ?? ex.overseas_totalsalary,
+      data.total_basicsalary ?? ex.total_basicsalary,
+      data.total_bonus ?? ex.total_bonus,
+      data.total_income ?? ex.total_income,
+      data.total_totalsalary ?? ex.total_totalsalary,
+      data.total_salary ?? ex.total_salary,
+      data.computed_tax ?? ex.computed_tax,
+      data.deduction_overseas ?? ex.deduction_overseas,
+      data.deduction_deduction ?? ex.deduction_deduction,
+      data.payable_income ?? ex.payable_income,
+      data.payable_resident ?? ex.payable_resident,
+      data.payable_special ?? ex.payable_special,
+      data.reg_date ?? ex.reg_date,
+      data.reg_name ?? ex.reg_name,
+      data.non_taxable_salary ?? ex.non_taxable_salary,
+      id
+    ]
+  );
+  return res.rows[0];
+}
+
+export async function deleteReceipt(id: number): Promise<boolean> {
+  if (!pool) return false;
+  await pool.query(`DELETE FROM receipt WHERE id = $1`, [id]);
+  return true;
 }
 
 // Consultation Services
@@ -182,7 +706,7 @@ export async function getConsultations(): Promise<Consultation[]> {
   if (pool) {
     const res = await pool.query(`
       SELECT id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, admin_memo as "adminMemo", created_at as "createdAt"
-      FROM consultations ORDER BY created_at DESC LIMIT 100
+      FROM consultations ORDER BY created_at DESC LIMIT 300
     `);
     return res.rows;
   }

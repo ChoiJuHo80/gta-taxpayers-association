@@ -215,10 +215,10 @@ function AboutContent() {
                   <FileCheck className="w-7 h-7" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900">
-                  Tax Certificate for Visa / ARC Extension
+                  Tax Certificate for Visa / KOR Residence Card Extension
                 </h3>
                 <p className="text-slate-600 text-sm leading-relaxed">
-                  Under immigration law, foreigners extending their stay must submit a Certificate of Full Tax Payment. GTA members receive tax certificates quickly within 1 day upon request whenever needed for Visa or Alien Registration Card extension.
+                  Under immigration law, foreigners extending their stay must submit a Certificate of Full Tax Payment. GTA members receive tax certificates quickly within 1 day upon request whenever needed for Visa or KOR Residence Card extension.
                 </p>
               </div>
               <div className="pt-4 border-t border-slate-100 text-xs font-bold text-gta-700 bg-gta-50 p-2.5 rounded-xl border border-gta-200">
@@ -235,11 +235,11 @@ function AboutContent() {
                   Convenient Member Portal Website
                 </h3>
                 <p className="text-slate-600 text-sm leading-relaxed">
-                  We operate a dedicated website for GTA members. Members can easily view their monthly tax payment receipts, download certificates, and check tax filing status online using their membership credentials.
+                  For convenient tax service, we are running a website. GTA members can check their monthly receipts through the website with the membership information.
                 </p>
               </div>
               <div className="pt-4 border-t border-slate-100 text-xs font-bold text-emerald-700 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
-                🌐 Online Receipt & Certificate System
+                🌐 Online check receipts
               </div>
             </div>
           </div>

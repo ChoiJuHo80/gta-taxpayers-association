@@ -1,8 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, FileText, Upload, Lock, CheckCircle2, AlertCircle, Download, Calendar, User, Building, Phone, Mail, DollarSign, KeyRound, ExternalLink } from 'lucide-react';
+import { FileText, Upload, CheckCircle2, AlertCircle, Download, DollarSign, KeyRound, MapPin, Search } from 'lucide-react';
 import Link from 'next/link';
+
+declare global {
+  interface Window {
+    daum?: any;
+  }
+}
 
 export default function ConsultPage() {
   const [isAdminAuthorized, setIsAdminAuthorized] = useState(false);
@@ -20,7 +26,7 @@ export default function ConsultPage() {
 
   const handleAdminVerify = (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminPinInput === '1201' || adminPinInput === 'gta7273') {
+    if (adminPinInput === '8992' || adminPinInput === '1201' || adminPinInput === 'gta7273') {
       setIsAdminAuthorized(true);
       sessionStorage.setItem('gta_admin_logged', 'true');
       setAdminPinError('');
@@ -29,14 +35,16 @@ export default function ConsultPage() {
     }
   };
 
+  const CURRENCIES = ['USD', 'EURO', 'NOK', 'GBP', 'DKK', 'CAD', 'AUD', 'SGD', 'SEK', 'JPY', 'KRW'] as const;
+
   const [formData, setFormData] = useState({
     applicantName: '',
     nationality: '',
     alienRegNo: '',
     address: '',
+    addressDetail: '',
     email: '',
     company: '',
-    workplace: '',
     phone: '',
     dateFromYear: '2026',
     dateFromMonth: '10',
@@ -49,21 +57,69 @@ export default function ConsultPage() {
     spouseDob: '',
     spouseIncome: 'No',
     childrenCount: '0',
-    child1Name: '', child1Dob: '',
-    child2Name: '', child2Dob: '',
-    child3Name: '', child3Dob: '',
-    child4Name: '', child4Dob: '',
+    children: [] as { name: string; dob: string }[],
+    salaryCurrency: 'USD',
     salaryBasic: '',
     salaryAllowance: '',
     salaryBonus: '',
     workedOtherCompany: 'No',
-    password: '',
+    remark: '',
     signature: '',
   });
 
+  // Load Daum/Juso Postcode script for Korean -> English address search popup
+  const handleOpenAddressPopup = () => {
+    const openPostcode = () => {
+      if (window.daum && window.daum.Postcode) {
+        new window.daum.Postcode({
+          oncomplete: (data: any) => {
+            const engAddr = data.roadAddressEnglish || data.jibunAddressEnglish || data.addressEnglish || '';
+            const zip = data.zonecode ? `, ${data.zonecode}` : '';
+            const fullEng = engAddr ? `${engAddr}, Republic of Korea${zip}` : data.roadAddress;
+            setFormData(prev => ({
+              ...prev,
+              address: prev.addressDetail ? `${prev.addressDetail}, ${fullEng}` : fullEng,
+            }));
+          },
+        }).open();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      if (window.daum && window.daum.Postcode) {
+        openPostcode();
+      } else {
+        const script = document.createElement('script');
+        script.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+        script.onload = openPostcode;
+        document.body.appendChild(script);
+      }
+    }
+  };
+
+  const handleChildrenCountChange = (countStr: string) => {
+    const count = Math.max(0, parseInt(countStr, 10) || 0);
+    setFormData(prev => {
+      const nextChildren = Array.from({ length: count }, (_, idx) => prev.children[idx] || { name: '', dob: '' });
+      return {
+        ...prev,
+        childrenCount: String(count),
+        children: nextChildren,
+      };
+    });
+  };
+
+  const handleChildChange = (index: number, field: 'name' | 'dob', value: string) => {
+    setFormData(prev => {
+      const nextChildren = [...prev.children];
+      nextChildren[index] = { ...nextChildren[index], [field]: value };
+      return { ...prev, children: nextChildren };
+    });
+  };
+
   const [files, setFiles] = useState<{ name: string; size: number; encryptedPath: string }[]>([]);
   const [loading, setLoading] = useState(false);
-  const [successResult, setSuccessResult] = useState<{ id: string; password: string } | null>(null);
+  const [successResult, setSuccessResult] = useState<{ id: string; memberId?: number } | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
   // Download official Word (.doc) form file
@@ -84,7 +140,7 @@ export default function ConsultPage() {
       </head>
       <body>
         <h2>APPLICATION FOR ADMISSION TO GEOJE TAXPAYERS ASSOCIATION</h2>
-        <div className="header-info">
+        <div class="header-info">
           Tel: (055) 688-2141 &nbsp;&nbsp; Fax: (055) 688-2142 &nbsp;&nbsp; www.gtakorea.org
         </div>
         
@@ -93,7 +149,7 @@ export default function ConsultPage() {
             <td colspan="2"><b>1. Applicant's name:</b> (write in capital letters)</td>
           </tr>
           <tr>
-            <td><b>2. Alien Registration Number:</b></td>
+            <td><b>2. Registration Number:</b></td>
             <td><b>* Nationality:</b></td>
           </tr>
           <tr>
@@ -101,17 +157,16 @@ export default function ConsultPage() {
             <td><b>e-mail:</b></td>
           </tr>
           <tr>
-            <td><b>4. Company:</b></td>
-            <td><b>5. Work place (Project Name):</b> (ex: DSME, SHI, HHI, STX)</td>
+            <td colspan="2"><b>4. Company:</b></td>
           </tr>
           <tr>
-            <td colspan="2"><b>6. Telephone number in Korea (Mobile):</b></td>
+            <td colspan="2"><b>5. Telephone number in Korea (Mobile):</b></td>
           </tr>
           <tr>
-            <td colspan="2"><b>7. Date of Stay & Work:</b> From ____/____/________ ~ To ____/____/________</td>
+            <td colspan="2"><b>6. Date of Stay & Work:</b> From ____/____/________ ~ To ____/____/________</td>
           </tr>
           <tr>
-            <td colspan="2" class="section-title">8. Exemption: Please check at least 1 item below.</td>
+            <td colspan="2" class="section-title">7. Exemption: Please check at least 1 item below.</td>
           </tr>
           <tr>
             <td colspan="2">
@@ -120,14 +175,17 @@ export default function ConsultPage() {
               ※ Does your spouse have any form of income? (Yes / No)<br/>
               Number of children below 20 years of age: _____ (A copy of child's birth certificate is required)<br/>
               Child 1 Name: _____________________ DOB: ______________<br/>
-              Child 2 Name: _____________________ DOB: ______________
+              Child 2 Name: _____________________ DOB: ______________<br/>
+              Child 3 Name: _____________________ DOB: ______________<br/>
+              Child 4 Name: _____________________ DOB: ______________
             </td>
           </tr>
           <tr>
-            <td colspan="2" class="section-title">9. The Class B Income (USD, EUR, NOK, GBP, KRW)</td>
+            <td colspan="2" class="section-title">8. The Class B Income (USD, EURO, NOK, GBP, DKK, CAD, AUD, SGD, SEK, JPY, KRW)</td>
           </tr>
           <tr>
             <td colspan="2">
+              Currency: _____________________________________________<br/>
               ① Basic Salary per month: _________________________________<br/>
               ② Overseas allowance per month: ___________________________<br/>
               ③ Bonus per month: _____________________________________<br/>
@@ -136,8 +194,13 @@ export default function ConsultPage() {
           </tr>
           <tr>
             <td colspan="2">
-              <b>10. Did you work for other company during the same year?</b> (Yes / No)<br/>
+              <b>9. Did you work for other company during the same year?</b> (Yes / No)<br/>
               <i>If Yes, you must submit a 'Receipt for wage and salary income Tax withholding' of your previous employment to GTA to avoid penalty tax.</i>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2">
+              <b>Remark:</b> _________________________________________________
             </td>
           </tr>
         </table>
@@ -183,28 +246,46 @@ export default function ConsultPage() {
     setLoading(true);
     setErrorMsg('');
 
+    const childrenLines =
+      formData.children.length > 0
+        ? formData.children
+            .map((c, idx) => `   - Child ${idx + 1}: ${c.name || 'N/A'} (${c.dob || 'N/A'})`)
+            .join('\n')
+        : '   - Children Details: None';
+
     const formattedContent = `
 === APPLICATION FOR ADMISSION TO GEOJE TAXPAYERS ASSOCIATION ===
 1. Applicant Name: ${formData.applicantName}
-2. Alien Reg Number: ${formData.alienRegNo} | Nationality: ${formData.nationality}
+2. Registration Number: ${formData.alienRegNo} | Nationality: ${formData.nationality}
 3. Address: ${formData.address} | Email: ${formData.email}
 4. Company: ${formData.company}
-5. Workplace / Project: ${formData.workplace}
-6. Telephone (Mobile): ${formData.phone}
-7. Date of Stay & Work: ${formData.dateFromYear}-${formData.dateFromMonth}-${formData.dateFromDay} ~ ${formData.dateToYear}-${formData.dateToMonth}-${formData.dateToDay}
-8. Exemption Status: ${formData.maritalStatus}
+5. Telephone (Mobile): ${formData.phone}
+6. Date of Stay & Work: ${formData.dateFromYear}-${formData.dateFromMonth}-${formData.dateFromDay} ~ ${formData.dateToYear}-${formData.dateToMonth}-${formData.dateToDay}
+7. Exemption Status: ${formData.maritalStatus}
    - Spouse Name: ${formData.spouseName || 'N/A'}, DOB: ${formData.spouseDob || 'N/A'}, Income: ${formData.spouseIncome}
    - Children (<20 yrs): ${formData.childrenCount}
-   - Child 1: ${formData.child1Name || 'N/A'} (${formData.child1Dob || 'N/A'})
-   - Child 2: ${formData.child2Name || 'N/A'} (${formData.child2Dob || 'N/A'})
-9. Class B Income per month:
-   - ① Basic Salary: ${formData.salaryBasic || '0'}
-   - ② Overseas Allowance: ${formData.salaryAllowance || '0'}
-   - ③ Bonus: ${formData.salaryBonus || '0'}
-   - Total Monthly Income: ${calculateTotalSalary()}
-10. Worked for other company during same year: ${formData.workedOtherCompany}
+${childrenLines}
+8. Class B Income per month (${formData.salaryCurrency}):
+   - ① Basic Salary: ${formData.salaryCurrency} ${formData.salaryBasic || '0'}
+   - ② Overseas Allowance: ${formData.salaryCurrency} ${formData.salaryAllowance || '0'}
+   - ③ Bonus: ${formData.salaryCurrency} ${formData.salaryBonus || '0'}
+   - Total Monthly Income: ${formData.salaryCurrency} ${calculateTotalSalary()}
+9. Worked for other company during same year: ${formData.workedOtherCompany}
+10. Remark: ${formData.remark || 'None'}
 11. Signature: ${formData.signature || formData.applicantName}
     `.trim();
+
+    // Build legacy-compatible family_txt (Spouse|DOB|Child1|DOB|...)
+    const familyParts: string[] = [];
+    if (formData.maritalStatus === 'Married' && formData.spouseName) {
+      familyParts.push(formData.spouseName, formData.spouseDob || '');
+    }
+    formData.children.forEach(ch => {
+      familyParts.push(ch.name || '', ch.dob || '');
+    });
+
+    const dateFromUnix = String(Math.floor(new Date(`${formData.dateFromYear}-${formData.dateFromMonth}-${formData.dateFromDay}`).getTime() / 1000) || Math.floor(Date.now() / 1000));
+    const dateToUnix = String(Math.floor(new Date(`${formData.dateToYear}-${formData.dateToMonth}-${formData.dateToDay}`).getTime() / 1000) || Math.floor(Date.now() / 1000));
 
     try {
       const res = await fetch('/api/consultations', {
@@ -216,14 +297,36 @@ export default function ConsultPage() {
           category: 'Application Form',
           title: `[Admission Application] ${formData.applicantName} (${formData.company || 'Individual'})`,
           content: formattedContent,
-          password: formData.password,
           attachments: files,
+          memberData: {
+            name: formData.applicantName,
+            number: formData.alienRegNo,
+            address: formData.address,
+            email: formData.email,
+            company: formData.company,
+            nationality: formData.nationality,
+            phon: formData.phone,
+            date_from: dateFromUnix,
+            date_to: dateToUnix,
+            married: formData.maritalStatus === 'Married' ? '2' : '1',
+            age: formData.childrenCount,
+            spouse: formData.spouseIncome === 'Yes' ? '1' : '2',
+            money_01: formData.salaryBasic ? `${formData.salaryCurrency} ${formData.salaryBasic}` : '0',
+            money_02: formData.salaryAllowance ? `${formData.salaryCurrency} ${formData.salaryAllowance}` : '0',
+            money_03: formData.salaryBonus ? `${formData.salaryCurrency} ${formData.salaryBonus}` : '0',
+            money_04: `${formData.salaryCurrency} ${calculateTotalSalary()}`,
+            name2: formData.applicantName,
+            name3: formData.alienRegNo,
+            family_txt: familyParts.join('|'),
+            other_worked: formData.workedOtherCompany === 'Yes' ? 1 : 0,
+            remark: formData.remark,
+          },
         }),
       });
 
       const json = await res.json();
       if (json.success) {
-        setSuccessResult({ id: json.data.id, password: formData.password });
+        setSuccessResult({ id: json.data.id, memberId: json.member?.id });
       } else {
         setErrorMsg(json.message || 'Error processing application submission.');
       }
@@ -240,32 +343,35 @@ export default function ConsultPage() {
         <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-lg">
           <CheckCircle2 className="w-10 h-10" />
         </div>
-        <h1 className="text-3xl font-extrabold text-slate-900">Application Submitted Successfully!</h1>
+        <h1 className="text-3xl font-extrabold text-slate-900">Application Registered Successfully!</h1>
         <p className="text-slate-600 leading-relaxed">
-          Your admission application to Geoje Taxpayers Association has been securely registered. Our tax advisor will review your submitted application.
+          The member admission application has been registered in the GTA Member Database. You can now search this member and issue monthly tax receipts in the Admin Portal.
         </p>
 
-        <div className="bg-slate-100 p-6 rounded-2xl border border-slate-200 text-left max-w-md mx-auto space-y-3 font-mono text-sm">
-          <div className="flex justify-between border-b border-slate-200 pb-2">
+        <div className="bg-slate-100 p-6 rounded-2xl border border-slate-200 text-left max-w-md mx-auto space-y-2.5 font-mono text-sm">
+          <div className="flex justify-between">
             <span className="text-slate-500">Application ID:</span>
             <span className="font-bold text-gta-700">{successResult.id}</span>
           </div>
-          <div className="flex justify-between border-b border-slate-200 pb-2">
-            <span className="text-slate-500">Lookup Password:</span>
-            <span className="font-bold text-slate-900">{successResult.password}</span>
-          </div>
-          <p className="text-xs text-slate-500 font-sans pt-1">
-            * You can lookup your application status anytime under [Check My Receipt / Status Lookup] menu.
-          </p>
+          {successResult.memberId && (
+            <div className="flex justify-between border-t border-slate-200 pt-2">
+              <span className="text-slate-500">Member No:</span>
+              <span className="font-bold text-emerald-700">#{successResult.memberId}</span>
+            </div>
+          )}
         </div>
 
         <div className="pt-4 flex justify-center space-x-4">
-          <Link href="/consult/lookup" className="bg-gta-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-gta-700 shadow">
-            Check Application Status
+          <Link href="/admin" className="bg-gta-600 text-white font-bold px-6 py-3 rounded-xl hover:bg-gta-700 shadow">
+            Go to Admin Portal
           </Link>
-          <Link href="/" className="bg-slate-200 text-slate-800 font-bold px-6 py-3 rounded-xl hover:bg-slate-300">
-            Return to Homepage
-          </Link>
+          <button
+            type="button"
+            onClick={() => setSuccessResult(null)}
+            className="bg-slate-200 text-slate-800 font-bold px-6 py-3 rounded-xl hover:bg-slate-300 cursor-pointer"
+          >
+            Register Another Member
+          </button>
         </div>
       </div>
     );
@@ -273,19 +379,17 @@ export default function ConsultPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
-      
       {/* If NOT admin authorized: Show General Member Guidance & Admin Login Gate */}
       {!isAdminAuthorized ? (
         <div className="space-y-8">
-          {/* General Member Guidance Card */}
           <div className="bg-white p-8 md:p-12 rounded-3xl shadow-sm border border-slate-200 text-center space-y-6 max-w-3xl mx-auto">
             <div className="w-16 h-16 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center mx-auto shadow-md">
               <FileText className="w-8 h-8" />
             </div>
-            
+
             <div className="space-y-2">
               <span className="text-xs font-bold text-sky-700 bg-sky-50 px-3 py-1 rounded-full uppercase border border-sky-200">
-                Notice for General Members & Expatriates
+                Notice for General Members &amp; Expatriates
               </span>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
                 Application Form Submission Notice
@@ -301,7 +405,7 @@ export default function ConsultPage() {
                 className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-extrabold text-sm px-6 py-3.5 rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all cursor-pointer"
               >
                 <Download className="w-4 h-4" />
-                <span>Go to Contact Us & Download Form (.DOC)</span>
+                <span>Go to Contact Us &amp; Download Form (.DOC)</span>
               </Link>
               <button
                 type="button"
@@ -328,7 +432,7 @@ export default function ConsultPage() {
               <input
                 type="password"
                 required
-                placeholder="Enter Admin Passcode (e.g. 1201)"
+                placeholder="Enter Admin Passcode (e.g. 8992)"
                 value={adminPinInput}
                 onChange={e => setAdminPinInput(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:ring-2 focus:ring-blue-500 font-mono"
@@ -338,7 +442,7 @@ export default function ConsultPage() {
               )}
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow cursor-pointer"
               >
                 Authorize Administrator Mode
               </button>
@@ -348,7 +452,6 @@ export default function ConsultPage() {
       ) : (
         /* Top Banner & Official Form Header (Admin Mode Authorized) */
         <div className="bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-slate-200 space-y-6">
-          
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-6 gap-4">
             <div>
               <div className="inline-flex items-center space-x-2 text-emerald-700 font-bold text-xs bg-emerald-50 px-3 py-1 rounded-full mb-2 border border-emerald-200">
@@ -363,12 +466,12 @@ export default function ConsultPage() {
               </p>
             </div>
 
-            {/* Download Official Word Form Button */}
             <button
+              type="button"
               onClick={handleDownloadWordForm}
               className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-lg flex items-center space-x-2 transition-all shrink-0 group cursor-pointer"
             >
-              <Download className="w-4 h-4 group-hover:bounce" />
+              <Download className="w-4 h-4" />
               <span>DOWNLOAD FORM (.DOC)</span>
             </button>
           </div>
@@ -382,99 +485,141 @@ export default function ConsultPage() {
 
           {/* Official Admission Form */}
           <form onSubmit={handleSubmit} className="space-y-8">
-          
-          {/* Section 1 ~ 3: Personal Information */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
-              Personal Information
-            </h3>
+            {/* Section 1 ~ 3: Personal Information */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
+                Personal Information
+              </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  1. Applicant's Name * <span className="text-slate-400 font-normal">(write in CAPITAL letters)</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. KIM SILVIA"
-                  value={formData.applicantName}
-                  onChange={e => setFormData({ ...formData, applicantName: e.target.value.toUpperCase() })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 uppercase font-mono"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    1. Applicant&apos;s Name * <span className="text-slate-400 font-normal">(write in CAPITAL letters — auto-fills Signature)</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. KIM SILVIA"
+                    value={formData.applicantName}
+                    onChange={e => {
+                      const upperName = e.target.value.toUpperCase();
+                      setFormData(prev => ({
+                        ...prev,
+                        applicantName: upperName,
+                        signature: upperName,
+                      }));
+                    }}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 uppercase font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Nationality *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. United Kingdom"
+                    value={formData.nationality}
+                    onChange={e => setFormData({ ...formData, nationality: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Nationality *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. United Kingdom"
-                  value={formData.nationality}
-                  onChange={e => setFormData({ ...formData, nationality: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">2. Registration Number *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 820012-3932521"
+                    value={formData.alienRegNo}
+                    onChange={e => setFormData({ ...formData, alienRegNo: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">3. E-mail Address *</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. silvia@example.com"
+                    value={formData.email}
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">5. Telephone (Mobile) *</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="e.g. 010-3700-3719"
+                    value={formData.phone}
+                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Address with Korean Parcel-Style Popup Search -> Auto English Conversion */}
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Residential Address in Korea * <span className="text-slate-400 font-normal">(Search road address to auto-fill in English)</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddressPopup}
+                    className="bg-gta-600 hover:bg-gta-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-xs inline-flex items-center space-x-1.5 transition-colors cursor-pointer"
+                  >
+                    <Search className="w-3.5 h-3.5" />
+                    <span>주소 검색 (Search &amp; Auto-Fill English Address)</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="md:col-span-2">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Click 'Search Address' or enter English address in Korea"
+                      value={formData.address}
+                      onChange={e => setFormData({ ...formData, address: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Apt / Room / Dong-Ho (e.g. #103-1002)"
+                      value={formData.addressDetail}
+                      onChange={e => {
+                        const detail = e.target.value;
+                        setFormData(prev => {
+                          const baseAddr = prev.address.replace(/^#?[^,]+,\s*(?=\d)/, '');
+                          return {
+                            ...prev,
+                            addressDetail: detail,
+                            address: detail ? `${detail}, ${baseAddr}` : baseAddr,
+                          };
+                        });
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">2. Alien Registration Number *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 820012-3932521"
-                  value={formData.alienRegNo}
-                  onChange={e => setFormData({ ...formData, alienRegNo: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 font-mono"
-                />
-              </div>
+            {/* Section 4 & 6: Employment & Stay Info */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
+                Employment &amp; Stay Information
+              </h3>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">3. E-mail Address *</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="e.g. silvia@example.com"
-                  value={formData.email}
-                  onChange={e => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">6. Telephone (Mobile) *</label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="e.g. 010-3700-3719"
-                  value={formData.phone}
-                  onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 font-mono"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Residential Address in Korea *</label>
-              <input
-                type="text"
-                required
-                placeholder="Enter your full residential address in Geoje/Korea"
-                value={formData.address}
-                onChange={e => setFormData({ ...formData, address: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
-              />
-            </div>
-          </div>
-
-          {/* Section 4 ~ 7: Employment & Stay Info */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
-              Employment & Stay Information
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">4. Company Name *</label>
                 <input
@@ -488,317 +633,364 @@ export default function ConsultPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  5. Work place / Project Name <span className="text-slate-400 font-normal">(ex: DSME, SHI, HHI, STX)</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. DSME Yard Project"
-                  value={formData.workplace}
-                  onChange={e => setFormData({ ...formData, workplace: e.target.value })}
+                <label className="block text-xs font-bold text-slate-700 mb-1">6. Date of Stay &amp; Work *</label>
+                <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-slate-600 shrink-0">From:</span>
+                    <input
+                      type="date"
+                      value={`${formData.dateFromYear}-${formData.dateFromMonth}-${formData.dateFromDay}`}
+                      onChange={e => {
+                        const parts = e.target.value.split('-');
+                        if (parts.length === 3) {
+                          setFormData({ ...formData, dateFromYear: parts[0], dateFromMonth: parts[1], dateFromDay: parts[2] });
+                        }
+                      }}
+                      className="px-2 py-1 rounded border border-slate-300 text-xs font-mono w-full"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-slate-600 shrink-0">To:</span>
+                    <input
+                      type="date"
+                      value={`${formData.dateToYear}-${formData.dateToMonth}-${formData.dateToDay}`}
+                      onChange={e => {
+                        const parts = e.target.value.split('-');
+                        if (parts.length === 3) {
+                          setFormData({ ...formData, dateToYear: parts[0], dateToMonth: parts[1], dateToDay: parts[2] });
+                        }
+                      }}
+                      className="px-2 py-1 rounded border border-slate-300 text-xs font-mono w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 7: Exemption (Marital & Children Details) */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
+                7. Exemption Status (Check at least 1 item below)
+              </h3>
+
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4 text-xs">
+                <div className="flex items-center space-x-6 font-bold text-slate-800">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="maritalStatus"
+                      checked={formData.maritalStatus === 'Single'}
+                      onChange={() => setFormData({ ...formData, maritalStatus: 'Single' })}
+                      className="text-gta-600 focus:ring-gta-500"
+                    />
+                    <span>Single</span>
+                  </label>
+
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="maritalStatus"
+                      checked={formData.maritalStatus === 'Married'}
+                      onChange={() => setFormData({ ...formData, maritalStatus: 'Married' })}
+                      className="text-gta-600 focus:ring-gta-500"
+                    />
+                    <span>Married</span>
+                    <span className="text-[11px] text-amber-700 font-normal">(A copy of your marriage certificate is required)</span>
+                  </label>
+                </div>
+
+                {formData.maritalStatus === 'Married' && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-slate-200">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Spouse&apos;s Name</label>
+                      <input
+                        type="text"
+                        placeholder="Spouse full name"
+                        value={formData.spouseName}
+                        onChange={e => setFormData({ ...formData, spouseName: e.target.value })}
+                        className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Spouse Date of Birth</label>
+                      <input
+                        type="text"
+                        placeholder="DD/MM/YYYY"
+                        value={formData.spouseDob}
+                        onChange={e => setFormData({ ...formData, spouseDob: e.target.value })}
+                        className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Does spouse have any form of income?</label>
+                      <select
+                        value={formData.spouseIncome}
+                        onChange={e => setFormData({ ...formData, spouseIncome: e.target.value })}
+                        className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs font-bold"
+                      >
+                        <option value="No">No</option>
+                        <option value="Yes">Yes</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-2 border-t border-slate-200 space-y-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="font-bold text-slate-700">Number of children below 20 years of age:</label>
+                    <select
+                      value={formData.childrenCount}
+                      onChange={e => handleChildrenCountChange(e.target.value)}
+                      className="px-2.5 py-1 rounded border border-slate-300 text-xs font-bold bg-white"
+                    >
+                      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                        <option key={num} value={String(num)}>{num}</option>
+                      ))}
+                    </select>
+                    <span className="text-[11px] text-slate-500">(A copy of child&apos;s birth certificate is required)</span>
+                  </div>
+
+                  {formData.children.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                      {formData.children.map((child, idx) => (
+                        <div key={idx} className="bg-white p-2.5 rounded-lg border border-slate-200">
+                          <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                            Child {idx + 1} Name &amp; DOB
+                          </label>
+                          <div className="flex space-x-2">
+                            <input
+                              type="text"
+                              placeholder={`Child ${idx + 1} Name`}
+                              value={child.name}
+                              onChange={e => handleChildChange(idx, 'name', e.target.value)}
+                              className="w-2/3 px-2 py-1.5 rounded border border-slate-300 text-xs"
+                            />
+                            <input
+                              type="text"
+                              placeholder="DOB (DD/MM/YYYY)"
+                              value={child.dob}
+                              onChange={e => handleChildChange(idx, 'dob', e.target.value)}
+                              className="w-1/3 px-2 py-1.5 rounded border border-slate-300 text-xs font-mono"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="text-[11px] text-slate-500 italic bg-amber-50 p-2 rounded border border-amber-200">
+                  ※ Family stays in Korea: Only a copy of KOR residence card is necessary.
+                </div>
+              </div>
+            </div>
+
+            {/* Section 8: Class B Income Details */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
+                8. The Class B Income (USD, EURO, NOK, GBP, DKK, CAD, AUD, SGD, SEK, JPY, KRW)
+              </h3>
+
+              {/* Currency Selection Bar */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
+                    <DollarSign className="w-4 h-4 text-gta-600" />
+                    <span>Select Salary Currency (Auto-applied to all income fields &amp; Total Income):</span>
+                  </label>
+                  <select
+                    value={formData.salaryCurrency}
+                    onChange={e => setFormData({ ...formData, salaryCurrency: e.target.value })}
+                    className="px-3 py-1.5 rounded-lg border border-gta-300 bg-white text-xs font-extrabold text-gta-800 focus:ring-2 focus:ring-gta-500"
+                  >
+                    {CURRENCIES.map(cur => (
+                      <option key={cur} value={cur}>{cur}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {CURRENCIES.map(cur => (
+                    <button
+                      key={cur}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, salaryCurrency: cur })}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        formData.salaryCurrency === cur
+                          ? 'bg-gta-600 text-white shadow-sm'
+                          : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {cur}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    ① Basic Salary per month ({formData.salaryCurrency})
+                  </label>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3 text-xs font-extrabold text-gta-700 bg-gta-50 px-1.5 py-0.5 rounded border border-gta-200 font-mono">
+                      {formData.salaryCurrency}
+                    </span>
+                    <input
+                      type="number"
+                      placeholder="e.g. 5000"
+                      value={formData.salaryBasic}
+                      onChange={e => setFormData({ ...formData, salaryBasic: e.target.value })}
+                      className="w-full pl-16 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-gta-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    ② Overseas allowance per month ({formData.salaryCurrency})
+                  </label>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3 text-xs font-extrabold text-gta-700 bg-gta-50 px-1.5 py-0.5 rounded border border-gta-200 font-mono">
+                      {formData.salaryCurrency}
+                    </span>
+                    <input
+                      type="number"
+                      placeholder="e.g. 2000"
+                      value={formData.salaryAllowance}
+                      onChange={e => setFormData({ ...formData, salaryAllowance: e.target.value })}
+                      className="w-full pl-16 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-gta-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    ③ Bonus per month ({formData.salaryCurrency})
+                  </label>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3 text-xs font-extrabold text-gta-700 bg-gta-50 px-1.5 py-0.5 rounded border border-gta-200 font-mono">
+                      {formData.salaryCurrency}
+                    </span>
+                    <input
+                      type="number"
+                      placeholder="e.g. 1000"
+                      value={formData.salaryBonus}
+                      onChange={e => setFormData({ ...formData, salaryBonus: e.target.value })}
+                      className="w-full pl-16 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-gta-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-emerald-50 p-3.5 rounded-xl border border-emerald-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs font-bold text-emerald-900">
+                <span>Total Income / Estimated Monthly Income (①+②+③):</span>
+                <div className="flex items-center space-x-2">
+                  <span className="bg-emerald-600 text-white px-2.5 py-1 rounded-lg font-mono text-xs font-extrabold">
+                    {formData.salaryCurrency}
+                  </span>
+                  <span className="font-mono text-lg text-emerald-700 font-black">
+                    {formData.salaryCurrency} {calculateTotalSalary()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 9: Worked for other company */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
+                9. Previous Employment Status
+              </h3>
+
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
+                <div className="flex items-center space-x-6 font-bold text-slate-800">
+                  <span>Did you work for other company during the same year in Korea?</span>
+                  <label className="flex items-center space-x-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="workedOtherCompany"
+                      checked={formData.workedOtherCompany === 'No'}
+                      onChange={() => setFormData({ ...formData, workedOtherCompany: 'No' })}
+                      className="text-gta-600 focus:ring-gta-500"
+                    />
+                    <span>No</span>
+                  </label>
+                  <label className="flex items-center space-x-1.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="workedOtherCompany"
+                      checked={formData.workedOtherCompany === 'Yes'}
+                      onChange={() => setFormData({ ...formData, workedOtherCompany: 'Yes' })}
+                      className="text-gta-600 focus:ring-gta-500"
+                    />
+                    <span>Yes</span>
+                  </label>
+                </div>
+
+                {formData.workedOtherCompany === 'Yes' && (
+                  <div className="p-3 bg-red-50 text-red-700 rounded-lg border border-red-200 font-medium">
+                    ※ If Yes, you must submit a <strong>&apos;Receipt for wage and salary income Tax withholding&apos;</strong> of your previous employment to GTA to avoid penalty tax.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Section 10: Remark (Memo) */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
+                10. Remark (Administrator Memo / Notes)
+              </h3>
+              <div>
+                <textarea
+                  rows={3}
+                  placeholder="Enter any remarks, DOB notes, or special tax memo for this member..."
+                  value={formData.remark}
+                  onChange={e => setFormData({ ...formData, remark: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">7. Date of Stay & Work *</label>
-              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
-                <div className="flex items-center space-x-2">
-                  <span className="font-bold text-slate-600 shrink-0">From:</span>
-                  <input
-                    type="date"
-                    value={`${formData.dateFromYear}-${formData.dateFromMonth}-${formData.dateFromDay}`}
-                    onChange={e => {
-                      const parts = e.target.value.split('-');
-                      setFormData({ ...formData, dateFromYear: parts[0], dateFromMonth: parts[1], dateFromDay: parts[2] });
-                    }}
-                    className="px-2 py-1 rounded border border-slate-300 text-xs font-mono w-full"
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="font-bold text-slate-600 shrink-0">To:</span>
-                  <input
-                    type="date"
-                    value={`${formData.dateToYear}-${formData.dateToMonth}-${formData.dateToDay}`}
-                    onChange={e => {
-                      const parts = e.target.value.split('-');
-                      setFormData({ ...formData, dateToYear: parts[0], dateToMonth: parts[1], dateToDay: parts[2] });
-                    }}
-                    className="px-2 py-1 rounded border border-slate-300 text-xs font-mono w-full"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+            {/* Attachments & Signature */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
+                Required Documents Upload &amp; Signature
+              </h3>
 
-          {/* Section 8: Exemption (Marital & Children Details) */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
-              8. Exemption Status (Check at least 1 item below)
-            </h3>
-
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4 text-xs">
-              <div className="flex items-center space-x-6 font-bold text-slate-800">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="maritalStatus"
-                    checked={formData.maritalStatus === 'Single'}
-                    onChange={() => setFormData({ ...formData, maritalStatus: 'Single' })}
-                    className="text-gta-600 focus:ring-gta-500"
-                  />
-                  <span>Single</span>
-                </label>
-
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="maritalStatus"
-                    checked={formData.maritalStatus === 'Married'}
-                    onChange={() => setFormData({ ...formData, maritalStatus: 'Married' })}
-                    className="text-gta-600 focus:ring-gta-500"
-                  />
-                  <span>Married</span>
-                  <span className="text-[11px] text-amber-700 font-normal">(A copy of your marriage certificate is required)</span>
-                </label>
-              </div>
-
-              {formData.maritalStatus === 'Married' && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-slate-200">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Spouse's Name</label>
-                    <input
-                      type="text"
-                      placeholder="Spouse full name"
-                      value={formData.spouseName}
-                      onChange={e => setFormData({ ...formData, spouseName: e.target.value })}
-                      className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Spouse Date of Birth</label>
-                    <input
-                      type="text"
-                      placeholder="DD/MM/YYYY"
-                      value={formData.spouseDob}
-                      onChange={e => setFormData({ ...formData, spouseDob: e.target.value })}
-                      className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Does spouse have any form of income?</label>
-                    <select
-                      value={formData.spouseIncome}
-                      onChange={e => setFormData({ ...formData, spouseIncome: e.target.value })}
-                      className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs font-bold"
-                    >
-                      <option value="No">No</option>
-                      <option value="Yes">Yes</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              <div className="pt-2 border-t border-slate-200 space-y-3">
-                <div className="flex items-center space-x-3">
-                  <label className="font-bold text-slate-700">Number of children below 20 years of age:</label>
-                  <select
-                    value={formData.childrenCount}
-                    onChange={e => setFormData({ ...formData, childrenCount: e.target.value })}
-                    className="px-2 py-1 rounded border border-slate-300 text-xs font-bold"
-                  >
-                    <option value="0">0</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4+</option>
-                  </select>
-                  <span className="text-[11px] text-slate-500">(A copy of child's birth certificate is required)</span>
+              <div className="bg-slate-50 p-5 rounded-xl border border-dashed border-slate-300 space-y-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-slate-800 flex items-center space-x-2">
+                    <Upload className="w-4 h-4 text-gta-500" />
+                    <span>Attach Copies (KOR Residence Card, Marriage Certificate, Child Birth Certificate, Income Receipt)</span>
+                  </label>
+                  <span className="text-[11px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    🔒 AES-256 Encrypted
+                  </span>
                 </div>
 
-                {parseInt(formData.childrenCount) > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600">Child 1 Name & DOB</label>
-                      <div className="flex space-x-2">
-                        <input
-                          type="text"
-                          placeholder="Name"
-                          value={formData.child1Name}
-                          onChange={e => setFormData({ ...formData, child1Name: e.target.value })}
-                          className="w-2/3 px-2 py-1 rounded border border-slate-300 text-xs"
-                        />
-                        <input
-                          type="text"
-                          placeholder="DOB"
-                          value={formData.child1Dob}
-                          onChange={e => setFormData({ ...formData, child1Dob: e.target.value })}
-                          className="w-1/3 px-2 py-1 rounded border border-slate-300 text-xs font-mono"
-                        />
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-gta-50 file:text-gta-700 hover:file:bg-gta-100"
+                />
+
+                {files.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    <span className="font-bold text-slate-600">Encrypted Uploaded Files:</span>
+                    {files.map((f, idx) => (
+                      <div key={idx} className="text-xs text-slate-700 bg-white p-2 rounded border border-slate-200 flex justify-between items-center font-mono">
+                        <span>📄 {f.name} ({(f.size / 1024).toFixed(1)} KB)</span>
+                        <span className="text-emerald-600 font-bold text-[10px]">Encrypted</span>
                       </div>
-                    </div>
-
-                    {parseInt(formData.childrenCount) > 1 && (
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600">Child 2 Name & DOB</label>
-                        <div className="flex space-x-2">
-                          <input
-                            type="text"
-                            placeholder="Name"
-                            value={formData.child2Name}
-                            onChange={e => setFormData({ ...formData, child2Name: e.target.value })}
-                            className="w-2/3 px-2 py-1 rounded border border-slate-300 text-xs"
-                          />
-                          <input
-                            type="text"
-                            placeholder="DOB"
-                            value={formData.child2Dob}
-                            onChange={e => setFormData({ ...formData, child2Dob: e.target.value })}
-                            className="w-1/3 px-2 py-1 rounded border border-slate-300 text-xs font-mono"
-                          />
-                        </div>
-                      </div>
-                    )}
+                    ))}
                   </div>
                 )}
               </div>
 
-              <div className="text-[11px] text-slate-500 italic bg-amber-50 p-2 rounded border border-amber-200">
-                ※ Family stays in Korea: Only a copy of Alien Registration Card is necessary.
-              </div>
-            </div>
-          </div>
-
-          {/* Section 9: Class B Income Details */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
-              9. The Class B Income (USD, EUR, NOK, GBP, KRW)
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">① Basic Salary per month</label>
-                <input
-                  type="number"
-                  placeholder="e.g. 5000"
-                  value={formData.salaryBasic}
-                  onChange={e => setFormData({ ...formData, salaryBasic: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">② Overseas allowance per month</label>
-                <input
-                  type="number"
-                  placeholder="e.g. 2000"
-                  value={formData.salaryAllowance}
-                  onChange={e => setFormData({ ...formData, salaryAllowance: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">③ Bonus per month</label>
-                <input
-                  type="number"
-                  placeholder="e.g. 1000"
-                  value={formData.salaryBonus}
-                  onChange={e => setFormData({ ...formData, salaryBonus: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono"
-                />
-              </div>
-            </div>
-
-            <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 flex justify-between items-center text-xs font-bold text-emerald-900">
-              <span>Total Estimated Monthly Income (①+②+③):</span>
-              <span className="font-mono text-base text-emerald-700">{calculateTotalSalary()}</span>
-            </div>
-          </div>
-
-          {/* Section 10: Worked for other company */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
-              10. Previous Employment Status
-            </h3>
-
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
-              <div className="flex items-center space-x-6 font-bold text-slate-800">
-                <span>Did you work for other company during the same year in Korea?</span>
-                <label className="flex items-center space-x-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="workedOtherCompany"
-                    checked={formData.workedOtherCompany === 'No'}
-                    onChange={() => setFormData({ ...formData, workedOtherCompany: 'No' })}
-                    className="text-gta-600 focus:ring-gta-500"
-                  />
-                  <span>No</span>
-                </label>
-                <label className="flex items-center space-x-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="workedOtherCompany"
-                    checked={formData.workedOtherCompany === 'Yes'}
-                    onChange={() => setFormData({ ...formData, workedOtherCompany: 'Yes' })}
-                    className="text-gta-600 focus:ring-gta-500"
-                  />
-                  <span>Yes</span>
-                </label>
-              </div>
-
-              {formData.workedOtherCompany === 'Yes' && (
-                <div className="p-3 bg-red-50 text-red-700 rounded-lg border border-red-200 font-medium">
-                  ※ If Yes, you must submit a <strong>'Receipt for wage and salary income Tax withholding'</strong> of your previous employment to GTA to avoid penalty tax.
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Attachments & Signature */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
-              Required Documents Upload & Signature
-            </h3>
-
-            {/* Secure Encrypted File Upload Box */}
-            <div className="bg-slate-50 p-5 rounded-xl border border-dashed border-slate-300 space-y-3 text-xs">
-              <div className="flex items-center justify-between">
-                <label className="block font-bold text-slate-800 flex items-center space-x-2">
-                  <Upload className="w-4 h-4 text-gta-500" />
-                  <span>Attach Copies (ARC Card, Marriage Certificate, Child Birth Certificate, Income Receipt)</span>
-                </label>
-                <span className="text-[11px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  🔒 AES-256 Encrypted
-                </span>
-              </div>
-
-              <input
-                type="file"
-                onChange={handleFileChange}
-                className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-gta-50 file:text-gta-700 hover:file:bg-gta-100"
-              />
-
-              {files.length > 0 && (
-                <div className="space-y-1.5 pt-1">
-                  <span className="font-bold text-slate-600">Encrypted Uploaded Files:</span>
-                  {files.map((f, idx) => (
-                    <div key={idx} className="text-xs text-slate-700 bg-white p-2 rounded border border-slate-200 flex justify-between items-center font-mono">
-                      <span>📄 {f.name} ({(f.size / 1024).toFixed(1)} KB)</span>
-                      <span className="text-emerald-600 font-bold text-[10px]">Encrypted</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Applicant's Signature * <span className="text-slate-400 font-normal">(Type full name)</span>
+                  Applicant&apos;s Signature * <span className="text-emerald-600 font-semibold">(Auto-completed from Applicant&apos;s Name)</span>
                 </label>
                 <input
                   type="text"
@@ -806,39 +998,21 @@ export default function ConsultPage() {
                   placeholder="Full name signature"
                   value={formData.signature}
                   onChange={e => setFormData({ ...formData, signature: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-serif italic font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  4-Digit Status Lookup Password *
-                </label>
-                <input
-                  type="password"
-                  required
-                  maxLength={4}
-                  placeholder="Create 4-digit PIN (e.g. 1234)"
-                  value={formData.password}
-                  onChange={e => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-serif italic font-bold bg-slate-50"
                 />
               </div>
             </div>
-          </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-gta-600 to-gta-500 hover:from-gta-700 hover:to-gta-600 text-white font-extrabold py-4 rounded-2xl shadow-xl transition-all text-base disabled:opacity-50 tracking-wider uppercase"
-          >
-            {loading ? 'Submitting Admission Application...' : 'SUBMIT ADMISSION APPLICATION FORM'}
-          </button>
-
-        </form>
-
-      </div>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-gta-600 to-gta-500 hover:from-gta-700 hover:to-gta-600 text-white font-extrabold py-4 rounded-2xl shadow-xl transition-all text-base disabled:opacity-50 tracking-wider uppercase cursor-pointer"
+            >
+              {loading ? 'Submitting Admission Application...' : 'SUBMIT ADMISSION APPLICATION FORM'}
+            </button>
+          </form>
+        </div>
       )}
     </div>
   );
