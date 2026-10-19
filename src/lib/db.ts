@@ -65,6 +65,7 @@ export interface ApplicationMember {
   family_txt: string;
   other_worked: number;
   remark: string;
+  seq_no?: number;
   receipt_count?: number;
 }
 
@@ -247,55 +248,86 @@ export async function getUsers(): Promise<User[]> {
 // =========================================================================
 export async function searchMembers(params: {
   query?: string;
+  field?: string;
   page?: number;
   limit?: number;
 }): Promise<{ members: ApplicationMember[]; total: number; page: number; limit: number }> {
   const page = Math.max(1, params.page || 1);
-  const limit = Math.min(200, Math.max(1, params.limit || 30));
+  const limit = Math.min(200, Math.max(1, params.limit || 20));
   const offset = (page - 1) * limit;
   const q = (params.query || '').trim();
+  const field = (params.field || 'all').toLowerCase();
 
   if (pool) {
     if (q) {
       const likeQ = `%${q}%`;
       const cleanQ = `%${q.replace(/-/g, '')}%`;
+
+      let whereClause = `
+        name ILIKE $1
+        OR number ILIKE $1
+        OR REPLACE(number, '-', '') ILIKE $2
+        OR company ILIKE $1
+        OR phon ILIKE $1
+        OR email ILIKE $1
+        OR CAST(id AS TEXT) = $3
+        OR CAST(seq_no AS TEXT) = $3
+      `;
+      if (field === 'name') {
+        whereClause = `name ILIKE $1 OR name2 ILIKE $1`;
+      } else if (field === 'number') {
+        whereClause = `number ILIKE $1 OR REPLACE(number, '-', '') ILIKE $2 OR CAST(seq_no AS TEXT) = $3 OR CAST(id AS TEXT) = $3`;
+      } else if (field === 'company') {
+        whereClause = `company ILIKE $1`;
+      } else if (field === 'phone') {
+        whereClause = `phon ILIKE $1`;
+      }
+
+      const queryParams =
+        field === 'name' || field === 'company' || field === 'phone'
+          ? [likeQ]
+          : [likeQ, cleanQ, q];
+
       const countRes = await pool.query(
-        `SELECT COUNT(*) FROM applicationform
-         WHERE name ILIKE $1
-            OR number ILIKE $1
-            OR REPLACE(number, '-', '') ILIKE $2
-            OR company ILIKE $1
-            OR phon ILIKE $1
-            OR email ILIKE $1
-            OR CAST(id AS TEXT) = $3`,
-        [likeQ, cleanQ, q]
+        `WITH numbered AS (
+           SELECT a.*, ROW_NUMBER() OVER (ORDER BY a.id ASC)::int AS seq_no
+           FROM applicationform a
+         )
+         SELECT COUNT(*) FROM numbered
+         WHERE ${whereClause}`,
+        queryParams
       );
       const total = parseInt(countRes.rows[0].count, 10);
 
+      const limitIdx = queryParams.length + 1;
+      const offsetIdx = queryParams.length + 2;
+
       const res = await pool.query(
-        `SELECT a.*,
-                (SELECT COUNT(*) FROM receipt r WHERE r.member_num = CAST(a.id AS TEXT))::int AS receipt_count
-         FROM applicationform a
-         WHERE a.name ILIKE $1
-            OR a.number ILIKE $1
-            OR REPLACE(a.number, '-', '') ILIKE $2
-            OR a.company ILIKE $1
-            OR a.phon ILIKE $1
-            OR a.email ILIKE $1
-            OR CAST(a.id AS TEXT) = $3
-         ORDER BY a.id DESC
-         LIMIT $4 OFFSET $5`,
-        [likeQ, cleanQ, q, limit, offset]
+        `WITH numbered AS (
+           SELECT a.*, ROW_NUMBER() OVER (ORDER BY a.id ASC)::int AS seq_no
+           FROM applicationform a
+         )
+         SELECT n.*,
+                (SELECT COUNT(*) FROM receipt r WHERE r.member_num = CAST(n.id AS TEXT))::int AS receipt_count
+         FROM numbered n
+         WHERE ${whereClause}
+         ORDER BY n.id DESC
+         LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+        [...queryParams, limit, offset]
       );
       return { members: res.rows, total, page, limit };
     } else {
       const countRes = await pool.query(`SELECT COUNT(*) FROM applicationform`);
       const total = parseInt(countRes.rows[0].count, 10);
       const res = await pool.query(
-        `SELECT a.*,
-                (SELECT COUNT(*) FROM receipt r WHERE r.member_num = CAST(a.id AS TEXT))::int AS receipt_count
-         FROM applicationform a
-         ORDER BY a.id DESC
+        `WITH numbered AS (
+           SELECT a.*, ROW_NUMBER() OVER (ORDER BY a.id ASC)::int AS seq_no
+           FROM applicationform a
+         )
+         SELECT n.*,
+                (SELECT COUNT(*) FROM receipt r WHERE r.member_num = CAST(n.id AS TEXT))::int AS receipt_count
+         FROM numbered n
+         ORDER BY n.id DESC
          LIMIT $1 OFFSET $2`,
         [limit, offset]
       );

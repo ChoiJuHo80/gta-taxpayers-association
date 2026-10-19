@@ -5,10 +5,11 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get('query') || '';
+    const field = searchParams.get('field') || 'all';
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '30', 10);
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
 
-    const result = await searchMembers({ query, page, limit });
+    const result = await searchMembers({ query, field, page, limit });
     return NextResponse.json({ success: true, ...result });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
