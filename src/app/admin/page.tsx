@@ -979,29 +979,75 @@ export default function AdminPage() {
               </table>
             </div>
 
-            {/* Pagination Bar */}
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center text-xs">
-              <button
-                type="button"
-                disabled={membersPage <= 1}
-                onClick={() => setMembersPage(p => Math.max(1, p - 1))}
-                className="px-3.5 py-1.5 rounded-lg bg-white border border-slate-300 font-bold text-slate-700 disabled:opacity-40 flex items-center space-x-1 cursor-pointer"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                <span>이전 (Prev)</span>
-              </button>
-              <span className="font-mono font-bold text-slate-700">
-                Page {membersPage} of {totalMemberPages}
-              </span>
-              <button
-                type="button"
-                disabled={membersPage >= totalMemberPages}
-                onClick={() => setMembersPage(p => Math.min(totalMemberPages, p + 1))}
-                className="px-3.5 py-1.5 rounded-lg bg-white border border-slate-300 font-bold text-slate-700 disabled:opacity-40 flex items-center space-x-1 cursor-pointer"
-              >
-                <span>다음 (Next)</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+            {/* Legacy Style 10-Page Block Pagination Bar */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap justify-center items-center gap-1.5 text-xs sm:text-sm font-mono">
+              {(() => {
+                const blockStart = Math.floor((membersPage - 1) / 10) * 10 + 1;
+                const blockEnd = Math.min(totalMemberPages, blockStart + 9);
+                const pages = [];
+                for (let p = blockStart; p <= blockEnd; p++) pages.push(p);
+
+                return (
+                  <>
+                    {blockStart > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setMembersPage(Math.max(1, blockStart - 10))}
+                          className="text-slate-700 hover:text-blue-700 underline font-bold px-1.5 py-0.5 cursor-pointer"
+                        >
+                          [BACK 10]
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMembersPage(1)}
+                          className="text-slate-700 hover:text-blue-700 underline font-bold px-1 py-0.5 cursor-pointer"
+                        >
+                          [1]
+                        </button>
+                        <span className="text-slate-500 px-0.5">..</span>
+                      </>
+                    )}
+
+                    {pages.map(p =>
+                      p === membersPage ? (
+                        <span key={p} className="text-orange-600 font-black px-1.5 py-0.5 text-sm">
+                          {p}
+                        </span>
+                      ) : (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setMembersPage(p)}
+                          className="text-blue-700 hover:text-blue-900 underline font-semibold px-1 py-0.5 cursor-pointer"
+                        >
+                          [{p}]
+                        </button>
+                      )
+                    )}
+
+                    {blockEnd < totalMemberPages && (
+                      <>
+                        <span className="text-slate-500 px-0.5">..</span>
+                        <button
+                          type="button"
+                          onClick={() => setMembersPage(totalMemberPages)}
+                          className="text-blue-700 hover:text-blue-900 underline font-semibold px-1 py-0.5 cursor-pointer"
+                        >
+                          [{totalMemberPages}]
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMembersPage(Math.min(totalMemberPages, blockEnd + 1))}
+                          className="text-blue-700 hover:text-blue-900 underline font-bold px-1.5 py-0.5 cursor-pointer"
+                        >
+                          [NEXT 10]
+                        </button>
+                      </>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -1142,29 +1188,75 @@ export default function AdminPage() {
               </table>
             </div>
 
-            {/* Pagination */}
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center text-xs">
-              <button
-                type="button"
-                disabled={receiptsPage <= 1}
-                onClick={() => setReceiptsPage(p => Math.max(1, p - 1))}
-                className="px-3.5 py-1.5 rounded-lg bg-white border border-slate-300 font-bold text-slate-700 disabled:opacity-40 flex items-center space-x-1 cursor-pointer"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                <span>이전 (Prev)</span>
-              </button>
-              <span className="font-mono font-bold text-slate-700">
-                Page {receiptsPage} of {totalReceiptPages}
-              </span>
-              <button
-                type="button"
-                disabled={receiptsPage >= totalReceiptPages}
-                onClick={() => setReceiptsPage(p => Math.min(totalReceiptPages, p + 1))}
-                className="px-3.5 py-1.5 rounded-lg bg-white border border-slate-300 font-bold text-slate-700 disabled:opacity-40 flex items-center space-x-1 cursor-pointer"
-              >
-                <span>다음 (Next)</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+            {/* Legacy Style 10-Page Block Pagination */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap justify-center items-center gap-1.5 text-xs sm:text-sm font-mono">
+              {(() => {
+                const blockStart = Math.floor((receiptsPage - 1) / 10) * 10 + 1;
+                const blockEnd = Math.min(totalReceiptPages, blockStart + 9);
+                const pages = [];
+                for (let p = blockStart; p <= blockEnd; p++) pages.push(p);
+
+                return (
+                  <>
+                    {blockStart > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setReceiptsPage(Math.max(1, blockStart - 10))}
+                          className="text-slate-700 hover:text-blue-700 underline font-bold px-1.5 py-0.5 cursor-pointer"
+                        >
+                          [BACK 10]
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReceiptsPage(1)}
+                          className="text-slate-700 hover:text-blue-700 underline font-bold px-1 py-0.5 cursor-pointer"
+                        >
+                          [1]
+                        </button>
+                        <span className="text-slate-500 px-0.5">..</span>
+                      </>
+                    )}
+
+                    {pages.map(p =>
+                      p === receiptsPage ? (
+                        <span key={p} className="text-orange-600 font-black px-1.5 py-0.5 text-sm">
+                          {p}
+                        </span>
+                      ) : (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setReceiptsPage(p)}
+                          className="text-blue-700 hover:text-blue-900 underline font-semibold px-1 py-0.5 cursor-pointer"
+                        >
+                          [{p}]
+                        </button>
+                      )
+                    )}
+
+                    {blockEnd < totalReceiptPages && (
+                      <>
+                        <span className="text-slate-500 px-0.5">..</span>
+                        <button
+                          type="button"
+                          onClick={() => setReceiptsPage(totalReceiptPages)}
+                          className="text-blue-700 hover:text-blue-900 underline font-semibold px-1 py-0.5 cursor-pointer"
+                        >
+                          [{totalReceiptPages}]
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReceiptsPage(Math.min(totalReceiptPages, blockEnd + 1))}
+                          className="text-blue-700 hover:text-blue-900 underline font-bold px-1.5 py-0.5 cursor-pointer"
+                        >
+                          [NEXT 10]
+                        </button>
+                      </>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
