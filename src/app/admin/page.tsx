@@ -1656,7 +1656,7 @@ export default function AdminPage() {
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-2xl w-full p-6 sm:p-8 space-y-5 my-8">
             <div className="flex justify-between items-center border-b border-slate-200 pb-3">
               <h3 className="text-lg font-black text-slate-900">
-                회원 정보 수정 (#{editingMember.id} {editingMember.name})
+                회원 정보 수정 (no. {editingMember.seq_no ?? editingMember.id} — {editingMember.name})
               </h3>
               <button
                 type="button"
@@ -1721,6 +1721,24 @@ export default function AdminPage() {
                     value={editingMember.email}
                     onChange={e => setEditingMember({ ...editingMember, email: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg border border-slate-300"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Date of Stay &amp; Work (From)</label>
+                  <input
+                    type="date"
+                    value={formatUnixDate(editingMember.date_from).length === 10 ? formatUnixDate(editingMember.date_from) : ''}
+                    onChange={e => setEditingMember({ ...editingMember, date_from: toUnixFromDate(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Date of Stay &amp; Work (To)</label>
+                  <input
+                    type="date"
+                    value={formatUnixDate(editingMember.date_to).length === 10 ? formatUnixDate(editingMember.date_to) : ''}
+                    onChange={e => setEditingMember({ ...editingMember, date_to: toUnixFromDate(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono"
                   />
                 </div>
               </div>
