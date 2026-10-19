@@ -280,175 +280,273 @@ export default function LookupPage() {
         </div>
       )}
 
-      {/* Official Printable Tax Withholding Receipt Modal */}
+      {/* Official Printable Tax Withholding Receipt Modal (Exact Legacy view_receipt.html) */}
       {selectedReceipt && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto print:static print:bg-white print:p-0">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-300 max-w-3xl w-full p-6 sm:p-10 space-y-6 my-8 print:shadow-none print:border-0 print:my-0 print:max-w-full">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:static print:bg-white print:p-0">
+          <div className="bg-white border-2 border-slate-500 shadow-2xl max-w-[850px] w-full p-3 sm:p-5 my-4 print:shadow-none print:border-0 print:my-0 print:max-w-full print:p-0">
             {/* Modal Action Bar (Hidden when printing) */}
-            <div className="flex justify-between items-center border-b border-slate-200 pb-4 print:hidden">
+            <div className="flex justify-between items-center border-b border-slate-300 pb-2.5 mb-2.5 print:hidden">
               <div className="flex items-center space-x-2">
                 <span className="bg-gta-100 text-gta-800 text-xs font-extrabold px-3 py-1 rounded-full">
                   Official GTA Tax Receipt #{selectedReceipt.id}
-                </span>
-                <span className="text-xs text-slate-500 font-mono">
-                  Period: {formatUnixMonth(selectedReceipt.taxation_period)}
                 </span>
               </div>
               <div className="flex items-center space-x-2">
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow cursor-pointer"
+                  className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold px-4 py-1.5 flex items-center space-x-1.5 shadow cursor-pointer"
                 >
-                  <Printer className="w-4 h-4" />
-                  <span>Print Receipt</span>
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print Receipt (인쇄)</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedReceipt(null)}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl cursor-pointer"
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 cursor-pointer"
                 >
-                  <X className="w-4 h-4" />
+                  ✕ Close
                 </button>
               </div>
             </div>
 
-            {/* Official Receipt Document Body */}
-            <div className="border-2 border-slate-800 p-6 sm:p-8 space-y-5 text-xs text-slate-900">
-              <div className="text-center border-b-2 border-slate-800 pb-4 space-y-1">
-                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                  Geoje Taxpayers Association (납세조합 완납 영수증)
-                </div>
-                <h2 className="text-xl sm:text-2xl font-black tracking-tight uppercase">
-                  Receipt for Wage &amp; Salary Income Tax Withholding
-                </h2>
-                <div className="text-xs font-mono text-slate-600">
-                  Management No: <strong>{selectedReceipt.management_no || '-'}</strong> &nbsp;|&nbsp; Taxation Period: <strong>{formatUnixMonth(selectedReceipt.taxation_period)}</strong>
-                </div>
-              </div>
+            {/* Exact 7-Column Legacy Table (view_receipt.html) */}
+            <div className="overflow-x-auto">
+              <table className="w-[800px] mx-auto border-collapse border border-[#CCCCCC] text-[12px] text-black bg-white">
+                <tbody>
+                  <tr>
+                    <td colSpan={7} className="border border-[#CCCCCC] p-2 bg-white">
+                      <div className="text-center text-[15px] font-bold text-[#333333] py-1">
+                        RECEIPT FOR CLASS &quot;B&quot; INCOME TAX (MONTHLY)
+                      </div>
+                      <div className="pt-1 text-[12px]">
+                        Management No: {selectedReceipt.management_no}
+                      </div>
+                    </td>
+                  </tr>
 
-              {/* Section 1: Withholding Agent & Taxpayer */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="border border-slate-400 p-3.5 space-y-1.5 bg-slate-50/50">
-                  <div className="font-black text-slate-800 border-b border-slate-300 pb-1 uppercase text-[11px]">
-                    1. Withholding Agent (Taxpayers Association)
-                  </div>
-                  <div className="grid grid-cols-3 gap-1">
-                    <span className="text-slate-500 font-semibold">Association:</span>
-                    <span className="col-span-2 font-bold">{selectedReceipt.association_name || 'Geoje Taxpayers Association'}</span>
-                    <span className="text-slate-500 font-semibold">License No:</span>
-                    <span className="col-span-2 font-mono">{selectedReceipt.license_no || '612-80-03137'}</span>
-                    <span className="text-slate-500 font-semibold">Chairman:</span>
-                    <span className="col-span-2 font-semibold">{selectedReceipt.chairman_name || 'Kim Se- Kwang'}</span>
-                    <span className="text-slate-500 font-semibold">Address:</span>
-                    <span className="col-span-2 text-[11px]">{selectedReceipt.address1 || '#107, 3696 Geoje-daero, Geoje-si, Gyeongsangnam-do, Korea'}</span>
-                  </div>
-                </div>
+                  <tr>
+                    <td rowSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white w-[80px]">
+                      Tax Dutyer
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white w-[100px]">1) License-No.</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white w-[100px]">
+                      {selectedReceipt.license_no || '612-80-03137'}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white w-[110px]">2) Association-Name</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white w-[120px]">
+                      {selectedReceipt.association_name || 'Geoje Taxpayers Association'}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white w-[105px]">3) Chairman-Name</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.chairman_name || 'Kim Se- Kwang'}
+                    </td>
+                  </tr>
 
-                <div className="border border-slate-400 p-3.5 space-y-1.5 bg-slate-50/50">
-                  <div className="font-black text-slate-800 border-b border-slate-300 pb-1 uppercase text-[11px]">
-                    2. Taxpayer (Earner) Information
-                  </div>
-                  <div className="grid grid-cols-3 gap-1">
-                    <span className="text-slate-500 font-semibold">Full Name:</span>
-                    <span className="col-span-2 font-black text-sm">{selectedReceipt.name}</span>
-                    <span className="text-slate-500 font-semibold">Reg. Number:</span>
-                    <span className="col-span-2 font-mono font-bold">{selectedReceipt.resident_no2}</span>
-                    <span className="text-slate-500 font-semibold">Company:</span>
-                    <span className="col-span-2 font-semibold">{selectedReceipt.overseas_name || selectedReceipt.local_name || '-'}</span>
-                    <span className="text-slate-500 font-semibold">Address:</span>
-                    <span className="col-span-2 text-[11px]">{selectedReceipt.address2 || '-'}</span>
-                  </div>
-                </div>
-              </div>
+                  <tr>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">4) Resident-No.</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.resident_no1 || '710925-*******'}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">5) Address</td>
+                    <td colSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.address1 || '#107, 3696 Geoje-daero, Geoje-city Gyeongnam Korea'}
+                    </td>
+                  </tr>
 
-              {/* Section 2: Salary Breakdown */}
-              <div className="space-y-1.5">
-                <div className="font-black text-slate-800 uppercase text-[11px]">
-                  3. Wage &amp; Salary Income Details (KRW)
-                </div>
-                <table className="w-full border-collapse border border-slate-500 text-center text-xs">
-                  <thead className="bg-slate-100 font-bold">
-                    <tr>
-                      <th className="border border-slate-400 p-2">Classification</th>
-                      <th className="border border-slate-400 p-2">Company Name</th>
-                      <th className="border border-slate-400 p-2">Basic Salary</th>
-                      <th className="border border-slate-400 p-2">Bonus</th>
-                      <th className="border border-slate-400 p-2">Other Income</th>
-                      <th className="border border-slate-400 p-2">Total Salary</th>
-                    </tr>
-                  </thead>
-                  <tbody className="font-mono">
-                    <tr>
-                      <td className="border border-slate-400 p-2 font-sans font-semibold bg-slate-50">Overseas (Class B)</td>
-                      <td className="border border-slate-400 p-2 font-sans">{selectedReceipt.overseas_name || '-'}</td>
-                      <td className="border border-slate-400 p-2 text-right">{selectedReceipt.overseas_basicsalary || '0'}</td>
-                      <td className="border border-slate-400 p-2 text-right">{selectedReceipt.overseas_bonus || '0'}</td>
-                      <td className="border border-slate-400 p-2 text-right">{selectedReceipt.overseas_income || '0'}</td>
-                      <td className="border border-slate-400 p-2 text-right font-bold">{selectedReceipt.overseas_totalsalary || selectedReceipt.total_salary || '0'}</td>
-                    </tr>
-                    {(selectedReceipt.local_name || (selectedReceipt.local_totalsalary && selectedReceipt.local_totalsalary !== '0')) && (
-                      <tr>
-                        <td className="border border-slate-400 p-2 font-sans font-semibold bg-slate-50">Local (Class A)</td>
-                        <td className="border border-slate-400 p-2 font-sans">{selectedReceipt.local_name || '-'}</td>
-                        <td className="border border-slate-400 p-2 text-right">{selectedReceipt.local_basicsalary || '0'}</td>
-                        <td className="border border-slate-400 p-2 text-right">{selectedReceipt.local_bonus || '0'}</td>
-                        <td className="border border-slate-400 p-2 text-right">{selectedReceipt.local_income || '0'}</td>
-                        <td className="border border-slate-400 p-2 text-right font-bold">{selectedReceipt.local_totalsalary || '0'}</td>
-                      </tr>
-                    )}
-                    <tr className="bg-slate-100 font-bold">
-                      <td colSpan={2} className="border border-slate-400 p-2 font-sans">Total Gross Wage (KRW)</td>
-                      <td className="border border-slate-400 p-2 text-right">{selectedReceipt.total_basicsalary || selectedReceipt.overseas_basicsalary || '0'}</td>
-                      <td className="border border-slate-400 p-2 text-right">{selectedReceipt.total_bonus || '0'}</td>
-                      <td className="border border-slate-400 p-2 text-right">{selectedReceipt.total_income || '0'}</td>
-                      <td className="border border-slate-400 p-2 text-right text-blue-800">{selectedReceipt.total_salary || selectedReceipt.total_totalsalary || '0'}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                  <tr>
+                    <td rowSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      Tax Payer
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">6) Name</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">{selectedReceipt.name}</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">7) Resident-No.</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">{selectedReceipt.resident_no2}</td>
+                    <td rowSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      9) Taxation Period
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {formatUnixMonth(selectedReceipt.taxation_period).replace('-', '. ')}
+                    </td>
+                  </tr>
 
-              {/* Section 3: Tax Computation & Paid Tax */}
-              <div className="space-y-1.5">
-                <div className="font-black text-slate-800 uppercase text-[11px]">
-                  4. Tax Calculation &amp; Withholding Tax Paid (KRW)
-                </div>
-                <table className="w-full border-collapse border border-slate-500 text-xs">
-                  <tbody className="font-mono">
-                    <tr>
-                      <th className="border border-slate-400 p-2.5 bg-slate-100 text-left font-sans w-1/4">Computed Tax (산출세액)</th>
-                      <td className="border border-slate-400 p-2.5 text-right w-1/4">₩{selectedReceipt.computed_tax || '0'}</td>
-                      <th className="border border-slate-400 p-2.5 bg-slate-100 text-left font-sans w-1/4">Association Credit (납세조합공제)</th>
-                      <td className="border border-slate-400 p-2.5 text-right w-1/4">₩{selectedReceipt.deduction_deduction || '0'}</td>
-                    </tr>
-                    <tr>
-                      <th className="border border-slate-400 p-2.5 bg-slate-100 text-left font-sans">Income Tax (소득세)</th>
-                      <td className="border border-slate-400 p-2.5 text-right font-bold">₩{selectedReceipt.payable_income || '0'}</td>
-                      <th className="border border-slate-400 p-2.5 bg-slate-100 text-left font-sans">Local Resident Tax (지방소득세)</th>
-                      <td className="border border-slate-400 p-2.5 text-right font-bold">₩{selectedReceipt.payable_resident || '0'}</td>
-                    </tr>
-                    <tr className="bg-emerald-50">
-                      <th colSpan={2} className="border border-slate-400 p-3 text-left font-sans font-black text-sm text-emerald-950">
-                        Total Monthly Tax Paid (합계 납부세액)
-                      </th>
-                      <td colSpan={2} className="border border-slate-400 p-3 text-right font-black text-base text-emerald-800">
-                        ₩{selectedReceipt.payable_special || '0'}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                  <tr>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">8) Address</td>
+                    <td colSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.address2}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
+                  </tr>
 
-              {/* Footer Certification */}
-              <div className="pt-4 flex flex-col sm:flex-row justify-between items-center border-t border-slate-300 gap-4">
-                <div className="text-[11px] text-slate-600 space-y-0.5">
-                  <p>We hereby certify that the above wage and salary income tax has been duly withheld and paid to the National Tax Service.</p>
-                  <p className="font-mono">Issue Date: <strong>{formatUnixDate(selectedReceipt.reg_date)}</strong> &nbsp;|&nbsp; Earner: <strong>{selectedReceipt.reg_name || selectedReceipt.name}</strong></p>
-                </div>
-                <div className="text-right shrink-0 border-2 border-red-700/80 text-red-700 px-3 py-1.5 rounded font-black text-xs uppercase tracking-wider">
-                  Geoje Taxpayers Association [OFFICIAL SEAL]
-                </div>
-              </div>
+                  <tr>
+                    <td rowSpan={4} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      Working Place
+                      <br />
+                      Income
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">10) Working-Division</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">11) Company-Name</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">12) Basic Salary</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">13) Bonus</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">14) Overseas Allowance</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">15) Total Salary</td>
+                  </tr>
+
+                  <tr>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">(101) Local</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">{selectedReceipt.local_name}</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.local_basicsalary !== '0' ? selectedReceipt.local_basicsalary : ''}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.local_bonus !== '0' ? selectedReceipt.local_bonus : ''}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.local_income !== '0' ? selectedReceipt.local_income : ''}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.local_totalsalary !== '0' ? selectedReceipt.local_totalsalary : ''}
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">(102) Overseas</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">{selectedReceipt.overseas_name}</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.overseas_basicsalary !== '0' ? selectedReceipt.overseas_basicsalary : ''}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.overseas_bonus !== '0' ? selectedReceipt.overseas_bonus : ''}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.overseas_income !== '0' ? selectedReceipt.overseas_income : ''}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.overseas_totalsalary !== '0' ? selectedReceipt.overseas_totalsalary : ''}
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      (103) TOTAL-SALARY
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.total_basicsalary !== '0' ? selectedReceipt.total_basicsalary : ''}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.total_bonus !== '0' ? selectedReceipt.total_bonus : ''}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.total_income !== '0' ? selectedReceipt.total_income : ''}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.total_totalsalary !== '0' ? selectedReceipt.total_totalsalary : ''}
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td colSpan={7} className="border border-[#CCCCCC] h-[10px] p-0 bg-white"></td>
+                  </tr>
+
+                  <tr>
+                    <td colSpan={7} className="border border-[#CCCCCC] p-1.5 bg-white text-center">
+                      C O M P U T E D &nbsp;&nbsp;T H E &nbsp;&nbsp; I T E M S
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      16) Total salary
+                    </td>
+                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.total_salary !== '0' ? selectedReceipt.total_salary : ''}
+                    </td>
+                    <td colSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white text-center">
+                      PAYABLE TAX
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      17) Non Taxable Salary
+                    </td>
+                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.non_taxable_salary !== '0' ? selectedReceipt.non_taxable_salary : ''}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">22) Income - Tax</td>
+                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.payable_income}
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      18) Computed-tax
+                    </td>
+                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.computed_tax}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">23) Local Income Tax</td>
+                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.payable_resident}
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td rowSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      Tax
+                      <br />
+                      Deduction
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">19) Paid-tax in overseas</td>
+                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.deduction_overseas !== '0' ? selectedReceipt.deduction_overseas : ''}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">24) Payable - Tax</td>
+                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.payable_special}
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">20) B-class deduction</td>
+                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
+                      {selectedReceipt.deduction_deduction !== '0' ? selectedReceipt.deduction_deduction : ''}
+                    </td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
+                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
+                  </tr>
+
+                  <tr>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">21)</td>
+                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
+                    <td className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
+                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
+                  </tr>
+
+                  <tr>
+                    <td colSpan={7} className="border border-[#CCCCCC] p-2 bg-white">
+                      <div className="flex justify-between items-center">
+                        <div className="leading-relaxed">
+                          Paid the above tax amount.
+                          <br />
+                          {formatUnixDate(selectedReceipt.reg_date).replace(/-/g, '. ')}
+                          <br />
+                          To : {selectedReceipt.reg_name || selectedReceipt.name}
+                        </div>
+                        <div>
+                          <img
+                            src="/img/icon_receipt.gif"
+                            width={254}
+                            height={52}
+                            alt="Chairman of Geoje Taxpayers Association"
+                          />
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

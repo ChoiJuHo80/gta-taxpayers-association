@@ -6,10 +6,11 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const memberNum = searchParams.get('memberNum') || undefined;
     const query = searchParams.get('query') || undefined;
+    const field = searchParams.get('field') || undefined;
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '30', 10);
 
-    const result = await getReceipts({ memberNum, query, page, limit });
+    const result = await getReceipts({ memberNum, query, field, page, limit });
     return NextResponse.json({ success: true, ...result });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

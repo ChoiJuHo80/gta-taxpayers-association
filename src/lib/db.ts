@@ -521,6 +521,7 @@ export async function lookupMemberAndReceipts(nameInput: string, regNoInput: str
 export async function getReceipts(params: {
   memberNum?: string;
   query?: string;
+  field?: string;
   page?: number;
   limit?: number;
 }): Promise<{ receipts: TaxReceipt[]; total: number; page: number; limit: number }> {
@@ -530,7 +531,10 @@ export async function getReceipts(params: {
   const limit = Math.min(200, Math.max(1, params.limit || 30));
   const offset = (page - 1) * limit;
 
-  if (params.memberNum) {
+  const q = (params.query || '').trim();
+  const field = (params.field || 'all').trim();
+
+  if (params.memberNum && !q) {
     const countRes = await pool.query(
       `SELECT COUNT(*) FROM receipt WHERE member_num = $1`,
       [params.memberNum]
@@ -543,32 +547,45 @@ export async function getReceipts(params: {
     return { receipts: res.rows, total, page, limit };
   }
 
-  const q = (params.query || '').trim();
   if (q) {
     const likeQ = `%${q}%`;
     const cleanQ = `%${q.replace(/-/g, '')}%`;
+
+    let whereClause = `
+      name ILIKE $1
+      OR resident_no2 ILIKE $1
+      OR REPLACE(resident_no2, '-', '') ILIKE $2
+      OR overseas_name ILIKE $1
+      OR management_no ILIKE $1
+      OR license_no ILIKE $1
+      OR member_num = $3
+    `;
+    let queryParams: any[] = [likeQ, cleanQ, q];
+
+    if (field === 'name') {
+      whereClause = `name ILIKE $1`;
+      queryParams = [likeQ];
+    } else if (field === 'resident_no2') {
+      whereClause = `(resident_no2 ILIKE $1 OR REPLACE(resident_no2, '-', '') ILIKE $2)`;
+      queryParams = [likeQ, cleanQ];
+    } else if (field === 'license_no') {
+      whereClause = `license_no ILIKE $1`;
+      queryParams = [likeQ];
+    }
+
     const countRes = await pool.query(
-      `SELECT COUNT(*) FROM receipt
-       WHERE name ILIKE $1
-          OR resident_no2 ILIKE $1
-          OR REPLACE(resident_no2, '-', '') ILIKE $2
-          OR overseas_name ILIKE $1
-          OR management_no ILIKE $1
-          OR member_num = $3`,
-      [likeQ, cleanQ, q]
+      `SELECT COUNT(*) FROM receipt WHERE ${whereClause}`,
+      queryParams
     );
     const total = parseInt(countRes.rows[0].count, 10);
+    const limitIdx = queryParams.length + 1;
+    const offsetIdx = queryParams.length + 2;
     const res = await pool.query(
       `SELECT * FROM receipt
-       WHERE name ILIKE $1
-          OR resident_no2 ILIKE $1
-          OR REPLACE(resident_no2, '-', '') ILIKE $2
-          OR overseas_name ILIKE $1
-          OR management_no ILIKE $1
-          OR member_num = $3
+       WHERE ${whereClause}
        ORDER BY id DESC
-       LIMIT $4 OFFSET $5`,
-      [likeQ, cleanQ, q, limit, offset]
+       LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+      [...queryParams, limit, offset]
     );
     return { receipts: res.rows, total, page, limit };
   }
@@ -610,41 +627,41 @@ export async function createReceipt(data: Partial<TaxReceipt>): Promise<TaxRecei
     ) RETURNING *`,
     [
       nextId,
-      data.member_num || '',
-      data.management_no || '',
+      data.member_num ?? '',
+      data.management_no ?? '',
       data.license_no || '612-80-03137',
       data.association_name || 'Geoje Taxpayers Association',
       data.chairman_name || 'Kim Se- Kwang',
       data.resident_no1 || '710925-*******',
-      data.address1 || '#107, 3696 Geoje-daero, Geoje-si, Gyeongsangnam-do, Republic of Korea',
-      (data.name || '').toUpperCase(),
-      data.resident_no2 || '',
-      data.address2 || '',
+      data.address1 || '#107, 3696 Geoje-daero, Geoje-city Gyeongnam Korea',
+      (data.name ?? '').toUpperCase(),
+      data.resident_no2 ?? '',
+      data.address2 ?? '',
       data.taxation_period || nowUnix,
-      data.local_name || '',
-      data.local_basicsalary || '0',
-      data.local_bonus || '0',
-      data.local_income || '0',
-      data.local_totalsalary || '0',
-      data.overseas_name || '',
-      data.overseas_basicsalary || '0',
-      data.overseas_bonus || '0',
-      data.overseas_income || '0',
-      data.overseas_totalsalary || data.total_salary || '0',
-      data.total_basicsalary || data.overseas_basicsalary || '0',
-      data.total_bonus || data.overseas_bonus || '0',
-      data.total_income || data.overseas_income || '0',
-      data.total_totalsalary || data.total_salary || '0',
-      data.total_salary || '0',
-      data.computed_tax || '0',
-      data.deduction_overseas || '0',
-      data.deduction_deduction || '0',
-      data.payable_income || '0',
-      data.payable_resident || '0',
-      data.payable_special || '0',
+      data.local_name ?? '',
+      data.local_basicsalary ?? '',
+      data.local_bonus ?? '',
+      data.local_income ?? '',
+      data.local_totalsalary ?? '',
+      data.overseas_name ?? '',
+      data.overseas_basicsalary ?? '',
+      data.overseas_bonus ?? '',
+      data.overseas_income ?? '',
+      data.overseas_totalsalary ?? data.total_salary ?? '',
+      data.total_basicsalary ?? data.overseas_basicsalary ?? '',
+      data.total_bonus ?? data.overseas_bonus ?? '',
+      data.total_income ?? data.overseas_income ?? '',
+      data.total_totalsalary ?? data.total_salary ?? '',
+      data.total_salary ?? '',
+      data.computed_tax ?? '',
+      data.deduction_overseas ?? '',
+      data.deduction_deduction ?? '',
+      data.payable_income ?? '',
+      data.payable_resident ?? '',
+      data.payable_special ?? '',
       data.reg_date || nowUnix,
-      data.reg_name || (data.name || '').toUpperCase(),
-      data.non_taxable_salary || ''
+      data.reg_name ?? (data.name ?? '').toUpperCase(),
+      data.non_taxable_salary ?? ''
     ]
   );
   return res.rows[0];
@@ -687,8 +704,13 @@ export async function updateReceipt(id: number, data: Partial<TaxReceipt>): Prom
       payable_special = $27,
       reg_date = $28,
       reg_name = $29,
-      non_taxable_salary = $30
-     WHERE id = $31
+      non_taxable_salary = $30,
+      license_no = $31,
+      association_name = $32,
+      chairman_name = $33,
+      resident_no1 = $34,
+      address1 = $35
+     WHERE id = $36
      RETURNING *`,
     [
       data.member_num ?? ex.member_num,
@@ -721,6 +743,11 @@ export async function updateReceipt(id: number, data: Partial<TaxReceipt>): Prom
       data.reg_date ?? ex.reg_date,
       data.reg_name ?? ex.reg_name,
       data.non_taxable_salary ?? ex.non_taxable_salary,
+      data.license_no ?? ex.license_no,
+      data.association_name ?? ex.association_name,
+      data.chairman_name ?? ex.chairman_name,
+      data.resident_no1 ?? ex.resident_no1,
+      data.address1 ?? ex.address1,
       id
     ]
   );
