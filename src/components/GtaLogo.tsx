@@ -14,10 +14,10 @@ export default function GtaLogo({ className = '', size = 'md' }: GtaLogoProps) {
       <img
         src="/img/logo.png"
         alt="GTA Geoje Taxpayers Association"
-        width={isSm ? 160 : isLg ? 240 : 210}
-        height={isSm ? 51 : isLg ? 77 : 67}
+        width={isSm ? 180 : isLg ? 240 : 230}
+        height={isSm ? 58 : isLg ? 77 : 74}
         className={`object-contain ${
-          isSm ? 'h-12 w-auto' : isLg ? 'h-[77px] w-auto' : 'h-14 sm:h-16 w-auto'
+          isSm ? 'h-14 w-auto' : isLg ? 'h-[77px] w-auto' : 'h-15 sm:h-[72px] w-auto'
         }`}
       />
     </div>
