@@ -253,7 +253,7 @@ export async function searchMembers(params: {
   limit?: number;
 }): Promise<{ members: ApplicationMember[]; total: number; page: number; limit: number }> {
   const page = Math.max(1, params.page || 1);
-  const limit = Math.min(200, Math.max(1, params.limit || 20));
+  const limit = Math.min(20000, Math.max(1, params.limit || 20));
   const offset = (page - 1) * limit;
   const q = (params.query || '').trim();
   const field = (params.field || 'all').toLowerCase();
@@ -306,10 +306,16 @@ export async function searchMembers(params: {
         `WITH numbered AS (
            SELECT a.*, ROW_NUMBER() OVER (ORDER BY a.id ASC)::int AS seq_no
            FROM applicationform a
+         ),
+         rc AS (
+           SELECT member_num, COUNT(*)::int AS cnt
+           FROM receipt
+           GROUP BY member_num
          )
          SELECT n.*,
-                (SELECT COUNT(*) FROM receipt r WHERE r.member_num = CAST(n.id AS TEXT))::int AS receipt_count
+                COALESCE(rc.cnt, 0)::int AS receipt_count
          FROM numbered n
+         LEFT JOIN rc ON rc.member_num = CAST(n.id AS TEXT)
          WHERE ${whereClause}
          ORDER BY n.id DESC
          LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
@@ -323,10 +329,16 @@ export async function searchMembers(params: {
         `WITH numbered AS (
            SELECT a.*, ROW_NUMBER() OVER (ORDER BY a.id ASC)::int AS seq_no
            FROM applicationform a
+         ),
+         rc AS (
+           SELECT member_num, COUNT(*)::int AS cnt
+           FROM receipt
+           GROUP BY member_num
          )
          SELECT n.*,
-                (SELECT COUNT(*) FROM receipt r WHERE r.member_num = CAST(n.id AS TEXT))::int AS receipt_count
+                COALESCE(rc.cnt, 0)::int AS receipt_count
          FROM numbered n
+         LEFT JOIN rc ON rc.member_num = CAST(n.id AS TEXT)
          ORDER BY n.id DESC
          LIMIT $1 OFFSET $2`,
         [limit, offset]

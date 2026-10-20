@@ -988,7 +988,13 @@ export default function AdminPage() {
   };
 
   const handleDownloadExcel = () => {
-    window.location.href = '/api/admin/excel';
+    const q = (memberQuery || memberSearchInput).trim();
+    const params = new URLSearchParams();
+    params.set('field', memberSearchField);
+    if (q) {
+      params.set('query', q);
+    }
+    window.location.href = `/api/admin/excel?${params.toString()}`;
   };
 
   // =========================================================================
@@ -1077,15 +1083,6 @@ export default function AdminPage() {
     );
   }
 
-  const filteredConsultations = consultations.filter(item => {
-    const matchStat = filterStatus === '전체' || item.status === filterStatus;
-    const matchSearch =
-      item.applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.phone.includes(searchTerm) ||
-      item.title.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchStat && matchSearch;
-  });
-
   const totalMemberPages = Math.max(1, Math.ceil(membersTotal / 20));
   const totalReceiptPages = Math.max(1, Math.ceil(receiptsTotal / 25));
 
@@ -1115,7 +1112,6 @@ export default function AdminPage() {
                 selectedReceiptMember ? String(selectedReceiptMember.id) : undefined,
                 receiptSearchField
               );
-              fetchConsultations();
               fetchNotices();
             }}
             className="bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1 cursor-pointer"
@@ -1143,6 +1139,7 @@ export default function AdminPage() {
 
           <button
             onClick={handleDownloadExcel}
+            title="전체 회원검색 및 영수증 발급 탭의 선택 옵션에 따른 회원 목록 엑셀 다운로드"
             className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold text-xs px-3.5 py-2.5 rounded-xl shadow flex items-center space-x-1.5 transition-all cursor-pointer"
           >
             <FileSpreadsheet className="w-4 h-4" />
@@ -1196,21 +1193,6 @@ export default function AdminPage() {
           <span>🧾 영수증 내역 및 관리 (- Receipt List)</span>
           <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
             {receiptsTotal.toLocaleString()}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('consultations')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
-            activeTab === 'consultations'
-              ? 'bg-gta-900 text-white shadow-md'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-          }`}
-        >
-          <MessageSquare className="w-4 h-4" />
-          <span>💬 온라인 신청/상담 내역</span>
-          <span className="bg-slate-600 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
-            {consultations.length}
           </span>
         </button>
 
@@ -1755,104 +1737,7 @@ export default function AdminPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: CONSULTATIONS */}
-      {/* ========================================================================= */}
-      {activeTab === 'consultations' && (
-        <div className="space-y-4 print:hidden">
-          <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-slate-600">상태 필터:</span>
-              {['전체', '접수', '진행중', '완료'].map(st => (
-                <button
-                  key={st}
-                  onClick={() => setFilterStatus(st)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer ${
-                    filterStatus === st ? 'bg-gta-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {st}
-                </button>
-              ))}
-            </div>
-
-            <div className="relative w-full md:w-64">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-              <input
-                type="text"
-                placeholder="이름 / 연락처 / 제목 검색"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-300 text-xs"
-              />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-100 text-slate-700 text-xs uppercase font-bold border-b border-slate-200">
-                  <tr>
-                    <th className="px-6 py-4">접수번호</th>
-                    <th className="px-6 py-4">신청자 / 연락처</th>
-                    <th className="px-6 py-4">유형</th>
-                    <th className="px-6 py-4">제목 &amp; 내용</th>
-                    <th className="px-6 py-4">상태</th>
-                    <th className="px-6 py-4 text-right">관리</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {filteredConsultations.map(item => (
-                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-mono text-xs font-bold text-slate-600">{item.id}</td>
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-slate-900">{item.applicantName}</div>
-                        <div className="text-xs text-slate-500">{item.phone}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-bold text-gta-800 bg-gta-50 px-2 py-0.5 rounded border border-gta-200">
-                          {item.category}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 max-w-md">
-                        <div className="font-bold text-slate-900 truncate">{item.title}</div>
-                        <div className="text-xs text-slate-500 line-clamp-2 whitespace-pre-line">{item.content}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                            item.status === '완료'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : item.status === '진행중'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-blue-100 text-blue-800'
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => {
-                            setEditingId(item.id);
-                            setEditStatus(item.status);
-                            setEditMemo(item.adminMemo || '');
-                          }}
-                          className="bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer"
-                        >
-                          상태 변경
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* TAB 4: NOTICE BOARD MANAGEMENT */}
+      {/* TAB 3: NOTICE BOARD MANAGEMENT */}
       {/* ========================================================================= */}
       {activeTab === 'notices' && (
         <div className="space-y-6 print:hidden">

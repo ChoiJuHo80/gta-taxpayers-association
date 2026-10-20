@@ -1,35 +1,67 @@
-import { NextResponse } from 'next/server';
-import { getConsultations } from '@/lib/db';
+import { NextRequest, NextResponse } from 'next/server';
+import { searchMembers } from '@/lib/db';
 import * as XLSX from 'xlsx';
 
-export async function GET() {
-  try {
-    const list = await getConsultations();
+function formatUnixDate(val?: string): string {
+  if (!val) return '-';
+  const num = Number(val);
+  if (!isNaN(num) && num > 10000000) {
+    const d = new Date((num + 9 * 3600) * 1000);
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  return val;
+}
 
-    const excelData = list.map(item => ({
-      '접수번호': item.id,
-      '신청자명': item.applicantName,
-      '연락처': item.phone,
-      '세무유형': item.category,
-      '제목': item.title,
-      '내용': item.content,
-      '처리상태': item.status,
-      '관리자 메모': item.adminMemo || '',
-      '첨부파일 수': item.attachments ? item.attachments.length : 0,
-      '신청일시': item.createdAt,
-    }));
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const query = (searchParams.get('query') || '').trim();
+    const field = (searchParams.get('field') || 'name').trim();
+
+    const { members } = await searchMembers({
+      query,
+      field,
+      page: 1,
+      limit: 20000,
+    });
+
+    const excelData = members.map(m => {
+      const cleanRemark = (m.remark || '').replace(/\\r\\n|\\n|\\r/g, ' ').trim();
+      return {
+        'no': m.seq_no ?? m.id,
+        'name': m.name || '',
+        'number': m.number || '',
+        'email': m.email || '',
+        'remark': cleanRemark,
+        'Telephone': m.phon || '',
+        'Date of Stay & Work': `${formatUnixDate(m.date_from)} ~ ${formatUnixDate(m.date_to)}`,
+        'Receipts': `${m.receipt_count ?? 0}건`,
+        'Company': m.company || '',
+        'Nationality': m.nationality || '',
+        'Address': m.address || '',
+        'Marital Status': m.married === '2' ? 'Married' : 'Single',
+        'Basic Salary': m.money_01 || '',
+        'Overseas Allowance': m.money_02 || '',
+        'Bonus': m.money_03 || '',
+        'Total Income': m.money_04 || '',
+      };
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, '세무상담접수내역');
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Member_List');
 
     const buf = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    const suffix = query ? `_${field}_${encodeURIComponent(query)}` : '';
 
     return new NextResponse(buf, {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename="GTA_Tax_Consultations_${new Date().toISOString().substring(0, 10)}.xlsx"`,
+        'Content-Disposition': `attachment; filename="GTA_Member_List${suffix}_${new Date().toISOString().substring(0, 10)}.xlsx"`,
       },
     });
   } catch (error: any) {
