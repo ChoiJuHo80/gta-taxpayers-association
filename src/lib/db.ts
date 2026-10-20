@@ -276,16 +276,16 @@ export async function searchMembers(params: {
       if (field === 'name') {
         whereClause = `name ILIKE $1 OR name2 ILIKE $1`;
       } else if (field === 'number') {
-        whereClause = `number ILIKE $1 OR REPLACE(number, '-', '') ILIKE $2 OR CAST(seq_no AS TEXT) = $3 OR CAST(id AS TEXT) = $3`;
-      } else if (field === 'company') {
-        whereClause = `company ILIKE $1`;
+        whereClause = `number ILIKE $1 OR REPLACE(number, '-', '') ILIKE $2 OR name3 ILIKE $1 OR REPLACE(name3, '-', '') ILIKE $2 OR CAST(seq_no AS TEXT) = $3 OR CAST(id AS TEXT) = $3`;
       } else if (field === 'phone') {
-        whereClause = `phon ILIKE $1`;
+        whereClause = `phon ILIKE $1 OR REPLACE(phon, '-', '') ILIKE $2`;
       }
 
       const queryParams =
-        field === 'name' || field === 'company' || field === 'phone'
+        field === 'name'
           ? [likeQ]
+          : field === 'phone'
+          ? [likeQ, cleanQ]
           : [likeQ, cleanQ, q];
 
       const countRes = await pool.query(
@@ -488,6 +488,11 @@ export async function lookupMemberAndReceipts(nameInput: string, regNoInput: str
   const primaryMember: ApplicationMember | null = memRes.rows[0] || null;
 
   // 2. Find receipts by member_num OR direct name + resident_no2 match
+  const receiptOrderClause = `
+    (CASE WHEN reg_date ~ '^[0-9]+$' THEN reg_date::bigint ELSE 0 END) DESC,
+    (CASE WHEN taxation_period ~ '^[0-9]+$' THEN taxation_period::bigint ELSE 0 END) DESC,
+    id DESC
+  `;
   let receiptsRes;
   if (memberIds.length > 0) {
     receiptsRes = await pool.query(
@@ -497,7 +502,7 @@ export async function lookupMemberAndReceipts(nameInput: string, regNoInput: str
             UPPER(TRIM(name)) = UPPER($2)
             AND REPLACE(REPLACE(TRIM(resident_no2), '-', ''), ' ', '') = $3
           )
-       ORDER BY id DESC
+       ORDER BY ${receiptOrderClause}
        LIMIT 300`,
       [memberIds, cleanName, cleanRegNo]
     );
@@ -506,7 +511,7 @@ export async function lookupMemberAndReceipts(nameInput: string, regNoInput: str
       `SELECT * FROM receipt
        WHERE UPPER(TRIM(name)) = UPPER($1)
          AND REPLACE(REPLACE(TRIM(resident_no2), '-', ''), ' ', '') = $2
-       ORDER BY id DESC
+       ORDER BY ${receiptOrderClause}
        LIMIT 300`,
       [cleanName, cleanRegNo]
     );
@@ -532,16 +537,22 @@ export async function getReceipts(params: {
   const offset = (page - 1) * limit;
 
   const q = (params.query || '').trim();
-  const field = (params.field || 'all').trim();
+  const field = (params.field || 'name').trim().toLowerCase();
+
+  const receiptOrderBy = `
+    (CASE WHEN r.reg_date ~ '^[0-9]+$' THEN r.reg_date::bigint ELSE 0 END) DESC,
+    (CASE WHEN r.taxation_period ~ '^[0-9]+$' THEN r.taxation_period::bigint ELSE 0 END) DESC,
+    r.id DESC
+  `;
 
   if (params.memberNum && !q) {
     const countRes = await pool.query(
-      `SELECT COUNT(*) FROM receipt WHERE member_num = $1`,
+      `SELECT COUNT(*) FROM receipt r WHERE r.member_num = $1`,
       [params.memberNum]
     );
     const total = parseInt(countRes.rows[0].count, 10);
     const res = await pool.query(
-      `SELECT * FROM receipt WHERE member_num = $1 ORDER BY id DESC LIMIT $2 OFFSET $3`,
+      `SELECT r.* FROM receipt r WHERE r.member_num = $1 ORDER BY ${receiptOrderBy} LIMIT $2 OFFSET $3`,
       [params.memberNum, limit, offset]
     );
     return { receipts: res.rows, total, page, limit };
@@ -552,38 +563,50 @@ export async function getReceipts(params: {
     const cleanQ = `%${q.replace(/-/g, '')}%`;
 
     let whereClause = `
-      name ILIKE $1
-      OR resident_no2 ILIKE $1
-      OR REPLACE(resident_no2, '-', '') ILIKE $2
-      OR overseas_name ILIKE $1
-      OR management_no ILIKE $1
-      OR license_no ILIKE $1
-      OR member_num = $3
+      r.name ILIKE $1
+      OR r.resident_no2 ILIKE $1
+      OR REPLACE(r.resident_no2, '-', '') ILIKE $2
+      OR r.overseas_name ILIKE $1
+      OR r.management_no ILIKE $1
+      OR r.license_no ILIKE $1
+      OR r.member_num = $3
     `;
     let queryParams: any[] = [likeQ, cleanQ, q];
 
     if (field === 'name') {
-      whereClause = `name ILIKE $1`;
+      whereClause = `r.name ILIKE $1`;
       queryParams = [likeQ];
-    } else if (field === 'resident_no2') {
-      whereClause = `(resident_no2 ILIKE $1 OR REPLACE(resident_no2, '-', '') ILIKE $2)`;
+    } else if (field === 'number' || field === 'resident_no2') {
+      whereClause = `(r.resident_no2 ILIKE $1 OR REPLACE(r.resident_no2, '-', '') ILIKE $2)`;
+      queryParams = [likeQ, cleanQ];
+    } else if (field === 'phone') {
+      whereClause = `
+        EXISTS (
+          SELECT 1 FROM applicationform a
+          WHERE (
+            CAST(a.id AS TEXT) = r.member_num
+            OR (r.resident_no2 <> '' AND REPLACE(a.number, '-', '') = REPLACE(r.resident_no2, '-', ''))
+          )
+          AND (a.phon ILIKE $1 OR REPLACE(a.phon, '-', '') ILIKE $2)
+        )
+      `;
       queryParams = [likeQ, cleanQ];
     } else if (field === 'license_no') {
-      whereClause = `license_no ILIKE $1`;
+      whereClause = `r.license_no ILIKE $1`;
       queryParams = [likeQ];
     }
 
     const countRes = await pool.query(
-      `SELECT COUNT(*) FROM receipt WHERE ${whereClause}`,
+      `SELECT COUNT(*) FROM receipt r WHERE ${whereClause}`,
       queryParams
     );
     const total = parseInt(countRes.rows[0].count, 10);
     const limitIdx = queryParams.length + 1;
     const offsetIdx = queryParams.length + 2;
     const res = await pool.query(
-      `SELECT * FROM receipt
+      `SELECT r.* FROM receipt r
        WHERE ${whereClause}
-       ORDER BY id DESC
+       ORDER BY ${receiptOrderBy}
        LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
       [...queryParams, limit, offset]
     );
@@ -593,7 +616,7 @@ export async function getReceipts(params: {
   const countRes = await pool.query(`SELECT COUNT(*) FROM receipt`);
   const total = parseInt(countRes.rows[0].count, 10);
   const res = await pool.query(
-    `SELECT * FROM receipt ORDER BY id DESC LIMIT $1 OFFSET $2`,
+    `SELECT r.* FROM receipt r ORDER BY ${receiptOrderBy} LIMIT $1 OFFSET $2`,
     [limit, offset]
   );
   return { receipts: res.rows, total, page, limit };

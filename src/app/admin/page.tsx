@@ -145,7 +145,7 @@ export default function AdminPage() {
   const [membersPage, setMembersPage] = useState(1);
   const [memberQuery, setMemberQuery] = useState('');
   const [memberSearchInput, setMemberSearchInput] = useState('');
-  const [memberSearchField, setMemberSearchField] = useState<'all' | 'name' | 'number' | 'company' | 'phone'>('all');
+  const [memberSearchField, setMemberSearchField] = useState<'name' | 'number' | 'phone'>('name');
   const [membersLoading, setMembersLoading] = useState(false);
 
   // Member Edit Modal
@@ -158,7 +158,7 @@ export default function AdminPage() {
   const [receiptsPage, setReceiptsPage] = useState(1);
   const [receiptQuery, setReceiptQuery] = useState('');
   const [receiptSearchInput, setReceiptSearchInput] = useState('');
-  const [receiptSearchField, setReceiptSearchField] = useState<'name' | 'resident_no2' | 'license_no'>('name');
+  const [receiptSearchField, setReceiptSearchField] = useState<'name' | 'number' | 'phone'>('name');
   const [receiptsLoading, setReceiptsLoading] = useState(false);
 
   // Legacy Receipt Write / Modify Popup Modal State
@@ -1024,10 +1024,8 @@ export default function AdminPage() {
               <span className="text-sm font-black text-slate-900 mr-2">- Member List</span>
               {(
                 [
-                  { value: 'all', label: '전체(all)' },
                   { value: 'name', label: 'name' },
                   { value: 'number', label: 'number' },
-                  { value: 'company', label: 'company' },
                   { value: 'phone', label: 'phone' },
                 ] as const
               ).map(opt => (
@@ -1050,7 +1048,7 @@ export default function AdminPage() {
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
                   type="text"
-                  placeholder="회원 이름(name), 등록번호(number), 회사명(company), 연락처(phone) 검색..."
+                  placeholder="회원 이름(name), 등록번호(number), 연락처(phone) 검색..."
                   value={memberSearchInput}
                   onChange={e => setMemberSearchInput(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-gta-500"
@@ -1311,50 +1309,52 @@ export default function AdminPage() {
                 setReceiptsPage(1);
                 setReceiptQuery(receiptSearchInput);
               }}
-              className="flex flex-wrap items-center gap-2 text-xs text-black"
+              className="flex flex-wrap items-center gap-2.5 text-xs text-black"
             >
-              <label className="inline-flex items-center space-x-1 cursor-pointer">
-                <input
-                  type="radio"
-                  name="search_mode"
-                  value="name"
-                  checked={receiptSearchField === 'name'}
-                  onChange={() => setReceiptSearchField('name')}
-                />
-                <span>Name</span>
-              </label>
-              <label className="inline-flex items-center space-x-1 cursor-pointer">
-                <input
-                  type="radio"
-                  name="search_mode"
-                  value="resident_no2"
-                  checked={receiptSearchField === 'resident_no2'}
-                  onChange={() => setReceiptSearchField('resident_no2')}
-                />
-                <span>Payer Resident-No</span>
-              </label>
-              <label className="inline-flex items-center space-x-1 cursor-pointer">
-                <input
-                  type="radio"
-                  name="search_mode"
-                  value="license_no"
-                  checked={receiptSearchField === 'license_no'}
-                  onChange={() => setReceiptSearchField('license_no')}
-                />
-                <span>License-No</span>
-              </label>
+              {(
+                [
+                  { value: 'name', label: 'name' },
+                  { value: 'number', label: 'number' },
+                  { value: 'phone', label: 'phone' },
+                ] as const
+              ).map(opt => (
+                <label key={opt.value} className="inline-flex items-center space-x-1 cursor-pointer font-semibold">
+                  <input
+                    type="radio"
+                    name="search_mode"
+                    value={opt.value}
+                    checked={receiptSearchField === opt.value}
+                    onChange={() => setReceiptSearchField(opt.value)}
+                  />
+                  <span>{opt.label}</span>
+                </label>
+              ))}
               <input
                 type="text"
                 value={receiptSearchInput}
                 onChange={e => setReceiptSearchInput(e.target.value)}
-                className="border border-slate-400 px-2 py-0.5 text-xs w-32"
+                placeholder="name / number / phone"
+                className="border border-slate-400 px-2 py-0.5 text-xs w-36"
               />
               <button
                 type="submit"
-                className="bg-slate-200 hover:bg-slate-300 border border-slate-400 text-black font-bold text-xs px-2.5 py-0.5 cursor-pointer"
+                className="bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 text-white font-bold text-xs px-3 py-0.5 rounded-xs cursor-pointer"
               >
                 검색
               </button>
+              {receiptQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReceiptSearchInput('');
+                    setReceiptQuery('');
+                    setReceiptsPage(1);
+                  }}
+                  className="bg-slate-200 hover:bg-slate-300 border border-slate-400 text-black font-bold text-xs px-2 py-0.5 cursor-pointer"
+                >
+                  초기화
+                </button>
+              )}
             </form>
           </div>
 
