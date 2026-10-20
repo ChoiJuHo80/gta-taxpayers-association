@@ -12,7 +12,7 @@ export default function GtaLogo({ className = '', size = 'md' }: GtaLogoProps) {
   return (
     <div className={`inline-flex items-center select-none ${className}`}>
       <img
-        src="/img/logo.png"
+        src="/img/logo.png?v=2"
         alt="GTA Geoje Taxpayers Association"
         width={isSm ? 180 : isLg ? 240 : 230}
         height={isSm ? 58 : isLg ? 77 : 74}
