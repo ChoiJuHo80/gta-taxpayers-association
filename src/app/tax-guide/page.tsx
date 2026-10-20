@@ -402,7 +402,7 @@ function TaxGuideContent() {
                 </div>
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                   <div className="font-bold text-slate-900">Deductible Categories</div>
-                  <div className="text-slate-600">Medical expenses in Korea, Educational expenses, Korean Credit Card / Debit Card receipts, Pension / Insurance premiums.</div>
+                  <div className="text-slate-600">Medical expenses in Korea, Educational expenses, Korean Credit Card / Debit Card Expenses, Pension / Insurance premiums.</div>
                 </div>
               </div>
             </div>
