@@ -30,7 +30,7 @@ export default function Footer() {
           
           {/* Col 1: Brand Info */}
           <div className="space-y-4">
-            <div className="bg-white p-2.5 rounded-xl inline-block shadow-md">
+            <div className="inline-block">
               <GtaLogo size="sm" />
             </div>
             <p className="text-xs text-slate-400 leading-relaxed max-w-md">
