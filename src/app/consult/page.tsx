@@ -276,13 +276,16 @@ ${childrenLines}
     `.trim();
 
     // Build legacy-compatible family_txt (Spouse|DOB|Child1|DOB|...)
-    const familyParts: string[] = [];
-    if (formData.maritalStatus === 'Married' && formData.spouseName) {
-      familyParts.push(formData.spouseName, formData.spouseDob || '');
-    }
+    const familyParts: string[] = [
+      formData.maritalStatus === 'Married' ? formData.spouseName || '' : '',
+      formData.maritalStatus === 'Married' ? formData.spouseDob || '' : '',
+    ];
     formData.children.forEach(ch => {
       familyParts.push(ch.name || '', ch.dob || '');
     });
+    while (familyParts.length < 11) {
+      familyParts.push('');
+    }
 
     const dateFromUnix = String(Math.floor(new Date(`${formData.dateFromYear}-${formData.dateFromMonth}-${formData.dateFromDay}`).getTime() / 1000) || Math.floor(Date.now() / 1000));
     const dateToUnix = String(Math.floor(new Date(`${formData.dateToYear}-${formData.dateToMonth}-${formData.dateToDay}`).getTime() / 1000) || Math.floor(Date.now() / 1000));

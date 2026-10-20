@@ -22,8 +22,36 @@ import {
   Printer,
   Edit3,
   X,
+  CheckCircle2,
+  Download,
+  DollarSign,
+  Upload,
 } from 'lucide-react';
 import { Consultation, Notice, ApplicationMember, TaxReceipt } from '@/lib/db';
+
+const CURRENCIES = ['USD', 'EURO', 'NOK', 'GBP', 'DKK', 'CAD', 'AUD', 'SGD', 'SEK', 'JPY', 'KRW'] as const;
+
+function detectMemberCurrency(...vals: (string | undefined)[]): string {
+  const combined = vals.filter(Boolean).join(' ').toUpperCase();
+  if (combined.includes('EURO') || combined.includes('EUR') || combined.includes('€')) return 'EURO';
+  for (const c of CURRENCIES) {
+    if (combined.includes(c)) return c;
+  }
+  if (combined.includes('$')) return 'USD';
+  if (combined.includes('¥')) return 'JPY';
+  if (combined.includes('£')) return 'GBP';
+  if (combined.includes('₩')) return 'KRW';
+  return 'USD';
+}
+
+function stripCurrencyPrefix(val?: string): string {
+  if (!val) return '';
+  const trimmed = val.trim();
+  if (trimmed === '-' || trimmed === '0') return '';
+  return trimmed
+    .replace(/^(USD|EURO|EUR|NOK|GBP|DKK|CAD|AUD|SGD|SEK|JPY|KRW|\$|€|£|¥|₩)\s*/i, '')
+    .trim();
+}
 
 function parseUnixToYmd(val?: string): { year: number; month: number; day: number } {
   const now = new Date();
@@ -148,8 +176,35 @@ export default function AdminPage() {
   const [memberSearchField, setMemberSearchField] = useState<'name' | 'number' | 'phone'>('name');
   const [membersLoading, setMembersLoading] = useState(false);
 
-  // Member Edit Modal
+  // Member Edit Modal (Full Application Form)
   const [editingMember, setEditingMember] = useState<ApplicationMember | null>(null);
+  const [memberAppForm, setMemberAppForm] = useState({
+    applicantName: '',
+    nationality: '',
+    alienRegNo: '',
+    address: '',
+    addressDetail: '',
+    email: '',
+    company: '',
+    phone: '',
+    dateFrom: '',
+    dateTo: '',
+    maritalStatus: 'Single' as 'Single' | 'Married',
+    spouseName: '',
+    spouseDob: '',
+    spouseIncome: 'No' as 'No' | 'Yes',
+    childrenCount: '0',
+    children: [] as { name: string; dob: string }[],
+    salaryCurrency: 'USD',
+    salaryBasic: '',
+    salaryAllowance: '',
+    salaryBonus: '',
+    workedOtherCompany: 'No' as 'No' | 'Yes',
+    remark: '',
+    signature: '',
+    applicationDate: '',
+    files: [] as { name: string; size: number }[],
+  });
 
   // Receipts State (118,902+ migrated receipts)
   const [selectedReceiptMember, setSelectedReceiptMember] = useState<ApplicationMember | null>(null);
@@ -674,20 +729,188 @@ export default function AdminPage() {
     }
   };
 
+  const handleOpenEditMember = (m: ApplicationMember) => {
+    const cleanRemark = (m.remark || '').replace(/\\r\\n|\\n|\\r/g, '\n').trim();
+    const parts = (m.family_txt || '').split('|');
+    const spouseName = (parts[0] || '').trim();
+    const spouseDob = (parts[1] || '').trim();
+    const parsedChildren: { name: string; dob: string }[] = [];
+    for (let i = 2; i < parts.length; i += 2) {
+      const cn = (parts[i] || '').trim();
+      const cd = (parts[i + 1] || '').trim();
+      if (cn || cd) {
+        parsedChildren.push({ name: cn, dob: cd });
+      }
+    }
+    const parsedAge = parseInt(String(m.age || '').replace(/[^0-9]/g, ''), 10) || 0;
+    const count = Math.max(parsedAge, parsedChildren.length);
+    const children = Array.from({ length: count }, (_, idx) => parsedChildren[idx] || { name: '', dob: '' });
+    const isMarried = m.married === '2' || spouseName !== '';
+    const salaryCurrency = detectMemberCurrency(m.money_01, m.money_02, m.money_03, m.money_04);
+    const df = formatUnixDate(m.date_from);
+    const dt = formatUnixDate(m.date_to);
+    const de = formatUnixDate(m.date_end);
+
+    setEditingMember(m);
+    setMemberAppForm({
+      applicantName: m.name || '',
+      nationality: m.nationality || '',
+      alienRegNo: m.number || '',
+      address: m.address || '',
+      addressDetail: '',
+      email: m.email || '',
+      company: m.company || '',
+      phone: m.phon || '',
+      dateFrom: df.length === 10 ? df : '',
+      dateTo: dt.length === 10 ? dt : '',
+      maritalStatus: isMarried ? 'Married' : 'Single',
+      spouseName,
+      spouseDob,
+      spouseIncome: m.spouse === '1' ? 'Yes' : 'No',
+      childrenCount: String(count),
+      children,
+      salaryCurrency,
+      salaryBasic: stripCurrencyPrefix(m.money_01),
+      salaryAllowance: stripCurrencyPrefix(m.money_02),
+      salaryBonus: stripCurrencyPrefix(m.money_03),
+      workedOtherCompany: m.other_worked === 1 ? 'Yes' : 'No',
+      remark: cleanRemark,
+      signature: m.name2 || m.name || '',
+      applicationDate: de.length === 10 ? de : new Date().toISOString().slice(0, 10),
+      files: [],
+    });
+  };
+
+  const handleOpenMemberAddressPopup = () => {
+    const openPostcode = () => {
+      if (typeof window !== 'undefined' && (window as any).daum && (window as any).daum.Postcode) {
+        new (window as any).daum.Postcode({
+          oncomplete: (data: any) => {
+            const engAddr = data.roadAddressEnglish || data.jibunAddressEnglish || data.addressEnglish || '';
+            const zip = data.zonecode ? `, ${data.zonecode}` : '';
+            const fullEng = engAddr ? `${engAddr}, Republic of Korea${zip}` : data.roadAddress;
+            setMemberAppForm(prev => ({
+              ...prev,
+              address: prev.addressDetail ? `${prev.addressDetail}, ${fullEng}` : fullEng,
+            }));
+          },
+        }).open();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      if ((window as any).daum && (window as any).daum.Postcode) {
+        openPostcode();
+      } else {
+        const script = document.createElement('script');
+        script.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+        script.onload = openPostcode;
+        document.body.appendChild(script);
+      }
+    }
+  };
+
+  const handleMemberChildrenCountChange = (countStr: string) => {
+    const count = Math.max(0, parseInt(countStr, 10) || 0);
+    setMemberAppForm(prev => {
+      const nextChildren = Array.from({ length: count }, (_, idx) => prev.children[idx] || { name: '', dob: '' });
+      return {
+        ...prev,
+        childrenCount: String(count),
+        children: nextChildren,
+      };
+    });
+  };
+
+  const handleMemberChildChange = (index: number, field: 'name' | 'dob', value: string) => {
+    setMemberAppForm(prev => {
+      const nextChildren = [...prev.children];
+      nextChildren[index] = { ...nextChildren[index], [field]: value };
+      return { ...prev, children: nextChildren };
+    });
+  };
+
+  const calculateMemberTotalSalary = () => {
+    const b = parseCommaNum(memberAppForm.salaryBasic);
+    const a = parseCommaNum(memberAppForm.salaryAllowance);
+    const bo = parseCommaNum(memberAppForm.salaryBonus);
+    return (b + a + bo).toLocaleString('en-US');
+  };
+
   const handleSaveMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingMember) return;
+
+    const familyParts: string[] = [
+      memberAppForm.maritalStatus === 'Married' ? memberAppForm.spouseName.trim() : '',
+      memberAppForm.maritalStatus === 'Married' ? memberAppForm.spouseDob.trim() : '',
+    ];
+    memberAppForm.children.forEach(ch => {
+      familyParts.push(ch.name.trim(), ch.dob.trim());
+    });
+    while (familyParts.length < 11) {
+      familyParts.push('');
+    }
+
+    const formatMoneyField = (val: string, cur: string) => {
+      const clean = val.trim();
+      if (!clean || clean === '-' || clean === '0') return '-';
+      if (/^(USD|EURO|EUR|NOK|GBP|DKK|CAD|AUD|SGD|SEK|JPY|KRW|\$|€|£|¥|₩)/i.test(clean)) {
+        return clean;
+      }
+      return `${cur} ${clean}`;
+    };
+
+    const totalNum =
+      parseCommaNum(memberAppForm.salaryBasic) +
+      parseCommaNum(memberAppForm.salaryAllowance) +
+      parseCommaNum(memberAppForm.salaryBonus);
+    const money04 =
+      totalNum > 0
+        ? `${memberAppForm.salaryCurrency} ${totalNum.toLocaleString('en-US')}`
+        : editingMember.money_04 && editingMember.money_04 !== '0'
+        ? editingMember.money_04
+        : '-';
+
+    const payload = {
+      id: editingMember.id,
+      name: memberAppForm.applicantName.toUpperCase(),
+      nationality: memberAppForm.nationality,
+      number: memberAppForm.alienRegNo,
+      address: memberAppForm.address,
+      email: memberAppForm.email,
+      company: memberAppForm.company,
+      phon: memberAppForm.phone,
+      date_from: memberAppForm.dateFrom ? toUnixFromDate(memberAppForm.dateFrom) : editingMember.date_from,
+      date_to: memberAppForm.dateTo ? toUnixFromDate(memberAppForm.dateTo) : editingMember.date_to,
+      married: memberAppForm.maritalStatus === 'Married' ? '2' : '1',
+      age: memberAppForm.childrenCount === '0' ? '-' : memberAppForm.childrenCount,
+      spouse: memberAppForm.spouseIncome === 'Yes' ? '1' : '2',
+      money_01: formatMoneyField(memberAppForm.salaryBasic, memberAppForm.salaryCurrency),
+      money_02: formatMoneyField(memberAppForm.salaryAllowance, memberAppForm.salaryCurrency),
+      money_03: formatMoneyField(memberAppForm.salaryBonus, memberAppForm.salaryCurrency),
+      money_04: money04,
+      name2: memberAppForm.signature || memberAppForm.applicantName.toUpperCase(),
+      name3: memberAppForm.alienRegNo,
+      date_end: memberAppForm.applicationDate ? toUnixFromDate(memberAppForm.applicationDate) : editingMember.date_end,
+      family_txt: familyParts.join('|'),
+      other_worked: memberAppForm.workedOtherCompany === 'Yes' ? 1 : 2,
+      remark: memberAppForm.remark,
+    };
+
     try {
       const res = await fetch('/api/members', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editingMember),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (json.success) {
-        alert('회원 정보가 수정되었습니다. (Member updated)');
+        alert('회원 신청서(Application Form) 정보가 수정되었습니다.');
         setEditingMember(null);
         fetchMembers(memberQuery, membersPage, memberSearchField);
+      } else {
+        alert(json.error || 'Failed to update member');
       }
     } catch (err) {
       alert('Failed to update member');
@@ -1161,7 +1384,7 @@ export default function AdminPage() {
                           <td className="px-2 py-2 whitespace-nowrap">
                             <button
                               type="button"
-                              onClick={() => setEditingMember({ ...m, remark: cleanRemark })}
+                              onClick={() => handleOpenEditMember(m)}
                               className="bg-slate-100 hover:bg-slate-200 border border-slate-400 text-slate-800 text-[11px] font-bold px-2 py-0.5 rounded-xs cursor-pointer"
                             >
                               MODIFY
@@ -2276,166 +2499,585 @@ export default function AdminPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 2: MEMBER EDIT MODAL */}
+      {/* MODAL 2: FULL APPLICATION FORM MEMBER EDIT MODAL */}
       {/* ========================================================================= */}
       {editingMember && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto print:hidden">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-2xl w-full p-6 sm:p-8 space-y-5 my-8">
-            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-              <h3 className="text-lg font-black text-slate-900">
-                회원 정보 수정 (no. {editingMember.seq_no ?? editingMember.id} — {editingMember.name})
-              </h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-start justify-center p-2 sm:p-4 overflow-y-auto print:hidden">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-4xl w-full p-6 sm:p-10 space-y-6 my-6">
+            {/* Top Header matching Application Form */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-5 gap-4">
+              <div>
+                <div className="inline-flex items-center space-x-2 text-emerald-700 font-bold text-xs bg-emerald-50 px-3 py-1 rounded-full mb-2 border border-emerald-200">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>
+                    Authorized GTA Administrator Application Form (no. {editingMember.seq_no ?? editingMember.id} — #{editingMember.id})
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight">
+                  APPLICATION FOR ADMISSION TO GEOJE TAXPAYERS ASSOCIATION
+                </h2>
+                <p className="text-xs font-mono text-slate-500 mt-1">
+                  Tel: (055) 688-2141 &nbsp;|&nbsp; Fax: (055) 688-2142 &nbsp;|&nbsp; www.gtakorea.org
+                </p>
+              </div>
+
               <button
                 type="button"
                 onClick={() => setEditingMember(null)}
-                className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-slate-100 cursor-pointer self-end md:self-auto"
+                title="Close"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveMember} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <form onSubmit={handleSaveMember} className="space-y-7">
+              {/* Section 1 ~ 3 & 5: Personal Information */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
+                  Personal Information
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      1. Applicant&apos;s Name *{' '}
+                      <span className="text-slate-400 font-normal">(write in CAPITAL letters — auto-fills Signature)</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. KIM SILVIA"
+                      value={memberAppForm.applicantName}
+                      onChange={e => {
+                        const upperName = e.target.value.toUpperCase();
+                        setMemberAppForm(prev => ({
+                          ...prev,
+                          applicantName: upperName,
+                          signature: upperName,
+                        }));
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 uppercase font-mono font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Nationality *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. United Kingdom"
+                      value={memberAppForm.nationality}
+                      onChange={e => setMemberAppForm({ ...memberAppForm, nationality: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">2. Registration Number *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 820012-3932521"
+                      value={memberAppForm.alienRegNo}
+                      onChange={e => setMemberAppForm({ ...memberAppForm, alienRegNo: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">3. E-mail Address *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. silvia@example.com"
+                      value={memberAppForm.email}
+                      onChange={e => setMemberAppForm({ ...memberAppForm, email: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">5. Telephone (Mobile) *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 010-3700-3719"
+                      value={memberAppForm.phone}
+                      onChange={e => setMemberAppForm({ ...memberAppForm, phone: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Address with Korean Parcel-Style Popup Search -> Auto English Conversion */}
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="block text-xs font-bold text-slate-700">
+                      3. Residential Address in Korea *{' '}
+                      <span className="text-slate-400 font-normal">(Search road address to auto-fill in English)</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleOpenMemberAddressPopup}
+                      className="bg-gta-600 hover:bg-gta-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-xs inline-flex items-center space-x-1.5 transition-colors cursor-pointer"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                      <span>주소 검색 (Search &amp; Auto-Fill English Address)</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="md:col-span-2">
+                      <input
+                        type="text"
+                        placeholder="Click 'Search Address' or enter English address in Korea"
+                        value={memberAppForm.address}
+                        onChange={e => setMemberAppForm({ ...memberAppForm, address: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Apt / Room / Dong-Ho (e.g. #103-1002)"
+                        value={memberAppForm.addressDetail}
+                        onChange={e => {
+                          const detail = e.target.value;
+                          setMemberAppForm(prev => {
+                            const baseAddr = prev.address.replace(/^#?[^,]+,\s*(?=\d)/, '');
+                            return {
+                              ...prev,
+                              addressDetail: detail,
+                              address: detail ? `${detail}, ${baseAddr}` : baseAddr,
+                            };
+                          });
+                        }}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 4 & 6: Employment & Stay Info */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
+                  Employment &amp; Stay Information
+                </h3>
+
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Name (성명)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">4. Company Name *</label>
                   <input
                     type="text"
-                    value={editingMember.name}
-                    onChange={e => setEditingMember({ ...editingMember, name: e.target.value.toUpperCase() })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono uppercase font-bold"
+                    placeholder="e.g. Northern Marine / Subsea 7"
+                    value={memberAppForm.company}
+                    onChange={e => setMemberAppForm({ ...memberAppForm, company: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
                   />
                 </div>
+
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Registration Number (등록번호)</label>
-                  <input
-                    type="text"
-                    value={editingMember.number}
-                    onChange={e => setEditingMember({ ...editingMember, number: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono"
-                  />
+                  <label className="block text-xs font-bold text-slate-700 mb-1">6. Date of Stay &amp; Work *</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-bold text-slate-600 shrink-0">From:</span>
+                      <input
+                        type="date"
+                        value={memberAppForm.dateFrom}
+                        onChange={e => setMemberAppForm({ ...memberAppForm, dateFrom: e.target.value })}
+                        className="px-2.5 py-1.5 rounded border border-slate-300 text-xs font-mono w-full bg-white"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-bold text-slate-600 shrink-0">To:</span>
+                      <input
+                        type="date"
+                        value={memberAppForm.dateTo}
+                        onChange={e => setMemberAppForm({ ...memberAppForm, dateTo: e.target.value })}
+                        className="px-2.5 py-1.5 rounded border border-slate-300 text-xs font-mono w-full bg-white"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Company (회사명)</label>
-                  <input
-                    type="text"
-                    value={editingMember.company}
-                    onChange={e => setEditingMember({ ...editingMember, company: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300"
-                  />
+              </div>
+
+              {/* Section 7: Exemption (Marital & Children Details) */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
+                  7. Exemption Status (Check at least 1 item below)
+                </h3>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4 text-xs">
+                  <div className="flex flex-wrap items-center gap-6 font-bold text-slate-800">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="editMaritalStatus"
+                        checked={memberAppForm.maritalStatus === 'Single'}
+                        onChange={() => setMemberAppForm({ ...memberAppForm, maritalStatus: 'Single' })}
+                        className="text-gta-600 focus:ring-gta-500"
+                      />
+                      <span>Single</span>
+                    </label>
+
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="editMaritalStatus"
+                        checked={memberAppForm.maritalStatus === 'Married'}
+                        onChange={() => setMemberAppForm({ ...memberAppForm, maritalStatus: 'Married' })}
+                        className="text-gta-600 focus:ring-gta-500"
+                      />
+                      <span>Married</span>
+                      <span className="text-[11px] text-amber-700 font-normal">
+                        (A copy of your marriage certificate is required)
+                      </span>
+                    </label>
+                  </div>
+
+                  {memberAppForm.maritalStatus === 'Married' && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-slate-200">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Spouse&apos;s Name</label>
+                        <input
+                          type="text"
+                          placeholder="Spouse full name"
+                          value={memberAppForm.spouseName}
+                          onChange={e => setMemberAppForm({ ...memberAppForm, spouseName: e.target.value })}
+                          className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Spouse Date of Birth</label>
+                        <input
+                          type="text"
+                          placeholder="DD/MM/YYYY or Resident No."
+                          value={memberAppForm.spouseDob}
+                          onChange={e => setMemberAppForm({ ...memberAppForm, spouseDob: e.target.value })}
+                          className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs font-mono bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Does spouse have any form of income?
+                        </label>
+                        <select
+                          value={memberAppForm.spouseIncome}
+                          onChange={e =>
+                            setMemberAppForm({ ...memberAppForm, spouseIncome: e.target.value as 'No' | 'Yes' })
+                          }
+                          className="w-full px-2.5 py-1.5 rounded border border-slate-300 text-xs font-bold bg-white"
+                        >
+                          <option value="No">No</option>
+                          <option value="Yes">Yes</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-2 border-t border-slate-200 space-y-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <label className="font-bold text-slate-700">Number of children below 20 years of age:</label>
+                      <select
+                        value={memberAppForm.childrenCount}
+                        onChange={e => handleMemberChildrenCountChange(e.target.value)}
+                        className="px-2.5 py-1 rounded border border-slate-300 text-xs font-bold bg-white"
+                      >
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                          <option key={num} value={String(num)}>
+                            {num}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="text-[11px] text-slate-500">
+                        (A copy of child&apos;s birth certificate is required)
+                      </span>
+                    </div>
+
+                    {memberAppForm.children.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                        {memberAppForm.children.map((child, idx) => (
+                          <div key={idx} className="bg-white p-2.5 rounded-lg border border-slate-200">
+                            <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                              Child {idx + 1} Name &amp; DOB
+                            </label>
+                            <div className="flex space-x-2">
+                              <input
+                                type="text"
+                                placeholder={`Child ${idx + 1} Name`}
+                                value={child.name}
+                                onChange={e => handleMemberChildChange(idx, 'name', e.target.value)}
+                                className="w-2/3 px-2 py-1.5 rounded border border-slate-300 text-xs"
+                              />
+                              <input
+                                type="text"
+                                placeholder="DOB (DD/MM/YYYY)"
+                                value={child.dob}
+                                onChange={e => handleMemberChildChange(idx, 'dob', e.target.value)}
+                                className="w-1/3 px-2 py-1.5 rounded border border-slate-300 text-xs font-mono"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-[11px] text-slate-500 italic bg-amber-50 p-2 rounded border border-amber-200">
+                    ※ Family stays in Korea: Only a copy of KOR residence card is necessary.
+                  </div>
                 </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Nationality (국적)</label>
-                  <input
-                    type="text"
-                    value={editingMember.nationality}
-                    onChange={e => setEditingMember({ ...editingMember, nationality: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300"
-                  />
+              </div>
+
+              {/* Section 8: Class B Income Details */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
+                  8. The Class B Income (USD, EURO, NOK, GBP, DKK, CAD, AUD, SGD, SEK, JPY, KRW)
+                </h3>
+
+                {/* Currency Selection Bar */}
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
+                      <DollarSign className="w-4 h-4 text-gta-600" />
+                      <span>Select Salary Currency (Auto-applied to all income fields &amp; Total Income):</span>
+                    </label>
+                    <select
+                      value={memberAppForm.salaryCurrency}
+                      onChange={e => setMemberAppForm({ ...memberAppForm, salaryCurrency: e.target.value })}
+                      className="px-3 py-1.5 rounded-lg border border-gta-300 bg-white text-xs font-extrabold text-gta-800 focus:ring-2 focus:ring-gta-500"
+                    >
+                      {CURRENCIES.map(cur => (
+                        <option key={cur} value={cur}>
+                          {cur}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {CURRENCIES.map(cur => (
+                      <button
+                        key={cur}
+                        type="button"
+                        onClick={() => setMemberAppForm({ ...memberAppForm, salaryCurrency: cur })}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          memberAppForm.salaryCurrency === cur
+                            ? 'bg-gta-600 text-white shadow-sm'
+                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {cur}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Telephone (연락처)</label>
-                  <input
-                    type="text"
-                    value={editingMember.phon}
-                    onChange={e => setEditingMember({ ...editingMember, phon: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono"
-                  />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      ① Basic Salary per month ({memberAppForm.salaryCurrency})
+                    </label>
+                    <div className="relative flex items-center">
+                      <span className="absolute left-3 text-xs font-extrabold text-gta-700 bg-gta-50 px-1.5 py-0.5 rounded border border-gta-200 font-mono">
+                        {memberAppForm.salaryCurrency}
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="e.g. 5,000"
+                        value={memberAppForm.salaryBasic}
+                        onChange={e => setMemberAppForm({ ...memberAppForm, salaryBasic: e.target.value })}
+                        className="w-full pl-16 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-gta-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      ② Overseas allowance per month ({memberAppForm.salaryCurrency})
+                    </label>
+                    <div className="relative flex items-center">
+                      <span className="absolute left-3 text-xs font-extrabold text-gta-700 bg-gta-50 px-1.5 py-0.5 rounded border border-gta-200 font-mono">
+                        {memberAppForm.salaryCurrency}
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="e.g. 2,000"
+                        value={memberAppForm.salaryAllowance}
+                        onChange={e => setMemberAppForm({ ...memberAppForm, salaryAllowance: e.target.value })}
+                        className="w-full pl-16 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-gta-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      ③ Bonus per month ({memberAppForm.salaryCurrency})
+                    </label>
+                    <div className="relative flex items-center">
+                      <span className="absolute left-3 text-xs font-extrabold text-gta-700 bg-gta-50 px-1.5 py-0.5 rounded border border-gta-200 font-mono">
+                        {memberAppForm.salaryCurrency}
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="e.g. 1,000"
+                        value={memberAppForm.salaryBonus}
+                        onChange={e => setMemberAppForm({ ...memberAppForm, salaryBonus: e.target.value })}
+                        className="w-full pl-16 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-gta-500"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Email</label>
-                  <input
-                    type="text"
-                    value={editingMember.email}
-                    onChange={e => setEditingMember({ ...editingMember, email: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300"
-                  />
+
+                <div className="bg-emerald-50 p-3.5 rounded-xl border border-emerald-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs font-bold text-emerald-900">
+                  <span>Total Income / Estimated Monthly Income (①+②+③):</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="bg-emerald-600 text-white px-2.5 py-1 rounded-lg font-mono text-xs font-extrabold">
+                      {memberAppForm.salaryCurrency}
+                    </span>
+                    <span className="font-mono text-lg text-emerald-700 font-black">
+                      {memberAppForm.salaryCurrency} {calculateMemberTotalSalary()}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Date of Stay &amp; Work (From)</label>
-                  <input
-                    type="date"
-                    value={
-                      formatUnixDate(editingMember.date_from).length === 10
-                        ? formatUnixDate(editingMember.date_from)
-                        : ''
-                    }
-                    onChange={e => setEditingMember({ ...editingMember, date_from: toUnixFromDate(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono"
-                  />
+              </div>
+
+              {/* Section 9: Worked for other company */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
+                  9. Previous Employment Status
+                </h3>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
+                  <div className="flex flex-wrap items-center gap-6 font-bold text-slate-800">
+                    <span>Did you work for other company during the same year in Korea?</span>
+                    <label className="flex items-center space-x-1.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="editWorkedOtherCompany"
+                        checked={memberAppForm.workedOtherCompany === 'No'}
+                        onChange={() => setMemberAppForm({ ...memberAppForm, workedOtherCompany: 'No' })}
+                        className="text-gta-600 focus:ring-gta-500"
+                      />
+                      <span>No</span>
+                    </label>
+                    <label className="flex items-center space-x-1.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="editWorkedOtherCompany"
+                        checked={memberAppForm.workedOtherCompany === 'Yes'}
+                        onChange={() => setMemberAppForm({ ...memberAppForm, workedOtherCompany: 'Yes' })}
+                        className="text-gta-600 focus:ring-gta-500"
+                      />
+                      <span>Yes</span>
+                    </label>
+                  </div>
+
+                  {memberAppForm.workedOtherCompany === 'Yes' && (
+                    <div className="p-3 bg-red-50 text-red-700 rounded-lg border border-red-200 font-medium">
+                      ※ If Yes, you must submit a{' '}
+                      <strong>&apos;Receipt for wage and salary income Tax withholding&apos;</strong> of your previous
+                      employment to GTA to avoid penalty tax.
+                    </div>
+                  )}
                 </div>
+              </div>
+
+              {/* Section 10: Remark (Memo) */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
+                  10. Remark (Administrator Memo / Notes)
+                </h3>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Date of Stay &amp; Work (To)</label>
-                  <input
-                    type="date"
-                    value={
-                      formatUnixDate(editingMember.date_to).length === 10 ? formatUnixDate(editingMember.date_to) : ''
-                    }
-                    onChange={e => setEditingMember({ ...editingMember, date_to: toUnixFromDate(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono"
+                  <textarea
+                    rows={3}
+                    placeholder="Enter any remarks, DOB notes, or special tax memo for this member..."
+                    value={memberAppForm.remark}
+                    onChange={e => setMemberAppForm({ ...memberAppForm, remark: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Address (국내 거주지 주소)</label>
-                <input
-                  type="text"
-                  value={editingMember.address}
-                  onChange={e => setEditingMember({ ...editingMember, address: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300"
-                />
+              {/* Section 11: Required Documents Upload & Signature */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
+                  Required Documents Upload &amp; Signature
+                </h3>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-dashed border-slate-300 space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-slate-800 flex items-center space-x-2">
+                      <Upload className="w-4 h-4 text-gta-500" />
+                      <span>
+                        Attach Copies (KOR Residence Card, Marriage Certificate, Child Birth Certificate, Income Receipt)
+                      </span>
+                    </label>
+                    <span className="text-[11px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      🔒 AES-256 Encrypted
+                    </span>
+                  </div>
+
+                  <input
+                    type="file"
+                    onChange={e => {
+                      if (e.target.files && e.target.files[0]) {
+                        const f = e.target.files[0];
+                        setMemberAppForm(prev => ({
+                          ...prev,
+                          files: [...prev.files, { name: f.name, size: f.size }],
+                        }));
+                      }
+                    }}
+                    className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-gta-50 file:text-gta-700 hover:file:bg-gta-100"
+                  />
+
+                  {memberAppForm.files.length > 0 && (
+                    <div className="space-y-1 pt-1">
+                      {memberAppForm.files.map((f, idx) => (
+                        <div
+                          key={idx}
+                          className="text-xs text-slate-700 bg-white p-2 rounded border border-slate-200 flex justify-between items-center font-mono"
+                        >
+                          <span>
+                            📄 {f.name} ({(f.size / 1024).toFixed(1)} KB)
+                          </span>
+                          <span className="text-emerald-600 font-bold text-[10px]">Encrypted</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Applicant&apos;s Signature *{' '}
+                      <span className="text-emerald-600 font-semibold">(Auto-completed from Applicant&apos;s Name)</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Full name signature"
+                      value={memberAppForm.signature}
+                      onChange={e => setMemberAppForm({ ...memberAppForm, signature: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-serif italic font-bold bg-slate-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Application Date</label>
+                    <input
+                      type="date"
+                      value={memberAppForm.applicationDate}
+                      onChange={e => setMemberAppForm({ ...memberAppForm, applicationDate: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono bg-white"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Basic Salary</label>
-                  <input
-                    type="text"
-                    value={editingMember.money_01}
-                    onChange={e => setEditingMember({ ...editingMember, money_01: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Allowance</label>
-                  <input
-                    type="text"
-                    value={editingMember.money_02}
-                    onChange={e => setEditingMember({ ...editingMember, money_02: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Bonus</label>
-                  <input
-                    type="text"
-                    value={editingMember.money_03}
-                    onChange={e => setEditingMember({ ...editingMember, money_03: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Total Income</label>
-                  <input
-                    type="text"
-                    value={editingMember.money_04}
-                    onChange={e => setEditingMember({ ...editingMember, money_04: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono font-bold"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Remark (관리자 메모/비고)</label>
-                <textarea
-                  rows={3}
-                  value={editingMember.remark}
-                  onChange={e => setEditingMember({ ...editingMember, remark: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300"
-                />
-              </div>
-
-              <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+              {/* Footer Buttons */}
+              <div className="flex flex-wrap justify-between items-center gap-3 pt-4 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={async () => {
@@ -2444,24 +3086,24 @@ export default function AdminPage() {
                     setEditingMember(null);
                     await handleDeleteMember(id, nm);
                   }}
-                  className="px-3.5 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold rounded-xl cursor-pointer inline-flex items-center space-x-1"
+                  className="px-4 py-2.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 text-xs font-bold rounded-xl cursor-pointer inline-flex items-center space-x-1.5"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-4 h-4" />
                   <span>회원 삭제 (DEL)</span>
                 </button>
-                <div className="flex space-x-2">
+                <div className="flex items-center space-x-2.5">
                   <button
                     type="button"
                     onClick={() => setEditingMember(null)}
-                    className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl cursor-pointer"
+                    className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer"
                   >
-                    취소
+                    취소 (Cancel)
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-gta-600 hover:bg-gta-700 text-white font-bold rounded-xl shadow cursor-pointer"
+                    className="px-6 py-2.5 bg-gradient-to-r from-gta-600 to-gta-500 hover:from-gta-700 hover:to-gta-600 text-white text-xs sm:text-sm font-extrabold rounded-xl shadow-lg cursor-pointer"
                   >
-                    수정 저장
+                    수정 저장 (UPDATE APPLICATION FORM)
                   </button>
                 </div>
               </div>

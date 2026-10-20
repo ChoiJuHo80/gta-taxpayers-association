@@ -420,8 +420,9 @@ export async function updateMember(id: number, data: Partial<ApplicationMember>)
       name3 = $18,
       family_txt = $19,
       other_worked = $20,
-      remark = $21
-     WHERE id = $22
+      remark = $21,
+      date_end = $22
+     WHERE id = $23
      RETURNING *`,
     [
       data.name ?? existing.name,
@@ -445,6 +446,7 @@ export async function updateMember(id: number, data: Partial<ApplicationMember>)
       data.family_txt ?? existing.family_txt,
       data.other_worked ?? existing.other_worked,
       data.remark ?? existing.remark,
+      data.date_end ?? existing.date_end,
       id
     ]
   );
