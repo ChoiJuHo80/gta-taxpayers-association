@@ -25,7 +25,7 @@ export default function ConsultFloatingWidget() {
   return (
     <div className="fixed bottom-24 right-4 sm:top-36 sm:bottom-auto sm:right-8 z-40 animate-in slide-in-from-bottom-5 sm:slide-in-from-top-5 duration-300">
       <Link
-        href="/consult"
+        href="/contact"
         className="bg-gradient-to-r from-blue-700 via-gta-600 to-blue-600 hover:from-blue-800 hover:to-gta-700 text-white font-extrabold text-xs sm:text-sm px-4 sm:px-5 py-2.5 sm:py-3 rounded-full shadow-2xl hover:shadow-blue-500/30 flex items-center space-x-2 border-2 border-white/80 transition-all hover:scale-105 active:scale-95 group shrink-0"
         title="Apply for Free Tax Counsel"
       >

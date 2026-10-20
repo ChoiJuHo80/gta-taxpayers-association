@@ -316,12 +316,6 @@ export default function Header() {
                 >
                   <div className="bg-white rounded-2xl shadow-xl border border-slate-200 py-2.5 space-y-0.5">
                     <Link
-                      href="/consult"
-                      className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
-                    >
-                      📝 {t.navApplicationForm}
-                    </Link>
-                    <Link
                       href="/consult/lookup"
                       className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-gta-50 hover:text-gta-600 font-medium transition-colors"
                     >
@@ -391,9 +385,6 @@ export default function Header() {
             <div>
               <div className="text-xs font-extrabold text-gta-600 uppercase tracking-wider mb-1 px-2">{t.catTaxService}</div>
               <div className="space-y-1 pl-2">
-                <Link href="/consult" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-sm font-semibold text-slate-700">
-                  📝 {t.navApplicationForm}
-                </Link>
                 <Link href="/consult/lookup" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-sm font-semibold text-slate-700">
                   🔍 {t.navCheckReceipt}
                 </Link>
