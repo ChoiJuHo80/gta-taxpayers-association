@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import {
   Lock,
@@ -28,6 +28,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { Consultation, Notice, ApplicationMember, TaxReceipt } from '@/lib/db';
+import ReceiptDocument, { downloadReceiptPdf } from '@/components/ReceiptDocument';
 
 const CURRENCIES = ['USD', 'EURO', 'NOK', 'GBP', 'DKK', 'CAD', 'AUD', 'SGD', 'SEK', 'JPY', 'KRW'] as const;
 
@@ -216,20 +217,21 @@ export default function AdminPage() {
   const [receiptSearchField, setReceiptSearchField] = useState<'name' | 'number' | 'phone'>('name');
   const [receiptsLoading, setReceiptsLoading] = useState(false);
 
-  // Legacy Receipt Write / Modify Popup Modal State
+  // Receipt Write / Modify Popup Modal State
   const [showReceiptFormModal, setShowReceiptFormModal] = useState(false);
   const [editingReceiptId, setEditingReceiptId] = useState<number | null>(null);
   const [selectedPrintReceipt, setSelectedPrintReceipt] = useState<TaxReceipt | null>(null);
+  const receiptPrintRef = useRef<HTMLDivElement | null>(null);
 
   const nowDate = new Date();
   const [receiptForm, setReceiptForm] = useState({
     member_num: '',
     management_no: '',
     license_no: '612-80-03137',
-    association_name: 'Geoje Taxpayers Association',
-    chairman_name: 'Kim Se- Kwang',
+    association_name: 'Geoje Taxpayer Association',
+    chairman_name: 'kim Se Kwang',
     resident_no1: '710925-*******',
-    address1: '#107, 3696 Geoje-daero, Geoje-city Gyeongnam Korea',
+    address1: '#107, 3696 Geoje-daero, Geoje-city gyeongnam Korea',
     name: '',
     resident_no2: '',
     address2: '',
@@ -261,6 +263,8 @@ export default function AdminPage() {
     payable_income: '',
     payable_resident: '',
     payable_special: '',
+    service_fee: '30,000',
+    yearend_fee: '',
     reg_name: '',
   });
 
@@ -427,22 +431,29 @@ export default function AdminPage() {
     }
   };
 
-  // Click [WRITE] in "- Receipt List" -> Opens Legacy receipt_write.html modal
+  // Click [WRITE] in Receipt List -> Opens Receipt Write modal with auto-filled defaults
   const handleOpenWriteReceipt = (m?: ApplicationMember | null) => {
     const targetMember = m ?? selectedReceiptMember;
+    const latestReceipt =
+      targetMember && receipts.length > 0 && String(receipts[0].member_num) === String(targetMember.id)
+        ? receipts[0]
+        : null;
+    const cleanVal = (v?: string) => (v && v !== '0' ? v : '');
+
     setEditingReceiptId(null);
     const today = new Date();
     setReceiptForm({
       member_num: targetMember ? String(targetMember.id) : '',
-      management_no: '',
+      management_no:
+        latestReceipt?.management_no || (targetMember ? String(targetMember.seq_no ?? targetMember.id) : ''),
       license_no: '612-80-03137',
-      association_name: 'Geoje Taxpayers Association',
-      chairman_name: 'Kim Se- Kwang',
+      association_name: 'Geoje Taxpayer Association',
+      chairman_name: 'kim Se Kwang',
       resident_no1: '710925-*******',
-      address1: '#107, 3696 Geoje-daero, Geoje-city Gyeongnam Korea',
-      name: targetMember?.name || '',
-      resident_no2: targetMember?.number || '',
-      address2: targetMember?.address || '',
+      address1: '#107, 3696 Geoje-daero, Geoje-city gyeongnam Korea',
+      name: targetMember?.name || latestReceipt?.name || '',
+      resident_no2: targetMember?.number || latestReceipt?.resident_no2 || '',
+      address2: targetMember?.address || latestReceipt?.address2 || '',
       tax_year: today.getFullYear(),
       tax_month: today.getMonth() + 1,
       tax_day: today.getDate(),
@@ -454,43 +465,64 @@ export default function AdminPage() {
       local_bonus: '',
       local_income: '',
       local_totalsalary: '',
-      overseas_name: targetMember?.company || '',
-      overseas_basicsalary: '',
-      overseas_bonus: '',
-      overseas_income: '',
-      overseas_totalsalary: '',
-      total_basicsalary: '',
-      total_bonus: '',
-      total_income: '',
-      total_totalsalary: '',
-      total_salary: '',
-      non_taxable_salary: '',
-      computed_tax: '',
-      deduction_overseas: '',
-      deduction_deduction: '',
-      payable_income: '',
-      payable_resident: '',
-      payable_special: '',
-      reg_name: targetMember?.name || '',
+      overseas_name: targetMember?.company || latestReceipt?.overseas_name || latestReceipt?.local_name || '',
+      overseas_basicsalary: cleanVal(latestReceipt?.overseas_basicsalary || latestReceipt?.total_basicsalary),
+      overseas_bonus: cleanVal(latestReceipt?.overseas_bonus || latestReceipt?.total_bonus),
+      overseas_income: cleanVal(latestReceipt?.overseas_income || latestReceipt?.total_income),
+      overseas_totalsalary: cleanVal(
+        latestReceipt?.overseas_totalsalary || latestReceipt?.total_totalsalary || latestReceipt?.total_salary
+      ),
+      total_basicsalary: cleanVal(latestReceipt?.total_basicsalary || latestReceipt?.overseas_basicsalary),
+      total_bonus: cleanVal(latestReceipt?.total_bonus || latestReceipt?.overseas_bonus),
+      total_income: cleanVal(latestReceipt?.total_income || latestReceipt?.overseas_income),
+      total_totalsalary: cleanVal(
+        latestReceipt?.total_totalsalary || latestReceipt?.total_salary || latestReceipt?.overseas_totalsalary
+      ),
+      total_salary: cleanVal(
+        latestReceipt?.total_salary || latestReceipt?.total_totalsalary || latestReceipt?.overseas_totalsalary
+      ),
+      non_taxable_salary: cleanVal(latestReceipt?.non_taxable_salary),
+      computed_tax: latestReceipt?.computed_tax || '',
+      deduction_overseas: cleanVal(latestReceipt?.deduction_overseas),
+      deduction_deduction: cleanVal(latestReceipt?.deduction_deduction),
+      payable_income: cleanVal(latestReceipt?.payable_income),
+      payable_resident: cleanVal(latestReceipt?.payable_resident),
+      payable_special: cleanVal(latestReceipt?.payable_special),
+      service_fee: '30,000',
+      yearend_fee: '',
+      reg_name: targetMember?.name || latestReceipt?.name || '',
     });
     setShowReceiptFormModal(true);
   };
 
-  // Click [MODIFY] in "- Receipt List" -> Opens Legacy receipt_modify.html modal
+  // Click [MODIFY] in Receipt List -> Opens Receipt Modify modal
   const handleOpenEditReceipt = (r: TaxReceipt) => {
     setEditingReceiptId(r.id);
     const taxYmd = parseUnixToYmd(r.taxation_period);
     const regYmd = parseUnixToYmd(r.reg_date);
     const cleanVal = (v?: string) => (v && v !== '0' ? v : '');
 
+    const b1 = parseCommaNum(r.overseas_basicsalary || r.total_basicsalary || r.local_basicsalary);
+    const b2 = parseCommaNum(r.overseas_bonus || r.total_bonus || r.local_bonus);
+    const b3 = parseCommaNum(r.overseas_income || r.total_income || r.local_income);
+    const computedSal =
+      b1 + b2 + b3 > 0
+        ? (b1 + b2 + b3).toLocaleString('en-US')
+        : cleanVal(r.total_salary) || cleanVal(r.total_totalsalary) || cleanVal(r.overseas_totalsalary);
+
+    const t1 = parseCommaNum(r.payable_income);
+    const t2 = parseCommaNum(r.payable_resident);
+    const computedTotalTax =
+      t1 + t2 > 0 ? (t1 + t2).toLocaleString('en-US') : cleanVal(r.payable_special);
+
     setReceiptForm({
       member_num: r.member_num || '',
-      management_no: r.management_no || '',
+      management_no: r.management_no || r.member_num || String(r.id),
       license_no: r.license_no || '612-80-03137',
-      association_name: r.association_name || 'Geoje Taxpayers Association',
-      chairman_name: r.chairman_name || 'Kim Se- Kwang',
+      association_name: r.association_name || 'Geoje Taxpayer Association',
+      chairman_name: r.chairman_name || 'kim Se Kwang',
       resident_no1: r.resident_no1 || '710925-*******',
-      address1: r.address1 || '#107, 3696 Geoje-daero, Geoje-city Gyeongnam Korea',
+      address1: r.address1 || '#107, 3696 Geoje-daero, Geoje-city gyeongnam Korea',
       name: r.name || '',
       resident_no2: r.resident_no2 || '',
       address2: r.address2 || '',
@@ -505,29 +537,31 @@ export default function AdminPage() {
       local_bonus: cleanVal(r.local_bonus),
       local_income: cleanVal(r.local_income),
       local_totalsalary: cleanVal(r.local_totalsalary),
-      overseas_name: r.overseas_name || '',
-      overseas_basicsalary: cleanVal(r.overseas_basicsalary),
-      overseas_bonus: cleanVal(r.overseas_bonus),
-      overseas_income: cleanVal(r.overseas_income),
-      overseas_totalsalary: cleanVal(r.overseas_totalsalary),
+      overseas_name: r.overseas_name || r.local_name || '',
+      overseas_basicsalary: cleanVal(r.overseas_basicsalary) || cleanVal(r.total_basicsalary),
+      overseas_bonus: cleanVal(r.overseas_bonus) || cleanVal(r.total_bonus),
+      overseas_income: cleanVal(r.overseas_income) || cleanVal(r.total_income),
+      overseas_totalsalary: computedSal,
       total_basicsalary: cleanVal(r.total_basicsalary) || cleanVal(r.overseas_basicsalary),
       total_bonus: cleanVal(r.total_bonus) || cleanVal(r.overseas_bonus),
       total_income: cleanVal(r.total_income) || cleanVal(r.overseas_income),
-      total_totalsalary: cleanVal(r.total_totalsalary) || cleanVal(r.total_salary),
-      total_salary: cleanVal(r.total_salary),
+      total_totalsalary: computedSal,
+      total_salary: computedSal,
       non_taxable_salary: cleanVal(r.non_taxable_salary),
       computed_tax: r.computed_tax || '',
       deduction_overseas: cleanVal(r.deduction_overseas),
       deduction_deduction: cleanVal(r.deduction_deduction),
-      payable_income: r.payable_income || '',
-      payable_resident: r.payable_resident || '',
-      payable_special: r.payable_special || '',
+      payable_income: cleanVal(r.payable_income),
+      payable_resident: cleanVal(r.payable_resident),
+      payable_special: computedTotalTax,
+      service_fee: r.service_fee !== undefined && r.service_fee !== null ? r.service_fee : '30,000',
+      yearend_fee: r.yearend_fee || '',
       reg_name: r.reg_name || r.name || '',
     });
     setShowReceiptFormModal(true);
   };
 
-  // Click [+ WRITE] in "- Receipt List" -> Legacy receipt_ok.php?mode=addup (clones the receipt row immediately)
+  // Click [+ WRITE] in Receipt List -> Clones the receipt row immediately
   const handleDuplicateReceipt = async (r: TaxReceipt) => {
     if (!confirm('본 내용을 기준으로 추가등록 하시겠습니까?')) return;
     try {
@@ -535,10 +569,10 @@ export default function AdminPage() {
         member_num: r.member_num || '',
         management_no: r.management_no || '',
         license_no: r.license_no || '612-80-03137',
-        association_name: r.association_name || 'Geoje Taxpayers Association',
-        chairman_name: r.chairman_name || 'Kim Se- Kwang',
+        association_name: r.association_name || 'Geoje Taxpayer Association',
+        chairman_name: r.chairman_name || 'kim Se Kwang',
         resident_no1: r.resident_no1 || '710925-*******',
-        address1: r.address1 || '#107, 3696 Geoje-daero, Geoje-city Gyeongnam Korea',
+        address1: r.address1 || '#107, 3696 Geoje-daero, Geoje-city gyeongnam Korea',
         name: r.name || '',
         resident_no2: r.resident_no2 || '',
         address2: r.address2 || '',
@@ -566,6 +600,8 @@ export default function AdminPage() {
         payable_income: r.payable_income || '',
         payable_resident: r.payable_resident || '',
         payable_special: r.payable_special || '',
+        service_fee: r.service_fee ?? '30,000',
+        yearend_fee: r.yearend_fee ?? '',
         reg_name: r.reg_name || r.name || '',
       };
 
@@ -591,7 +627,7 @@ export default function AdminPage() {
     }
   };
 
-  // Exact Legacy basic.js auto_value() + autocommas() handler for Overseas Salary fields (g2, g3, g4)
+  // Auto-sum [1] Basic Salary + [2] Bonus + [3] Other Income -> [4] Total Salary (both upper and lower)
   const handleOverseasSalaryChange = (
     field: 'overseas_basicsalary' | 'overseas_bonus' | 'overseas_income',
     rawVal: string
@@ -617,37 +653,31 @@ export default function AdminPage() {
     });
   };
 
-  // Exact Legacy basic.js auto_value() + autocommas() handler for Tax fields (g11, g12, g13)
-  const handleTaxCalculationChange = (
-    field: 'computed_tax' | 'deduction_overseas' | 'deduction_deduction',
+  // Auto-sum [6] Payable Income Tax + [7] Local Income Tax -> [8] Total tax
+  const handlePayableTaxChange = (
+    field: 'payable_income' | 'payable_resident',
     rawVal: string
   ) => {
     const formatted = formatWithCommas(rawVal);
     setReceiptForm(prev => {
       const next = { ...prev, [field]: formatted };
-      const g11 = parseCommaNum(next.computed_tax);
-      const g12 = parseCommaNum(next.deduction_overseas);
-      const g13 = parseCommaNum(next.deduction_deduction);
-
-      // Legacy basic.js formula:
-      // g14 = Math.floor((g11 - g12 - g13) / 10) * 10
-      // g15 = Math.floor((g14 * 0.1) / 10) * 10
-      // g16 = g14 + g15
-      const g14 = Math.floor((g11 - g12 - g13) / 10) * 10;
-      const g15 = Math.floor((g14 * 0.1) / 10) * 10;
-      const g16 = g14 + g15;
-
-      return {
-        ...next,
-        payable_income: g11 || g12 || g13 ? g14.toLocaleString('en-US') : '',
-        payable_resident: g11 || g12 || g13 ? g15.toLocaleString('en-US') : '',
-        payable_special: g11 || g12 || g13 ? g16.toLocaleString('en-US') : '',
-      };
+      // If user edits [6] Payable Income Tax and [7] Local Income Tax hasn't been manually customized or is 10%, auto-update [7] if desired, or sum [6]+[7]
+      if (field === 'payable_income') {
+        const inc = parseCommaNum(formatted);
+        const autoLocal = inc > 0 ? Math.floor((inc * 0.1) / 10) * 10 : 0;
+        if (!prev.payable_resident || parseCommaNum(prev.payable_resident) === Math.floor((parseCommaNum(prev.payable_income) * 0.1) / 10) * 10) {
+          next.payable_resident = autoLocal > 0 ? autoLocal.toLocaleString('en-US') : '';
+        }
+      }
+      const t6 = parseCommaNum(next.payable_income);
+      const t7 = parseCommaNum(next.payable_resident);
+      const t8 = t6 + t7;
+      next.payable_special = t8 > 0 ? t8.toLocaleString('en-US') : '';
+      return next;
     });
   };
 
-  const handleSaveReceipt = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitReceiptData = async (downloadPdfAfterSave = false) => {
     const payload = {
       member_num: receiptForm.member_num,
       management_no: receiptForm.management_no,
@@ -683,6 +713,8 @@ export default function AdminPage() {
       payable_income: receiptForm.payable_income,
       payable_resident: receiptForm.payable_resident,
       payable_special: receiptForm.payable_special,
+      service_fee: receiptForm.service_fee,
+      yearend_fee: receiptForm.yearend_fee,
       reg_name: receiptForm.reg_name || receiptForm.name,
     };
 
@@ -702,12 +734,26 @@ export default function AdminPage() {
           receiptSearchField
         );
         fetchMembers(memberQuery, membersPage, memberSearchField);
+
+        if (downloadPdfAfterSave && json.data) {
+          setSelectedPrintReceipt(json.data);
+          setTimeout(() => {
+            if (receiptPrintRef.current) {
+              downloadReceiptPdf(receiptPrintRef.current, json.data);
+            }
+          }, 300);
+        }
       } else {
         alert(json.error || 'Failed to save receipt');
       }
     } catch (err) {
       alert('Error saving receipt');
     }
+  };
+
+  const handleSaveReceipt = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitReceiptData(false);
   };
 
   const handleDeleteReceipt = async (id: number) => {
@@ -1087,14 +1133,14 @@ export default function AdminPage() {
   const totalReceiptPages = Math.max(1, Math.ceil(receiptsTotal / 25));
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 print:p-0 print:m-0 print:space-y-0 print:max-w-none">
       {/* Top Header & Quick Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gta-900 text-white p-6 rounded-2xl shadow-xl print:hidden">
         <div className="flex items-center space-x-3">
           <Shield className="w-8 h-8 text-amber-400 shrink-0" />
           <div>
             <h1 className="text-xl sm:text-2xl font-black">
-              GTA 통합 관리자 시스템 (Member &amp; Tax Receipt Portal)
+              GTA 통합 관리자 시스템
             </h1>
             <p className="text-xs text-slate-300">
               전체 회원 조회({membersTotal.toLocaleString()}명) · 월별 납세 영수증 작성/발급({receiptsTotal.toLocaleString()}건) · 신청서 등록
@@ -1125,7 +1171,7 @@ export default function AdminPage() {
             className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-3.5 py-2.5 rounded-xl shadow flex items-center space-x-1.5 transition-all"
           >
             <FileText className="w-4 h-4" />
-            <span>+ 신규 회원 신청서 등록 (Application Form)</span>
+            <span>+ 신규 회원 신청서 등록</span>
           </Link>
 
           <button
@@ -1134,7 +1180,7 @@ export default function AdminPage() {
             className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs px-3.5 py-2.5 rounded-xl shadow flex items-center space-x-1.5 transition-all cursor-pointer"
           >
             <Receipt className="w-4 h-4" />
-            <span>+ 영수증 직접 작성 (Write Receipt)</span>
+            <span>+ 영수증 직접 작성</span>
           </button>
 
           <button
@@ -1171,7 +1217,7 @@ export default function AdminPage() {
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>👥 전체 회원 검색 및 영수증 발급 (- Member List)</span>
+          <span>👥 전체 회원 검색 및 영수증 발급</span>
           <span className="bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
             {membersTotal.toLocaleString()}
           </span>
@@ -1190,7 +1236,7 @@ export default function AdminPage() {
           }`}
         >
           <Receipt className="w-4 h-4" />
-          <span>🧾 영수증 내역 및 관리 (- Receipt List)</span>
+          <span>🧾 영수증 내역 및 관리</span>
           <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
             {receiptsTotal.toLocaleString()}
           </span>
@@ -1473,25 +1519,25 @@ export default function AdminPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: LEGACY "- Receipt List" (Exact match to receipt_list.html) */}
+      {/* TAB 2: RECEIPT LIST (Full-width expanded layout) */}
       {/* ========================================================================= */}
       {activeTab === 'receipts' && (
-        <div className="max-w-[860px] mx-auto space-y-2 print:hidden bg-white p-4 sm:p-6 rounded-xl border border-slate-300 shadow-xs">
+        <div className="w-full space-y-3 print:hidden bg-white p-4 sm:p-6 rounded-xl border border-slate-300 shadow-xs">
           {/* Header Row: "- Receipt List" on left, Radio Search on right */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-1">
             <div className="flex items-center space-x-3">
               <span className="text-[15px] font-bold text-black">- Receipt List</span>
               {selectedReceiptMember && (
-                <span className="text-xs font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                <span className="text-xs font-bold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded border border-blue-200">
                   {selectedReceiptMember.name} ({selectedReceiptMember.number})
                 </span>
               )}
               <button
                 type="button"
                 onClick={() => setActiveTab('members')}
-                className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-2.5 py-1 rounded-xs cursor-pointer"
+                className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-1 rounded-xs cursor-pointer"
               >
-                ← 회원목록 (Member List)
+                ← 회원목록
               </button>
               {selectedReceiptMember && (
                 <button
@@ -1500,7 +1546,7 @@ export default function AdminPage() {
                     setSelectedReceiptMember(null);
                     setReceiptsPage(1);
                   }}
-                  className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-2.5 py-1 rounded-xs cursor-pointer"
+                  className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-1 rounded-xs cursor-pointer"
                 >
                   전체 영수증 보기
                 </button>
@@ -1514,7 +1560,7 @@ export default function AdminPage() {
                 setReceiptsPage(1);
                 setReceiptQuery(receiptSearchInput);
               }}
-              className="flex flex-wrap items-center gap-2.5 text-xs text-black"
+              className="flex flex-wrap items-center gap-3 text-xs text-black"
             >
               {(
                 [
@@ -1539,11 +1585,11 @@ export default function AdminPage() {
                 value={receiptSearchInput}
                 onChange={e => setReceiptSearchInput(e.target.value)}
                 placeholder="name / number / phone"
-                className="border border-slate-400 px-2 py-0.5 text-xs w-36"
+                className="border border-slate-400 px-2.5 py-1 text-xs w-48 rounded-xs"
               />
               <button
                 type="submit"
-                className="bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 text-white font-bold text-xs px-3 py-0.5 rounded-xs cursor-pointer"
+                className="bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 text-white font-bold text-xs px-4 py-1 rounded-xs cursor-pointer"
               >
                 검색
               </button>
@@ -1555,7 +1601,7 @@ export default function AdminPage() {
                     setReceiptQuery('');
                     setReceiptsPage(1);
                   }}
-                  className="bg-slate-200 hover:bg-slate-300 border border-slate-400 text-black font-bold text-xs px-2 py-0.5 cursor-pointer"
+                  className="bg-slate-200 hover:bg-slate-300 border border-slate-400 text-black font-bold text-xs px-2.5 py-1 cursor-pointer"
                 >
                   초기화
                 </button>
@@ -1563,20 +1609,20 @@ export default function AdminPage() {
             </form>
           </div>
 
-          {/* Legacy Receipt List Table (#FFFBC8 header, #CCCCCC grid borders) */}
+          {/* Expanded Receipt List Table */}
           <div className="overflow-x-auto">
             <table className="w-full border-collapse border border-[#CCCCCC] text-center text-[12px] text-black">
               <thead>
-                <tr className="bg-[#FFFBC8] h-[28px] font-bold">
-                  <td className="border border-[#CCCCCC] px-2 w-[40px]">no</td>
-                  <td className="border border-[#CCCCCC] px-2 w-[150px]">name</td>
-                  <td className="border border-[#CCCCCC] px-2 w-[130px]">Payer Resident-No</td>
-                  <td className="border border-[#CCCCCC] px-2 w-[170px]">Association-Name</td>
-                  <td className="border border-[#CCCCCC] px-2 w-[100px]">License-No</td>
-                  <td className="border border-[#CCCCCC] px-2 w-[85px]">Date</td>
-                  <td className="border border-[#CCCCCC] px-2 w-[65px]">Modify</td>
-                  <td className="border border-[#CCCCCC] px-2 w-[50px]">Del</td>
-                  <td className="border border-[#CCCCCC] px-2 w-[65px]">+ Write</td>
+                <tr className="bg-[#FFFBC8] h-[34px] font-bold">
+                  <td className="border border-[#CCCCCC] px-3 w-[6%]">no</td>
+                  <td className="border border-[#CCCCCC] px-3 w-[19%]">name</td>
+                  <td className="border border-[#CCCCCC] px-3 w-[16%]">Payer Resident-No</td>
+                  <td className="border border-[#CCCCCC] px-3 w-[20%]">Association-Name</td>
+                  <td className="border border-[#CCCCCC] px-3 w-[12%]">License-No</td>
+                  <td className="border border-[#CCCCCC] px-3 w-[10%]">Date</td>
+                  <td className="border border-[#CCCCCC] px-2 w-[6%]">Modify</td>
+                  <td className="border border-[#CCCCCC] px-2 w-[5%]">Del</td>
+                  <td className="border border-[#CCCCCC] px-2 w-[6%]">+ Write</td>
                 </tr>
               </thead>
               <tbody>
@@ -1810,16 +1856,14 @@ export default function AdminPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 1: LEGACY RECEIPT WRITE / MODIFY POPUP (receipt_write.html / receipt_modify.html) */}
+      {/* MODAL 1: RECEIPT WRITE / MODIFY POPUP (Matching GTA Excel Sample) */}
       {/* ========================================================================= */}
       {showReceiptFormModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:hidden">
-          <div className="bg-white border-2 border-slate-500 shadow-2xl max-w-[850px] w-full p-3 sm:p-5 my-4 max-h-[95vh] overflow-y-auto">
-            <div className="flex justify-between items-center pb-2 mb-2 border-b border-slate-300 text-xs">
-              <span className="font-bold text-slate-700">
-                {editingReceiptId
-                  ? `영수증 수정 (Receipt Modify #${editingReceiptId})`
-                  : '영수증 작성 (Receipt Write)'}
+          <div className="bg-white border-2 border-slate-500 shadow-2xl max-w-[820px] w-full p-4 sm:p-6 my-4 max-h-[95vh] overflow-y-auto">
+            <div className="flex justify-between items-center pb-2.5 mb-3 border-b border-slate-300 text-xs">
+              <span className="font-bold text-slate-800 text-sm">
+                {editingReceiptId ? `영수증 수정 #${editingReceiptId}` : '영수증 작성'}
               </span>
               <button
                 type="button"
@@ -1830,552 +1874,466 @@ export default function AdminPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveReceipt}>
+            <form onSubmit={handleSaveReceipt} className="space-y-4 text-[12px] text-black">
               <div className="overflow-x-auto">
-                <table className="w-[800px] mx-auto border-collapse border border-[#CCCCCC] text-[12px] text-black bg-white">
-                  <tbody>
-                    {/* Title & Management No */}
-                    <tr>
-                      <td colSpan={7} className="border border-[#CCCCCC] p-2 bg-white">
-                        <div className="text-center text-[15px] font-bold text-[#333333] py-1">
-                          RECEIPT FOR CLASS &quot;B&quot; INCOME TAX (MONTHLY)
-                        </div>
-                        <div className="flex justify-between items-center pt-1 text-[12px]">
-                          <div>
-                            Management No:{' '}
+                <div className="w-[740px] mx-auto bg-white p-2 space-y-4">
+                  {/* Title */}
+                  <div className="text-center text-[17px] font-bold tracking-wide py-2">
+                    RECEIPT FOR CLASS &quot;B&quot; INCOME TAX (MONTHLY)
+                  </div>
+
+                  {/* Top Meta Row */}
+                  <div className="flex justify-between items-center text-[12px] gap-4">
+                    <div className="flex items-center space-x-2 w-1/2">
+                      <span className="font-semibold whitespace-nowrap">GTA Management No. :</span>
+                      <input
+                        type="text"
+                        value={receiptForm.management_no}
+                        onChange={e => setReceiptForm({ ...receiptForm, management_no: e.target.value })}
+                        className="bg-[#F8F8F8] border border-slate-400 px-2 py-1 text-[12px] w-[180px]"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2 w-1/2 pl-2">
+                      <span className="font-semibold whitespace-nowrap">Taxation Period :</span>
+                      <div className="flex items-center space-x-1">
+                        <select
+                          value={receiptForm.tax_year}
+                          onChange={e => setReceiptForm({ ...receiptForm, tax_year: Number(e.target.value) })}
+                          className="bg-[#F3F3F3] border border-slate-400 text-[12px] px-1.5 py-1"
+                        >
+                          {YEAR_OPTIONS.map(y => (
+                            <option key={y} value={y}>
+                              {y}
+                            </option>
+                          ))}
+                        </select>
+                        <span>.</span>
+                        <select
+                          value={receiptForm.tax_month}
+                          onChange={e => setReceiptForm({ ...receiptForm, tax_month: Number(e.target.value) })}
+                          className="bg-[#F3F3F3] border border-slate-400 text-[12px] px-1.5 py-1"
+                        >
+                          {MONTH_OPTIONS.map(m => (
+                            <option key={m} value={m}>
+                              {String(m).padStart(2, '0')}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* TAXPAYER & TAXPAYER ASSOCIATION (Vertical 1-Column Stacked Layout) */}
+                  <table className="w-full border-collapse border border-slate-500 text-[12px]">
+                    <tbody>
+                      {/* TAXPAYER (3 rows) */}
+                      <tr>
+                        <td
+                          rowSpan={3}
+                          className="border border-slate-400 bg-[#DCE6F1] text-center font-semibold w-[150px] px-2 py-2 align-middle"
+                        >
+                          TAXPAYER
+                        </td>
+                        <td className="border border-slate-300 px-3 py-1.5 w-[160px] font-medium">Name</td>
+                        <td className="border border-slate-300 px-2 py-1">
+                          <input
+                            type="text"
+                            value={receiptForm.name}
+                            onChange={e => {
+                              const val = e.target.value.toUpperCase();
+                              setReceiptForm(prev => ({ ...prev, name: val, reg_name: val }));
+                            }}
+                            className="bg-[#D9EE99] border border-slate-400 px-2 py-1 w-full text-[12px] font-semibold"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="border border-slate-300 px-3 py-1.5 font-medium">Registration Number</td>
+                        <td className="border border-slate-300 px-2 py-1">
+                          <input
+                            type="text"
+                            value={receiptForm.resident_no2}
+                            onChange={e => setReceiptForm({ ...receiptForm, resident_no2: e.target.value })}
+                            className="bg-[#D9EE99] border border-slate-400 px-2 py-1 w-[220px] text-[12px]"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="border border-slate-300 px-3 py-1.5 font-medium">Address</td>
+                        <td className="border border-slate-300 px-2 py-1">
+                          <input
+                            type="text"
+                            value={receiptForm.address2}
+                            onChange={e => setReceiptForm({ ...receiptForm, address2: e.target.value })}
+                            className="bg-[#F8F8F8] border border-slate-400 px-2 py-1 w-full text-[12px]"
+                          />
+                        </td>
+                      </tr>
+
+                      {/* TAXPAYER ASSOCIATION (4 rows) */}
+                      <tr>
+                        <td
+                          rowSpan={4}
+                          className="border border-slate-400 bg-[#DCE6F1] text-center font-semibold px-2 py-2 align-middle leading-tight"
+                        >
+                          TAXPAYER
+                          <br />
+                          ASSOCIATION
+                        </td>
+                        <td className="border border-slate-300 px-3 py-1.5 font-medium">Association</td>
+                        <td className="border border-slate-300 px-2 py-1">
+                          <input
+                            type="text"
+                            value={receiptForm.association_name}
+                            onChange={e => setReceiptForm({ ...receiptForm, association_name: e.target.value })}
+                            className="bg-[#F8F8F8] border border-slate-400 px-2 py-1 w-full text-[12px]"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="border border-slate-300 px-3 py-1.5 font-medium">Licence number</td>
+                        <td className="border border-slate-300 px-2 py-1">
+                          <input
+                            type="text"
+                            value={receiptForm.license_no}
+                            onChange={e => setReceiptForm({ ...receiptForm, license_no: e.target.value })}
+                            className="bg-[#F8F8F8] border border-slate-400 px-2 py-1 w-[220px] text-[12px]"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="border border-slate-300 px-3 py-1.5 font-medium">Chairman</td>
+                        <td className="border border-slate-300 px-2 py-1">
+                          <input
+                            type="text"
+                            value={receiptForm.chairman_name}
+                            onChange={e => setReceiptForm({ ...receiptForm, chairman_name: e.target.value })}
+                            className="bg-[#F8F8F8] border border-slate-400 px-2 py-1 w-[220px] text-[12px]"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="border border-slate-300 px-3 py-1.5 font-medium">Address</td>
+                        <td className="border border-slate-300 px-2 py-1">
+                          <input
+                            type="text"
+                            value={receiptForm.address1}
+                            onChange={e => setReceiptForm({ ...receiptForm, address1: e.target.value })}
+                            className="bg-[#F8F8F8] border border-slate-400 px-2 py-1 w-full text-[12px]"
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  {/* WAGE & SALARY DETAILS (KRW) */}
+                  <div>
+                    <div className="font-semibold text-[12px] mb-1">WAGE &amp; SALARY DETAILS (KRW)</div>
+                    <table className="w-full border-collapse border border-slate-500 text-[12px] text-center">
+                      <thead>
+                        <tr className="bg-[#DCE6F1] h-[30px]">
+                          <th className="border border-slate-400 font-medium px-2 w-[20%]">Company</th>
+                          <th className="border border-slate-400 font-medium px-2 w-[20%]">[1] Basic Salary</th>
+                          <th className="border border-slate-400 font-medium px-2 w-[20%]">[2] Bonus</th>
+                          <th className="border border-slate-400 font-medium px-2 w-[20%]">[3] Other Income</th>
+                          <th className="border border-slate-400 font-medium px-2 w-[20%]">[4] Total Salary</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="h-[44px]">
+                          <td className="border border-slate-400 p-1.5">
                             <input
                               type="text"
-                              value={receiptForm.management_no}
-                              onChange={e => setReceiptForm({ ...receiptForm, management_no: e.target.value })}
-                              className="bg-[#F8F8F8] border border-slate-400 px-1.5 py-0.5 text-[12px] w-[160px]"
+                              value={receiptForm.overseas_name}
+                              onChange={e => setReceiptForm({ ...receiptForm, overseas_name: e.target.value })}
+                              placeholder="Company"
+                              className="bg-[#F8F8F8] border border-slate-400 px-2 py-1 w-full text-[12px] text-center"
                             />
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
+                          </td>
+                          <td className="border border-slate-400 p-1.5">
+                            <input
+                              type="text"
+                              value={receiptForm.overseas_basicsalary}
+                              onChange={e => handleOverseasSalaryChange('overseas_basicsalary', e.target.value)}
+                              placeholder="0"
+                              className="bg-[#F8F8F8] border border-slate-400 px-2 py-1 w-full text-[12px] text-right font-mono"
+                            />
+                          </td>
+                          <td className="border border-slate-400 p-1.5">
+                            <input
+                              type="text"
+                              value={receiptForm.overseas_bonus}
+                              onChange={e => handleOverseasSalaryChange('overseas_bonus', e.target.value)}
+                              placeholder="0"
+                              className="bg-[#F8F8F8] border border-slate-400 px-2 py-1 w-full text-[12px] text-right font-mono"
+                            />
+                          </td>
+                          <td className="border border-slate-400 p-1.5">
+                            <input
+                              type="text"
+                              value={receiptForm.overseas_income}
+                              onChange={e => handleOverseasSalaryChange('overseas_income', e.target.value)}
+                              placeholder="0"
+                              className="bg-[#F8F8F8] border border-slate-400 px-2 py-1 w-full text-[12px] text-right font-mono"
+                            />
+                          </td>
+                          <td className="border border-slate-400 p-1.5">
+                            <input
+                              type="text"
+                              value={receiptForm.total_salary}
+                              onChange={e => {
+                                const val = formatWithCommas(e.target.value);
+                                setReceiptForm({
+                                  ...receiptForm,
+                                  overseas_totalsalary: val,
+                                  total_totalsalary: val,
+                                  total_salary: val,
+                                });
+                              }}
+                              placeholder="=[1]+[2]+[3]"
+                              className="bg-blue-50/60 border border-slate-400 px-2 py-1 w-full text-[12px] text-right font-mono font-bold"
+                            />
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
 
-                    {/* Tax Dutyer Row 1 */}
-                    <tr>
-                      <td rowSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white w-[80px]">
-                        Tax Dutyer
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white w-[105px]">1) License-No.</td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white w-[105px]">
-                        <input
-                          type="text"
-                          value={receiptForm.license_no}
-                          onChange={e => setReceiptForm({ ...receiptForm, license_no: e.target.value })}
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[90px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white w-[110px]">2) Association-Name</td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white w-[120px]">
-                        <input
-                          type="text"
-                          value={receiptForm.association_name}
-                          onChange={e => setReceiptForm({ ...receiptForm, association_name: e.target.value })}
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[110px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white w-[105px]">3) Chairman-Name</td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.chairman_name}
-                          onChange={e => setReceiptForm({ ...receiptForm, chairman_name: e.target.value })}
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[110px] text-[12px]"
-                        />
-                      </td>
-                    </tr>
+                  {/* TAX CALCULATION (KRW) */}
+                  <div>
+                    <div className="font-semibold text-[12px] mb-1">TAX CALCULATION (KRW)</div>
+                    <table className="w-full border-collapse border border-slate-500 text-[12px] text-center">
+                      <tbody>
+                        {/* Row 1: [4] Total Salary | [5] * Non Taxable Salary */}
+                        <tr className="h-[28px]">
+                          <td className="border border-slate-400 bg-[#DCE6F1] font-medium px-2 w-1/3">
+                            [4] Total Salary
+                          </td>
+                          <td className="border border-slate-400 bg-[#DCE6F1] font-medium px-2 w-1/3">
+                            [5] * Non Taxable Salary
+                          </td>
+                          <td className="border border-slate-400 bg-white px-2 w-1/3"></td>
+                        </tr>
+                        <tr className="h-[42px]">
+                          <td className="border border-slate-400 p-1.5">
+                            <input
+                              type="text"
+                              value={receiptForm.total_salary}
+                              onChange={e =>
+                                setReceiptForm({ ...receiptForm, total_salary: formatWithCommas(e.target.value) })
+                              }
+                              className="bg-blue-50/60 border border-slate-400 px-2 py-1 w-full text-[12px] text-right font-mono font-bold"
+                            />
+                          </td>
+                          <td className="border border-slate-400 p-1.5">
+                            <input
+                              type="text"
+                              value={receiptForm.non_taxable_salary}
+                              onChange={e =>
+                                setReceiptForm({
+                                  ...receiptForm,
+                                  non_taxable_salary: formatWithCommas(e.target.value),
+                                })
+                              }
+                              placeholder="수기 입력 (Manual Input)"
+                              className="bg-[#D9EE99] border border-slate-400 px-2 py-1 w-full text-[12px] text-right font-mono"
+                            />
+                          </td>
+                          <td className="border border-slate-400 p-1.5"></td>
+                        </tr>
 
-                    {/* Tax Dutyer Row 2 */}
-                    <tr>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">4) Resident-No.</td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.resident_no1}
-                          onChange={e => setReceiptForm({ ...receiptForm, resident_no1: e.target.value })}
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[90px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">5) Address</td>
-                      <td colSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.address1}
-                          onChange={e => setReceiptForm({ ...receiptForm, address1: e.target.value })}
-                          className="bg-[#F8F8F8] border border-slate-400 px-1.5 py-0.5 w-full text-[12px]"
-                        />
-                      </td>
-                    </tr>
+                        {/* Row 2: [6] Payable Income Tax | [7] Local Income Tax | [8] Total tax */}
+                        <tr className="bg-[#DCE6F1] h-[28px]">
+                          <td className="border border-slate-400 font-medium px-2">[6] Payable Income Tax</td>
+                          <td className="border border-slate-400 font-medium px-2">[7] Local Income Tax</td>
+                          <td className="border border-slate-400 font-medium px-2">[8] Total tax</td>
+                        </tr>
+                        <tr className="h-[42px]">
+                          <td className="border border-slate-400 p-1.5">
+                            <input
+                              type="text"
+                              value={receiptForm.payable_income}
+                              onChange={e => handlePayableTaxChange('payable_income', e.target.value)}
+                              placeholder="0"
+                              className="bg-[#F8F8F8] border border-slate-400 px-2 py-1 w-full text-[12px] text-right font-mono"
+                            />
+                          </td>
+                          <td className="border border-slate-400 p-1.5">
+                            <input
+                              type="text"
+                              value={receiptForm.payable_resident}
+                              onChange={e => handlePayableTaxChange('payable_resident', e.target.value)}
+                              placeholder="0"
+                              className="bg-[#F8F8F8] border border-slate-400 px-2 py-1 w-full text-[12px] text-right font-mono"
+                            />
+                          </td>
+                          <td className="border border-slate-400 p-1.5">
+                            <input
+                              type="text"
+                              value={receiptForm.payable_special}
+                              onChange={e =>
+                                setReceiptForm({ ...receiptForm, payable_special: formatWithCommas(e.target.value) })
+                              }
+                              placeholder="=[6]+[7]"
+                              className="bg-blue-50/60 border border-slate-400 px-2 py-1 w-full text-[12px] text-right font-mono font-bold"
+                            />
+                          </td>
+                        </tr>
 
-                    {/* Tax Payer Row 1 */}
-                    <tr>
-                      <td rowSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        Tax Payer
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">6) Name</td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.name}
-                          onChange={e => {
-                            const val = e.target.value.toUpperCase();
-                            setReceiptForm(prev => ({
-                              ...prev,
-                              name: val,
-                              reg_name: val,
-                            }));
-                          }}
-                          className="bg-[#D9EE99] border border-slate-400 px-1 py-0.5 w-[95px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">7) Resident-No.</td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.resident_no2}
-                          onChange={e => setReceiptForm({ ...receiptForm, resident_no2: e.target.value })}
-                          className="bg-[#D9EE99] border border-slate-400 px-1 py-0.5 w-[105px] text-[12px]"
-                        />
-                        <div className="text-[11px] text-slate-700 mt-0.5">- 빼고 입력하세요.</div>
-                      </td>
-                      <td rowSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        9) Taxation Period
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white space-y-1">
-                        <div className="flex flex-wrap gap-1">
+                        {/* Row 3 & 4: Service Fee & Year-end settlement Fee */}
+                        <tr className="h-[34px]">
+                          <td rowSpan={2} className="border border-slate-400 bg-white px-2"></td>
+                          <td className="border border-slate-400 bg-[#DCE6F1] font-medium px-2">
+                            [8] Monthly service Fee
+                          </td>
+                          <td className="border border-slate-400 p-1.5">
+                            <input
+                              type="text"
+                              value={receiptForm.service_fee}
+                              onChange={e =>
+                                setReceiptForm({ ...receiptForm, service_fee: formatWithCommas(e.target.value) })
+                              }
+                              placeholder="30,000"
+                              className="bg-[#D9EE99] border border-slate-400 px-2 py-1 w-full text-[12px] text-right font-mono font-semibold"
+                            />
+                          </td>
+                        </tr>
+                        <tr className="h-[34px]">
+                          <td className="border border-slate-400 bg-[#DCE6F1] font-medium px-2">
+                            [9] Year-end settlement Fee
+                          </td>
+                          <td className="border border-slate-400 p-1.5">
+                            <input
+                              type="text"
+                              value={receiptForm.yearend_fee}
+                              onChange={e =>
+                                setReceiptForm({ ...receiptForm, yearend_fee: formatWithCommas(e.target.value) })
+                              }
+                              placeholder="0"
+                              className="bg-[#F8F8F8] border border-slate-400 px-2 py-1 w-full text-[12px] text-right font-mono"
+                            />
+                          </td>
+                        </tr>
+
+                        {/* Row 5: [10] Grand total amount */}
+                        <tr className="h-[44px]">
+                          <td colSpan={2} className="border border-slate-400 bg-[#DCE6F1] font-semibold px-2">
+                            [10] Grand total amount
+                          </td>
+                          <td className="border border-slate-400 px-3 font-bold text-[13px] text-right font-mono bg-emerald-50/50">
+                            {(() => {
+                              const totalTax =
+                                parseCommaNum(receiptForm.payable_income) + parseCommaNum(receiptForm.payable_resident) >
+                                0
+                                  ? parseCommaNum(receiptForm.payable_income) +
+                                    parseCommaNum(receiptForm.payable_resident)
+                                  : parseCommaNum(receiptForm.payable_special);
+                              const grand =
+                                totalTax +
+                                parseCommaNum(receiptForm.service_fee) +
+                                parseCommaNum(receiptForm.yearend_fee);
+                              return grand > 0 ? `₩${grand.toLocaleString('en-US')}` : '₩0';
+                            })()}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Certification & Issue Date Footer */}
+                  <div className="pt-2 space-y-2 border-t border-slate-200">
+                    <div className="text-[11.5px] text-slate-800">
+                      We hereby certify that the above wage and salary income tax has been duly withheld and paid
+                      <br />
+                      to the National Tax Service.
+                    </div>
+
+                    <div className="flex justify-between items-end pt-1">
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-semibold w-[80px]">Issue Date :</span>
                           <select
-                            value={receiptForm.tax_year}
-                            onChange={e => setReceiptForm({ ...receiptForm, tax_year: Number(e.target.value) })}
-                            className="bg-[#F3F3F3] border border-slate-400 text-[11px] px-1 py-0.5"
+                            value={receiptForm.reg_year}
+                            onChange={e => setReceiptForm({ ...receiptForm, reg_year: Number(e.target.value) })}
+                            className="bg-[#F3F3F3] border border-slate-400 text-[12px] px-1.5 py-0.5"
                           >
                             {YEAR_OPTIONS.map(y => (
                               <option key={y} value={y}>
-                                {y} 년
+                                {y}
                               </option>
                             ))}
                           </select>
+                          <span>.</span>
                           <select
-                            value={receiptForm.tax_month}
-                            onChange={e => setReceiptForm({ ...receiptForm, tax_month: Number(e.target.value) })}
-                            className="bg-[#F3F3F3] border border-slate-400 text-[11px] px-1 py-0.5"
+                            value={receiptForm.reg_month}
+                            onChange={e => setReceiptForm({ ...receiptForm, reg_month: Number(e.target.value) })}
+                            className="bg-[#F3F3F3] border border-slate-400 text-[12px] px-1.5 py-0.5"
                           >
                             {MONTH_OPTIONS.map(m => (
                               <option key={m} value={m}>
-                                {m} 월
+                                {String(m).padStart(2, '0')}
                               </option>
                             ))}
                           </select>
+                          <span>.</span>
                           <select
-                            value={receiptForm.tax_day}
-                            onChange={e => setReceiptForm({ ...receiptForm, tax_day: Number(e.target.value) })}
-                            className="bg-[#F3F3F3] border border-slate-400 text-[11px] px-1 py-0.5"
+                            value={receiptForm.reg_day}
+                            onChange={e => setReceiptForm({ ...receiptForm, reg_day: Number(e.target.value) })}
+                            className="bg-[#F3F3F3] border border-slate-400 text-[12px] px-1.5 py-0.5"
                           >
                             {DAY_OPTIONS.map(d => (
                               <option key={d} value={d}>
-                                {d} 일
+                                {String(d).padStart(2, '0')}
                               </option>
                             ))}
                           </select>
                         </div>
-                      </td>
-                    </tr>
 
-                    {/* Tax Payer Row 2 */}
-                    <tr>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">8) Address</td>
-                      <td colSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.address2}
-                          onChange={e => setReceiptForm({ ...receiptForm, address2: e.target.value })}
-                          className="bg-[#F8F8F8] border border-slate-400 px-1.5 py-0.5 w-full text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                    </tr>
-
-                    {/* Working Place Income Header */}
-                    <tr>
-                      <td rowSpan={4} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        Working Place
-                        <br />
-                        Income
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">10) Working-Division</td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">11) Company-Name</td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">12) Basic Salary</td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">13) Bonus</td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">14) Overseas Allowance</td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">15) Total Salary</td>
-                    </tr>
-
-                    {/* (101) Local */}
-                    <tr>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">(101) Local</td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.local_name}
-                          onChange={e => setReceiptForm({ ...receiptForm, local_name: e.target.value })}
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-full text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.local_basicsalary}
-                          onChange={e =>
-                            setReceiptForm({ ...receiptForm, local_basicsalary: formatWithCommas(e.target.value) })
-                          }
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[90px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.local_bonus}
-                          onChange={e =>
-                            setReceiptForm({ ...receiptForm, local_bonus: formatWithCommas(e.target.value) })
-                          }
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[90px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.local_income}
-                          onChange={e =>
-                            setReceiptForm({ ...receiptForm, local_income: formatWithCommas(e.target.value) })
-                          }
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[90px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.local_totalsalary}
-                          onChange={e =>
-                            setReceiptForm({ ...receiptForm, local_totalsalary: formatWithCommas(e.target.value) })
-                          }
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[95px] text-[12px]"
-                        />
-                      </td>
-                    </tr>
-
-                    {/* (102) Overseas */}
-                    <tr>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">(102) Overseas</td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.overseas_name}
-                          onChange={e => setReceiptForm({ ...receiptForm, overseas_name: e.target.value })}
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-full text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.overseas_basicsalary}
-                          onChange={e => handleOverseasSalaryChange('overseas_basicsalary', e.target.value)}
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[90px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.overseas_bonus}
-                          onChange={e => handleOverseasSalaryChange('overseas_bonus', e.target.value)}
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[90px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.overseas_income}
-                          onChange={e => handleOverseasSalaryChange('overseas_income', e.target.value)}
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[90px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.overseas_totalsalary}
-                          onChange={e =>
-                            setReceiptForm({ ...receiptForm, overseas_totalsalary: formatWithCommas(e.target.value) })
-                          }
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[95px] text-[12px]"
-                        />
-                      </td>
-                    </tr>
-
-                    {/* (103) TOTAL-SALARY */}
-                    <tr>
-                      <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        (103) TOTAL-SALARY
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.total_basicsalary}
-                          onChange={e =>
-                            setReceiptForm({ ...receiptForm, total_basicsalary: formatWithCommas(e.target.value) })
-                          }
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[90px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.total_bonus}
-                          onChange={e =>
-                            setReceiptForm({ ...receiptForm, total_bonus: formatWithCommas(e.target.value) })
-                          }
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[90px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.total_income}
-                          onChange={e =>
-                            setReceiptForm({ ...receiptForm, total_income: formatWithCommas(e.target.value) })
-                          }
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[90px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.total_totalsalary}
-                          onChange={e =>
-                            setReceiptForm({ ...receiptForm, total_totalsalary: formatWithCommas(e.target.value) })
-                          }
-                          className="bg-[#F8F8F8] border border-slate-400 px-1 py-0.5 w-[95px] text-[12px]"
-                        />
-                      </td>
-                    </tr>
-
-                    {/* Spacer Row */}
-                    <tr>
-                      <td colSpan={7} className="border border-[#CCCCCC] h-[10px] p-0 bg-white"></td>
-                    </tr>
-
-                    {/* COMPUTED THE ITEMS Header */}
-                    <tr>
-                      <td colSpan={7} className="border border-[#CCCCCC] p-1.5 bg-white text-center">
-                        C O M P U T E D &nbsp;&nbsp;T H E &nbsp;&nbsp; I T E M S
-                      </td>
-                    </tr>
-
-                    {/* 16) Total salary & PAYABLE TAX */}
-                    <tr>
-                      <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        16) Total salary
-                      </td>
-                      <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.total_salary}
-                          onChange={e =>
-                            setReceiptForm({ ...receiptForm, total_salary: formatWithCommas(e.target.value) })
-                          }
-                          className="bg-[#F8F8F8] border border-slate-400 px-1.5 py-0.5 w-[150px] text-[12px]"
-                        />
-                      </td>
-                      <td colSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white text-center">
-                        PAYABLE TAX
-                      </td>
-                    </tr>
-
-                    {/* 17) Non Taxable Salary & 22) Income - Tax */}
-                    <tr>
-                      <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        17) Non Taxable Salary
-                      </td>
-                      <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.non_taxable_salary}
-                          onChange={e =>
-                            setReceiptForm({ ...receiptForm, non_taxable_salary: formatWithCommas(e.target.value) })
-                          }
-                          className="bg-[#F8F8F8] border border-slate-400 px-1.5 py-0.5 w-[150px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">22) Income - Tax</td>
-                      <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.payable_income}
-                          onChange={e =>
-                            setReceiptForm({ ...receiptForm, payable_income: formatWithCommas(e.target.value) })
-                          }
-                          className="bg-[#F8F8F8] border border-slate-400 px-1.5 py-0.5 w-[110px] text-[12px]"
-                        />
-                      </td>
-                    </tr>
-
-                    {/* 18) Computed-tax & 23) Local Income Tax */}
-                    <tr>
-                      <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        18) Computed-tax
-                      </td>
-                      <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.computed_tax}
-                          onChange={e => handleTaxCalculationChange('computed_tax', e.target.value)}
-                          className="bg-[#F8F8F8] border border-slate-400 px-1.5 py-0.5 w-[150px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">23) Local Income Tax</td>
-                      <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.payable_resident}
-                          onChange={e =>
-                            setReceiptForm({ ...receiptForm, payable_resident: formatWithCommas(e.target.value) })
-                          }
-                          className="bg-[#F8F8F8] border border-slate-400 px-1.5 py-0.5 w-[110px] text-[12px]"
-                        />
-                      </td>
-                    </tr>
-
-                    {/* Tax Deduction Row 1: 19) Paid-tax in overseas & 24) Payable - Tax */}
-                    <tr>
-                      <td rowSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        Tax
-                        <br />
-                        Deduction
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">19) Paid-tax in overseas</td>
-                      <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.deduction_overseas}
-                          onChange={e => handleTaxCalculationChange('deduction_overseas', e.target.value)}
-                          className="bg-[#F8F8F8] border border-slate-400 px-1.5 py-0.5 w-[180px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">24) Payable - Tax</td>
-                      <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.payable_special}
-                          onChange={e =>
-                            setReceiptForm({ ...receiptForm, payable_special: formatWithCommas(e.target.value) })
-                          }
-                          className="bg-[#F8F8F8] border border-slate-400 px-1.5 py-0.5 w-[110px] text-[12px]"
-                        />
-                      </td>
-                    </tr>
-
-                    {/* Tax Deduction Row 2: 20) B-class deduction */}
-                    <tr>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">20) B-class deduction</td>
-                      <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                        <input
-                          type="text"
-                          value={receiptForm.deduction_deduction}
-                          onChange={e => handleTaxCalculationChange('deduction_deduction', e.target.value)}
-                          className="bg-[#F8F8F8] border border-slate-400 px-1.5 py-0.5 w-[180px] text-[12px]"
-                        />
-                      </td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                      <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                    </tr>
-
-                    {/* Tax Deduction Row 3: 21) */}
-                    <tr>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">21)</td>
-                      <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                      <td className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                      <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                    </tr>
-
-                    {/* Footer Row: Paid the above tax amount + Date Selects + To + Stamp Image */}
-                    <tr>
-                      <td colSpan={7} className="border border-[#CCCCCC] p-2 bg-white">
-                        <div className="flex justify-between items-center">
-                          <div className="space-y-1 leading-relaxed">
-                            <div>Paid the above tax amount.</div>
-                            <div className="flex items-center space-x-1">
-                              <select
-                                value={receiptForm.reg_year}
-                                onChange={e => setReceiptForm({ ...receiptForm, reg_year: Number(e.target.value) })}
-                                className="bg-[#F3F3F3] border border-slate-400 text-[11px] px-1 py-0.5"
-                              >
-                                {YEAR_OPTIONS.map(y => (
-                                  <option key={y} value={y}>
-                                    {y} 년
-                                  </option>
-                                ))}
-                              </select>
-                              <select
-                                value={receiptForm.reg_month}
-                                onChange={e => setReceiptForm({ ...receiptForm, reg_month: Number(e.target.value) })}
-                                className="bg-[#F3F3F3] border border-slate-400 text-[11px] px-1 py-0.5"
-                              >
-                                {MONTH_OPTIONS.map(m => (
-                                  <option key={m} value={m}>
-                                    {m} 월
-                                  </option>
-                                ))}
-                              </select>
-                              <select
-                                value={receiptForm.reg_day}
-                                onChange={e => setReceiptForm({ ...receiptForm, reg_day: Number(e.target.value) })}
-                                className="bg-[#F3F3F3] border border-slate-400 text-[11px] px-1 py-0.5"
-                              >
-                                {DAY_OPTIONS.map(d => (
-                                  <option key={d} value={d}>
-                                    {d} 일
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <div>
-                              To :{' '}
-                              <input
-                                type="text"
-                                value={receiptForm.reg_name}
-                                onChange={e => setReceiptForm({ ...receiptForm, reg_name: e.target.value })}
-                                className="bg-[#F8F8F8] border border-slate-400 px-1.5 py-0.5 w-[180px] text-[12px]"
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <img
-                              src="/img/icon_receipt.gif"
-                              width={254}
-                              height={52}
-                              alt="Chairman of Geoje Taxpayers Association"
-                            />
-                          </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-semibold w-[80px]">Taxpayer :</span>
+                          <input
+                            type="text"
+                            value={receiptForm.reg_name}
+                            onChange={e => setReceiptForm({ ...receiptForm, reg_name: e.target.value })}
+                            className="bg-[#F8F8F8] border border-slate-400 px-2 py-1 w-[220px] text-[12px]"
+                          />
                         </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <span className="text-[12px] font-medium tracking-wider">GEOGE TAXPAYER ASSOCIATION</span>
+                        <img
+                          src="/img/official_seal.png"
+                          alt="Geoje Taxpayer Association Official Seal"
+                          className="w-[68px] h-[68px] object-contain"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex justify-center items-center space-x-2 pt-4">
+              <div className="flex flex-wrap justify-center items-center gap-2.5 pt-3 border-t border-slate-200">
                 <button
                   type="submit"
-                  className="bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs px-6 py-1.5 border border-blue-900 cursor-pointer"
+                  className="bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs px-6 py-2 rounded-lg shadow cursor-pointer"
                 >
-                  SEND (저장)
+                  저장
+                </button>
+                <button
+                  type="button"
+                  onClick={() => submitReceiptData(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 py-2 rounded-lg shadow flex items-center space-x-1.5 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>저장 후 PDF 다운로드</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowReceiptFormModal(false)}
-                  className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs px-6 py-1.5 border border-slate-400 cursor-pointer"
+                  className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs px-6 py-2 rounded-lg cursor-pointer"
                 >
-                  CANCEL (취소)
+                  취소
                 </button>
               </div>
             </form>
@@ -2998,24 +2956,36 @@ export default function AdminPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 3: LEGACY PRINTABLE RECEIPT VIEW (Exact match to page/view_receipt.html) */}
+      {/* MODAL 3: PRINTABLE RECEIPT VIEW (Matching GTA Excel Sample) */}
       {/* ========================================================================= */}
       {selectedPrintReceipt && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:static print:bg-white print:p-0">
-          <div className="bg-white border-2 border-slate-500 shadow-2xl max-w-[850px] w-full p-3 sm:p-5 my-4 print:shadow-none print:border-0 print:my-0 print:max-w-full print:p-0">
+          <div className="bg-white border-2 border-slate-500 shadow-2xl max-w-[780px] w-full p-3 sm:p-5 my-4 print:shadow-none print:border-0 print:my-0 print:max-w-full print:p-0">
             {/* Action Bar (Hidden when printing) */}
             <div className="flex justify-between items-center pb-2.5 mb-2.5 border-b border-slate-300 print:hidden">
               <span className="text-xs font-bold text-slate-700">
-                RECEIPT VIEW (#{selectedPrintReceipt.id} — {selectedPrintReceipt.name})
+                RECEIPT VIEW #{selectedPrintReceipt.id} — {selectedPrintReceipt.name}
               </span>
               <div className="flex items-center space-x-2">
                 <button
                   type="button"
+                  onClick={() => {
+                    if (receiptPrintRef.current) {
+                      downloadReceiptPdf(receiptPrintRef.current, selectedPrintReceipt);
+                    }
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-1.5 flex items-center space-x-1.5 shadow cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>PDF 저장</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => window.print()}
-                  className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold px-3.5 py-1 flex items-center space-x-1 cursor-pointer"
+                  className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold px-3.5 py-1.5 flex items-center space-x-1.5 shadow cursor-pointer"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  <span>인쇄하기 (Print)</span>
+                  <span>인쇄하기</span>
                 </button>
                 <button
                   type="button"
@@ -3024,261 +2994,22 @@ export default function AdminPage() {
                     setSelectedPrintReceipt(null);
                     handleOpenEditReceipt(r);
                   }}
-                  className="bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold px-3 py-1 cursor-pointer"
+                  className="bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold px-3 py-1.5 cursor-pointer"
                 >
-                  수정 (MODIFY)
+                  수정
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedPrintReceipt(null)}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-1 cursor-pointer"
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-1.5 cursor-pointer"
                 >
                   ✕ 닫기
                 </button>
               </div>
             </div>
 
-            {/* Exact 7-Column Legacy Table (view_receipt.html) */}
-            <div className="overflow-x-auto">
-              <table className="w-[800px] mx-auto border-collapse border border-[#CCCCCC] text-[12px] text-black bg-white">
-                <tbody>
-                  <tr>
-                    <td colSpan={7} className="border border-[#CCCCCC] p-2 bg-white">
-                      <div className="text-center text-[15px] font-bold text-[#333333] py-1">
-                        RECEIPT FOR CLASS &quot;B&quot; INCOME TAX (MONTHLY)
-                      </div>
-                      <div className="pt-1 text-[12px]">
-                        Management No: {selectedPrintReceipt.management_no}
-                      </div>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td rowSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white w-[80px]">
-                      Tax Dutyer
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white w-[100px]">1) License-No.</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white w-[100px]">
-                      {selectedPrintReceipt.license_no || '612-80-03137'}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white w-[110px]">2) Association-Name</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white w-[120px]">
-                      {selectedPrintReceipt.association_name || 'Geoje Taxpayers Association'}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white w-[105px]">3) Chairman-Name</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.chairman_name || 'Kim Se- Kwang'}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">4) Resident-No.</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.resident_no1 || '710925-*******'}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">5) Address</td>
-                    <td colSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.address1 || '#107, 3696 Geoje-daero, Geoje-city Gyeongnam Korea'}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td rowSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      Tax Payer
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">6) Name</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">{selectedPrintReceipt.name}</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">7) Resident-No.</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">{selectedPrintReceipt.resident_no2}</td>
-                    <td rowSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      9) Taxation Period
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {formatUnixMonthDot(selectedPrintReceipt.taxation_period)}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">8) Address</td>
-                    <td colSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.address2}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                  </tr>
-
-                  <tr>
-                    <td rowSpan={4} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      Working Place
-                      <br />
-                      Income
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">10) Working-Division</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">11) Company-Name</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">12) Basic Salary</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">13) Bonus</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">14) Overseas Allowance</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">15) Total Salary</td>
-                  </tr>
-
-                  <tr>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">(101) Local</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">{selectedPrintReceipt.local_name}</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.local_basicsalary !== '0' ? selectedPrintReceipt.local_basicsalary : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.local_bonus !== '0' ? selectedPrintReceipt.local_bonus : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.local_income !== '0' ? selectedPrintReceipt.local_income : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.local_totalsalary !== '0' ? selectedPrintReceipt.local_totalsalary : ''}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">(102) Overseas</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">{selectedPrintReceipt.overseas_name}</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.overseas_basicsalary !== '0'
-                        ? selectedPrintReceipt.overseas_basicsalary
-                        : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.overseas_bonus !== '0' ? selectedPrintReceipt.overseas_bonus : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.overseas_income !== '0' ? selectedPrintReceipt.overseas_income : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.overseas_totalsalary !== '0'
-                        ? selectedPrintReceipt.overseas_totalsalary
-                        : ''}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      (103) TOTAL-SALARY
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.total_basicsalary !== '0' ? selectedPrintReceipt.total_basicsalary : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.total_bonus !== '0' ? selectedPrintReceipt.total_bonus : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.total_income !== '0' ? selectedPrintReceipt.total_income : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.total_totalsalary !== '0' ? selectedPrintReceipt.total_totalsalary : ''}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td colSpan={7} className="border border-[#CCCCCC] h-[10px] p-0 bg-white"></td>
-                  </tr>
-
-                  <tr>
-                    <td colSpan={7} className="border border-[#CCCCCC] p-1.5 bg-white text-center">
-                      C O M P U T E D &nbsp;&nbsp;T H E &nbsp;&nbsp; I T E M S
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      16) Total salary
-                    </td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.total_salary !== '0' ? selectedPrintReceipt.total_salary : ''}
-                    </td>
-                    <td colSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white text-center">
-                      PAYABLE TAX
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      17) Non Taxable Salary
-                    </td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.non_taxable_salary !== '0' ? selectedPrintReceipt.non_taxable_salary : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">22) Income - Tax</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.payable_income}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      18) Computed-tax
-                    </td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.computed_tax}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">23) Local Income Tax</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.payable_resident}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td rowSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      Tax
-                      <br />
-                      Deduction
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">19) Paid-tax in overseas</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.deduction_overseas !== '0' ? selectedPrintReceipt.deduction_overseas : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">24) Payable - Tax</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.payable_special}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">20) B-class deduction</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedPrintReceipt.deduction_deduction !== '0' ? selectedPrintReceipt.deduction_deduction : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                  </tr>
-
-                  <tr>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">21)</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                  </tr>
-
-                  <tr>
-                    <td colSpan={7} className="border border-[#CCCCCC] p-2 bg-white">
-                      <div className="flex justify-between items-center">
-                        <div className="leading-relaxed">
-                          Paid the above tax amount.
-                          <br />
-                          {formatUnixDateDot(selectedPrintReceipt.reg_date)}
-                          <br />
-                          To : {selectedPrintReceipt.reg_name || selectedPrintReceipt.name}
-                        </div>
-                        <div>
-                          <img
-                            src="/img/icon_receipt.gif"
-                            width={254}
-                            height={52}
-                            alt="Chairman of Geoje Taxpayers Association"
-                          />
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div className="overflow-x-auto print:overflow-visible">
+              <ReceiptDocument receipt={selectedPrintReceipt} containerRef={receiptPrintRef} />
             </div>
           </div>
         </div>

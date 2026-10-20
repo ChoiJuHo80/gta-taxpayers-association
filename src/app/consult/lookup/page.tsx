@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, FileText, CheckCircle2, AlertCircle, Printer, User, CreditCard, Building2, Calendar, X, LogOut } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Search, FileText, CheckCircle2, AlertCircle, Printer, Download, User, CreditCard, LogOut } from 'lucide-react';
 import { ApplicationMember, TaxReceipt } from '@/lib/db';
+import ReceiptDocument, { downloadReceiptPdf } from '@/components/ReceiptDocument';
 
 function formatUnixMonth(val?: string): string {
   if (!val) return '-';
@@ -38,6 +39,7 @@ export default function LookupPage() {
   const [receipts, setReceipts] = useState<TaxReceipt[] | null>(null);
   const [selectedReceipt, setSelectedReceipt] = useState<TaxReceipt | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const receiptPrintRef = useRef<HTMLDivElement | null>(null);
 
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +89,7 @@ export default function LookupPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8 print:p-0 print:m-0 print:space-y-0 print:max-w-none">
       {/* Login / Lookup Card */}
       <div className="bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-slate-200 space-y-6 print:hidden">
         <div className="border-b border-slate-200 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -280,10 +282,10 @@ export default function LookupPage() {
         </div>
       )}
 
-      {/* Official Printable Tax Withholding Receipt Modal (Exact Legacy view_receipt.html) */}
+      {/* Official Printable Tax Withholding Receipt Modal */}
       {selectedReceipt && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:static print:bg-white print:p-0">
-          <div className="bg-white border-2 border-slate-500 shadow-2xl max-w-[850px] w-full p-3 sm:p-5 my-4 print:shadow-none print:border-0 print:my-0 print:max-w-full print:p-0">
+          <div className="bg-white border-2 border-slate-500 shadow-2xl max-w-[780px] w-full p-3 sm:p-5 my-4 print:shadow-none print:border-0 print:my-0 print:max-w-full print:p-0">
             {/* Modal Action Bar (Hidden when printing) */}
             <div className="flex justify-between items-center border-b border-slate-300 pb-2.5 mb-2.5 print:hidden">
               <div className="flex items-center space-x-2">
@@ -294,11 +296,23 @@ export default function LookupPage() {
               <div className="flex items-center space-x-2">
                 <button
                   type="button"
+                  onClick={() => {
+                    if (receiptPrintRef.current) {
+                      downloadReceiptPdf(receiptPrintRef.current, selectedReceipt);
+                    }
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-1.5 flex items-center space-x-1.5 shadow cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Save PDF</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => window.print()}
                   className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold px-4 py-1.5 flex items-center space-x-1.5 shadow cursor-pointer"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  <span>Print Receipt (인쇄)</span>
+                  <span>Print Receipt</span>
                 </button>
                 <button
                   type="button"
@@ -310,243 +324,8 @@ export default function LookupPage() {
               </div>
             </div>
 
-            {/* Exact 7-Column Legacy Table (view_receipt.html) */}
-            <div className="overflow-x-auto">
-              <table className="w-[800px] mx-auto border-collapse border border-[#CCCCCC] text-[12px] text-black bg-white">
-                <tbody>
-                  <tr>
-                    <td colSpan={7} className="border border-[#CCCCCC] p-2 bg-white">
-                      <div className="text-center text-[15px] font-bold text-[#333333] py-1">
-                        RECEIPT FOR CLASS &quot;B&quot; INCOME TAX (MONTHLY)
-                      </div>
-                      <div className="pt-1 text-[12px]">
-                        Management No: {selectedReceipt.management_no}
-                      </div>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td rowSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white w-[80px]">
-                      Tax Dutyer
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white w-[100px]">1) License-No.</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white w-[100px]">
-                      {selectedReceipt.license_no || '612-80-03137'}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white w-[110px]">2) Association-Name</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white w-[120px]">
-                      {selectedReceipt.association_name || 'Geoje Taxpayers Association'}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white w-[105px]">3) Chairman-Name</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.chairman_name || 'Kim Se- Kwang'}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">4) Resident-No.</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.resident_no1 || '710925-*******'}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">5) Address</td>
-                    <td colSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.address1 || '#107, 3696 Geoje-daero, Geoje-city Gyeongnam Korea'}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td rowSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      Tax Payer
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">6) Name</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">{selectedReceipt.name}</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">7) Resident-No.</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">{selectedReceipt.resident_no2}</td>
-                    <td rowSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      9) Taxation Period
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {formatUnixMonth(selectedReceipt.taxation_period).replace('-', '. ')}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">8) Address</td>
-                    <td colSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.address2}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                  </tr>
-
-                  <tr>
-                    <td rowSpan={4} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      Working Place
-                      <br />
-                      Income
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">10) Working-Division</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">11) Company-Name</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">12) Basic Salary</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">13) Bonus</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">14) Overseas Allowance</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">15) Total Salary</td>
-                  </tr>
-
-                  <tr>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">(101) Local</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">{selectedReceipt.local_name}</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.local_basicsalary !== '0' ? selectedReceipt.local_basicsalary : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.local_bonus !== '0' ? selectedReceipt.local_bonus : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.local_income !== '0' ? selectedReceipt.local_income : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.local_totalsalary !== '0' ? selectedReceipt.local_totalsalary : ''}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">(102) Overseas</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">{selectedReceipt.overseas_name}</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.overseas_basicsalary !== '0' ? selectedReceipt.overseas_basicsalary : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.overseas_bonus !== '0' ? selectedReceipt.overseas_bonus : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.overseas_income !== '0' ? selectedReceipt.overseas_income : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.overseas_totalsalary !== '0' ? selectedReceipt.overseas_totalsalary : ''}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      (103) TOTAL-SALARY
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.total_basicsalary !== '0' ? selectedReceipt.total_basicsalary : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.total_bonus !== '0' ? selectedReceipt.total_bonus : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.total_income !== '0' ? selectedReceipt.total_income : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.total_totalsalary !== '0' ? selectedReceipt.total_totalsalary : ''}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td colSpan={7} className="border border-[#CCCCCC] h-[10px] p-0 bg-white"></td>
-                  </tr>
-
-                  <tr>
-                    <td colSpan={7} className="border border-[#CCCCCC] p-1.5 bg-white text-center">
-                      C O M P U T E D &nbsp;&nbsp;T H E &nbsp;&nbsp; I T E M S
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      16) Total salary
-                    </td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.total_salary !== '0' ? selectedReceipt.total_salary : ''}
-                    </td>
-                    <td colSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white text-center">
-                      PAYABLE TAX
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      17) Non Taxable Salary
-                    </td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.non_taxable_salary !== '0' ? selectedReceipt.non_taxable_salary : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">22) Income - Tax</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.payable_income}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      18) Computed-tax
-                    </td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.computed_tax}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">23) Local Income Tax</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.payable_resident}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td rowSpan={3} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      Tax
-                      <br />
-                      Deduction
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">19) Paid-tax in overseas</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.deduction_overseas !== '0' ? selectedReceipt.deduction_overseas : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">24) Payable - Tax</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.payable_special}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">20) B-class deduction</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">
-                      {selectedReceipt.deduction_deduction !== '0' ? selectedReceipt.deduction_deduction : ''}
-                    </td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                  </tr>
-
-                  <tr>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">21)</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                    <td className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                    <td colSpan={2} className="border border-[#CCCCCC] p-1.5 bg-white">&nbsp;</td>
-                  </tr>
-
-                  <tr>
-                    <td colSpan={7} className="border border-[#CCCCCC] p-2 bg-white">
-                      <div className="flex justify-between items-center">
-                        <div className="leading-relaxed">
-                          Paid the above tax amount.
-                          <br />
-                          {formatUnixDate(selectedReceipt.reg_date).replace(/-/g, '. ')}
-                          <br />
-                          To : {selectedReceipt.reg_name || selectedReceipt.name}
-                        </div>
-                        <div>
-                          <img
-                            src="/img/icon_receipt.gif"
-                            width={254}
-                            height={52}
-                            alt="Chairman of Geoje Taxpayers Association"
-                          />
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div className="overflow-x-auto print:overflow-visible">
+              <ReceiptDocument receipt={selectedReceipt} containerRef={receiptPrintRef} />
             </div>
           </div>
         </div>

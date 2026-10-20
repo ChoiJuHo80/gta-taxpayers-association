@@ -106,6 +106,8 @@ export interface TaxReceipt {
   reg_date: string;
   reg_name: string;
   non_taxable_salary: string;
+  service_fee?: string;
+  yearend_fee?: string;
 }
 
 // Global Store Simulation for Development & Hybrid DB fallback
@@ -651,7 +653,7 @@ export async function createReceipt(data: Partial<TaxReceipt>): Promise<TaxRecei
       total_basicsalary, total_bonus, total_income, total_totalsalary, total_salary,
       computed_tax, deduction_overseas, deduction_deduction,
       payable_income, payable_resident, payable_special,
-      reg_date, reg_name, non_taxable_salary
+      reg_date, reg_name, non_taxable_salary, service_fee, yearend_fee
     ) VALUES (
       $1,$2,$3,$4,$5,$6,
       $7,$8,$9,$10,$11,$12,
@@ -660,17 +662,17 @@ export async function createReceipt(data: Partial<TaxReceipt>): Promise<TaxRecei
       $23,$24,$25,$26,$27,
       $28,$29,$30,
       $31,$32,$33,
-      $34,$35,$36
+      $34,$35,$36,$37,$38
     ) RETURNING *`,
     [
       nextId,
       data.member_num ?? '',
       data.management_no ?? '',
       data.license_no || '612-80-03137',
-      data.association_name || 'Geoje Taxpayers Association',
-      data.chairman_name || 'Kim Se- Kwang',
+      data.association_name || 'Geoje Taxpayer Association',
+      data.chairman_name || 'kim Se Kwang',
       data.resident_no1 || '710925-*******',
-      data.address1 || '#107, 3696 Geoje-daero, Geoje-city Gyeongnam Korea',
+      data.address1 || '#107, 3696 Geoje-daero, Geoje-city gyeongnam Korea',
       (data.name ?? '').toUpperCase(),
       data.resident_no2 ?? '',
       data.address2 ?? '',
@@ -698,7 +700,9 @@ export async function createReceipt(data: Partial<TaxReceipt>): Promise<TaxRecei
       data.payable_special ?? '',
       data.reg_date || nowUnix,
       data.reg_name ?? (data.name ?? '').toUpperCase(),
-      data.non_taxable_salary ?? ''
+      data.non_taxable_salary ?? '',
+      data.service_fee ?? '30,000',
+      data.yearend_fee ?? ''
     ]
   );
   return res.rows[0];
@@ -746,8 +750,10 @@ export async function updateReceipt(id: number, data: Partial<TaxReceipt>): Prom
       association_name = $32,
       chairman_name = $33,
       resident_no1 = $34,
-      address1 = $35
-     WHERE id = $36
+      address1 = $35,
+      service_fee = $36,
+      yearend_fee = $37
+     WHERE id = $38
      RETURNING *`,
     [
       data.member_num ?? ex.member_num,
@@ -785,6 +791,8 @@ export async function updateReceipt(id: number, data: Partial<TaxReceipt>): Prom
       data.chairman_name ?? ex.chairman_name,
       data.resident_no1 ?? ex.resident_no1,
       data.address1 ?? ex.address1,
+      data.service_fee ?? ex.service_fee ?? '30,000',
+      data.yearend_fee ?? ex.yearend_fee ?? '',
       id
     ]
   );

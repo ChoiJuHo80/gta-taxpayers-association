@@ -18,12 +18,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen flex flex-col antialiased relative">
+      <body className="min-h-screen print:min-h-0 flex flex-col antialiased relative">
         <Header />
         <main className="flex-1">{children}</main>
-        <Footer />
-        <ConsultFloatingWidget />
-        <NtsFloatingWidget />
+        <div className="print:hidden">
+          <Footer />
+          <ConsultFloatingWidget />
+          <NtsFloatingWidget />
+        </div>
       </body>
     </html>
   );
