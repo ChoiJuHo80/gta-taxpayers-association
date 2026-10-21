@@ -366,26 +366,23 @@ export async function getMemberById(id: number): Promise<ApplicationMember | und
 
 export async function createMember(data: Partial<ApplicationMember>): Promise<ApplicationMember> {
   if (!pool) throw new Error('Database not connected');
-  const maxRes = await pool.query(`SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM applicationform`);
-  const nextId = maxRes.rows[0].next_id;
   const nowUnix = String(Math.floor(Date.now() / 1000));
 
   const res = await pool.query(
     `INSERT INTO applicationform (
-      id, name, number, address, email, company, nationality, phon,
+      name, number, address, email, company, nationality, phon,
       date_from, date_to, married, age, spouse,
       money_01, money_02, money_03, money_04,
       name2, name3, date_end, family_txt, other_worked, remark,
       work_place, project_name, worked_before_2004
     ) VALUES (
-      $1,$2,$3,$4,$5,$6,$7,$8,
-      $9,$10,$11,$12,$13,
-      $14,$15,$16,$17,
-      $18,$19,$20,$21,$22,$23,
-      $24,$25,$26
+      $1,$2,$3,$4,$5,$6,$7,
+      $8,$9,$10,$11,$12,
+      $13,$14,$15,$16,
+      $17,$18,$19,$20,$21,$22,
+      $23,$24,$25
     ) RETURNING *`,
     [
-      nextId,
       (data.name || '').toUpperCase(),
       data.number || '',
       data.address || '',
@@ -655,13 +652,11 @@ export async function getReceipts(params: {
 
 export async function createReceipt(data: Partial<TaxReceipt>): Promise<TaxReceipt> {
   if (!pool) throw new Error('Database not connected');
-  const maxRes = await pool.query(`SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM receipt`);
-  const nextId = maxRes.rows[0].next_id;
   const nowUnix = String(Math.floor(Date.now() / 1000));
 
   const res = await pool.query(
     `INSERT INTO receipt (
-      id, member_num, management_no, license_no, association_name, chairman_name,
+      member_num, management_no, license_no, association_name, chairman_name,
       resident_no1, address1, name, resident_no2, address2, taxation_period,
       local_name, local_basicsalary, local_bonus, local_income, local_totalsalary,
       overseas_name, overseas_basicsalary, overseas_bonus, overseas_income, overseas_totalsalary,
@@ -670,17 +665,16 @@ export async function createReceipt(data: Partial<TaxReceipt>): Promise<TaxRecei
       payable_income, payable_resident, payable_special,
       reg_date, reg_name, non_taxable_salary, service_fee, yearend_fee, receipt_title
     ) VALUES (
-      $1,$2,$3,$4,$5,$6,
-      $7,$8,$9,$10,$11,$12,
-      $13,$14,$15,$16,$17,
-      $18,$19,$20,$21,$22,
-      $23,$24,$25,$26,$27,
-      $28,$29,$30,
-      $31,$32,$33,
-      $34,$35,$36,$37,$38,$39
+      $1,$2,$3,$4,$5,
+      $6,$7,$8,$9,$10,$11,
+      $12,$13,$14,$15,$16,
+      $17,$18,$19,$20,$21,
+      $22,$23,$24,$25,$26,
+      $27,$28,$29,
+      $30,$31,$32,
+      $33,$34,$35,$36,$37,$38
     ) RETURNING *`,
     [
-      nextId,
       data.member_num ?? '',
       data.management_no ?? '',
       data.license_no || '612-80-03137',
