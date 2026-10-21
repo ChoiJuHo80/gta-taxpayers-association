@@ -47,40 +47,86 @@ export function formatReceiptDate(val?: string): string {
   return val;
 }
 
-export async function downloadReceiptPdf(element: HTMLElement, receipt: TaxReceipt) {
+async function captureReceiptCanvas(element: HTMLElement): Promise<HTMLCanvasElement> {
   const html2canvas = (await import('html2canvas')).default;
-  const { jsPDF } = await import('jspdf');
 
-  const canvas = await html2canvas(element, {
-    scale: 2,
+  // Create isolated sandbox on body to eliminate any parent modal scroll, offsets, or background bleeding
+  const sandbox = document.createElement('div');
+  sandbox.style.position = 'fixed';
+  sandbox.style.left = '-9999px';
+  sandbox.style.top = '0';
+  sandbox.style.width = '700px';
+  sandbox.style.background = '#ffffff';
+  sandbox.style.margin = '0';
+  sandbox.style.padding = '12px 16px';
+  sandbox.style.boxSizing = 'border-box';
+  sandbox.style.zIndex = '-99999';
+
+  const clone = element.cloneNode(true) as HTMLElement;
+  clone.style.margin = '0';
+  clone.style.padding = '0';
+  clone.style.width = '100%';
+  clone.style.maxWidth = '100%';
+  clone.style.background = '#ffffff';
+  clone.style.boxShadow = 'none';
+  clone.style.border = 'none';
+
+  sandbox.appendChild(clone);
+  document.body.appendChild(sandbox);
+
+  // Ensure all images (official seal, logo) inside clone are fully loaded
+  const images = Array.from(sandbox.querySelectorAll('img'));
+  await Promise.all(
+    images.map(
+      img =>
+        new Promise(resolve => {
+          if (img.complete && img.naturalHeight !== 0) resolve(true);
+          else {
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(true);
+          }
+        })
+    )
+  );
+
+  // Ultra-high definition capture: 3.2x scale (~325 DPI, publication print standard)
+  const canvas = await html2canvas(sandbox, {
+    scale: 3.2,
     useCORS: true,
     backgroundColor: '#ffffff',
+    scrollX: 0,
+    scrollY: 0,
+    x: 0,
+    y: 0,
+    logging: false,
+    imageTimeout: 5000,
   });
 
-  const imgData = canvas.toDataURL('image/png');
+  document.body.removeChild(sandbox);
+  return canvas;
+}
+
+export async function downloadReceiptPdf(element: HTMLElement, receipt: TaxReceipt) {
+  const { jsPDF } = await import('jspdf');
+  const canvas = await captureReceiptCanvas(element);
+
+  const imgData = canvas.toDataURL('image/jpeg', 0.98);
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
     format: 'a4',
+    compress: true,
   });
 
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 12;
-  const maxW = pageWidth - margin * 2;
-  const maxH = pageHeight - margin * 2;
-
-  let renderW = maxW;
-  let renderH = (canvas.height * renderW) / canvas.width;
-  if (renderH > maxH) {
-    renderH = maxH;
-    renderW = (canvas.width * renderH) / canvas.height;
-  }
-
+  const pageWidth = 210;
+  // Professional A4 presentation width: 175mm (leaves balanced ~17.5mm left/right margins)
+  const renderW = 175;
+  const renderH = (canvas.height * renderW) / canvas.width;
   const x = (pageWidth - renderW) / 2;
-  const y = margin;
+  // Clean, professional top margin (14mm) - zero unwanted displacement
+  const y = 14;
 
-  pdf.addImage(imgData, 'PNG', x, y, renderW, renderH);
+  pdf.addImage(imgData, 'JPEG', x, y, renderW, renderH, undefined, 'FAST');
   const safeName = (receipt.name || 'MEMBER').replace(/[^A-Za-z0-9_-]/g, '_');
   const period = formatReceiptMonth(receipt.taxation_period).replace(/[^0-9]/g, '');
   pdf.save(`GTA_Receipt_${safeName}_${period || receipt.id}.pdf`);
@@ -92,45 +138,30 @@ export async function downloadReceiptsBundlePdf(
   onProgress?: (current: number, total: number) => void
 ) {
   if (!elements || elements.length === 0) return;
-  const html2canvas = (await import('html2canvas')).default;
   const { jsPDF } = await import('jspdf');
 
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
     format: 'a4',
+    compress: true,
   });
 
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 12;
-  const maxW = pageWidth - margin * 2;
-  const maxH = pageHeight - margin * 2;
+  const pageWidth = 210;
+  const renderW = 175;
+  const x = (pageWidth - renderW) / 2;
+  const y = 14;
 
   for (let i = 0; i < elements.length; i++) {
     if (onProgress) onProgress(i + 1, elements.length);
-    const el = elements[i];
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-    });
-
-    const imgData = canvas.toDataURL('image/png');
-    let renderW = maxW;
-    let renderH = (canvas.height * renderW) / canvas.width;
-    if (renderH > maxH) {
-      renderH = maxH;
-      renderW = (canvas.width * renderH) / canvas.height;
-    }
-
-    const x = (pageWidth - renderW) / 2;
-    const y = margin;
+    const canvas = await captureReceiptCanvas(elements[i]);
+    const imgData = canvas.toDataURL('image/jpeg', 0.98);
+    const renderH = (canvas.height * renderW) / canvas.width;
 
     if (i > 0) {
       pdf.addPage();
     }
-    pdf.addImage(imgData, 'PNG', x, y, renderW, renderH);
+    pdf.addImage(imgData, 'JPEG', x, y, renderW, renderH, undefined, 'FAST');
   }
 
   pdf.save(filename);
