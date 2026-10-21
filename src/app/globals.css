@@ -19,6 +19,11 @@ button, a, th {
   word-break: keep-all;
 }
 
+#printable-receipt-area table th,
+#printable-receipt-area table td {
+  vertical-align: middle !important;
+}
+
 .glass-panel {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
