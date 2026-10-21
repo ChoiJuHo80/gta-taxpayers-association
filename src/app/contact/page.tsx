@@ -40,27 +40,34 @@ export default function ContactUsPage() {
         
         <table>
           <tr>
-            <td colspan="2"><b>1. Applicant's name:</b> (write in capital letters)</td>
+            <td><b>1. Applicant's name:</b> (write in capital letters)</td>
+            <td><b>Nationality:</b></td>
           </tr>
           <tr>
-            <td><b>2. Registration Number:</b></td>
-            <td><b>* Nationality:</b></td>
+            <td colspan="2"><b>2. Alien Registration Number:</b></td>
           </tr>
           <tr>
             <td><b>3. Address:</b></td>
-            <td><b>e-mail:</b></td>
+            <td><b>(e-mail):</b></td>
           </tr>
           <tr>
             <td colspan="2"><b>4. Company:</b></td>
           </tr>
           <tr>
-            <td colspan="2"><b>5. Telephone number in Korea (Mobile):</b></td>
+            <td><b>5. Work place :</b> (ex : Hanwha Ocean, SHI, HHI, STX, ...)</td>
+            <td><b>(Project Name):</b></td>
           </tr>
           <tr>
-            <td colspan="2"><b>6. Date of Stay & Work:</b> From ____/____/________ ~ To ____/____/________</td>
+            <td colspan="2"><b>6. Telephone number in Korea (Mobile):</b></td>
           </tr>
           <tr>
-            <td colspan="2" class="section-title">7. Exemption: Please check at least 1 item below.</td>
+            <td colspan="2">
+              <b>7. Date of Stay &amp; Work:</b> (from) ____.____.________ ~ (to) ____.____.________<br/>
+              &nbsp;&nbsp;&nbsp;※ Have you worked in Korea before 1st Jan. 2004? (Yes / No)
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" class="section-title">8. Exemption: Please check at least 1 item below.</td>
           </tr>
           <tr>
             <td colspan="2">
@@ -75,7 +82,7 @@ export default function ContactUsPage() {
             </td>
           </tr>
           <tr>
-            <td colspan="2" class="section-title">8. The Class B Income (USD, EURO, NOK, GBP, DKK, CAD, AUD, SGD, SEK, JPY, KRW)</td>
+            <td colspan="2" class="section-title">9. The Class B income (USD, EURO, NOK, GBP, DKK, CAD, AUD, SGD, SEK, JPY, KRW)</td>
           </tr>
           <tr>
             <td colspan="2">
@@ -88,8 +95,8 @@ export default function ContactUsPage() {
           </tr>
           <tr>
             <td colspan="2">
-              <b>9. Did you work for other company during the same year?</b> (Yes / No)<br/>
-              <i>If Yes, you must submit a 'Receipt for wage and salary income Tax withholding' of your previous employment to GTA to avoid penalty tax.</i>
+              <b>10. Did you work for other company during the same year in Korea?</b> (Yes / No)<br/>
+              <i>* If Yes, you must submit a 'Receipt for wage and salary income Tax withholding' of your previous employment to GTA to avoid penalty tax.</i>
             </td>
           </tr>
           <tr>
@@ -100,9 +107,9 @@ export default function ContactUsPage() {
         </table>
         
         <br/><br/>
-        <p>I have read and ratified the charter of Geoje Taxpayers Association and hereby apply for admission.</p>
+        <p>In accordance with the above, I hereby apply for membership in the GTA.</p>
         <br/>
-        <p>Applicant's Signature: ___________________________ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date: ____/____/________</p>
+        <p>Applicant's Signature: ___________________________ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date: ____.____.________</p>
       </body>
       </html>
     `;

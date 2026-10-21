@@ -24,11 +24,12 @@ import {
   X,
   CheckCircle2,
   Download,
+  FileDown,
   DollarSign,
   Upload,
 } from 'lucide-react';
 import { Consultation, Notice, ApplicationMember, TaxReceipt } from '@/lib/db';
-import ReceiptDocument, { downloadReceiptPdf } from '@/components/ReceiptDocument';
+import ReceiptDocument, { downloadReceiptPdf, downloadReceiptsBundlePdf } from '@/components/ReceiptDocument';
 
 const CURRENCIES = ['USD', 'EURO', 'NOK', 'GBP', 'DKK', 'CAD', 'AUD', 'SGD', 'SEK', 'JPY', 'KRW'] as const;
 
@@ -187,9 +188,12 @@ export default function AdminPage() {
     addressDetail: '',
     email: '',
     company: '',
+    workPlace: '',
+    projectName: '',
     phone: '',
     dateFrom: '',
     dateTo: '',
+    workedBefore2004: 'No' as 'No' | 'Yes',
     maritalStatus: 'Single' as 'Single' | 'Married',
     spouseName: '',
     spouseDob: '',
@@ -217,6 +221,12 @@ export default function AdminPage() {
   const [receiptSearchField, setReceiptSearchField] = useState<'name' | 'number' | 'phone'>('name');
   const [receiptsLoading, setReceiptsLoading] = useState(false);
 
+  // Batch PDF Selection State
+  const [selectedReceiptsMap, setSelectedReceiptsMap] = useState<Record<number, TaxReceipt>>({});
+  const [isBatchGenerating, setIsBatchGenerating] = useState<boolean>(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
+  const batchContainerRef = useRef<HTMLDivElement | null>(null);
+
   // Receipt Write / Modify Popup Modal State
   const [showReceiptFormModal, setShowReceiptFormModal] = useState(false);
   const [editingReceiptId, setEditingReceiptId] = useState<number | null>(null);
@@ -225,6 +235,7 @@ export default function AdminPage() {
 
   const nowDate = new Date();
   const [receiptForm, setReceiptForm] = useState({
+    receipt_title: 'RECEIPT FOR CLASS "B" INCOME TAX (MONTHLY)',
     member_num: '',
     management_no: '',
     license_no: '612-80-03137',
@@ -491,6 +502,7 @@ export default function AdminPage() {
       service_fee: '30,000',
       yearend_fee: '',
       reg_name: targetMember?.name || latestReceipt?.name || '',
+      receipt_title: latestReceipt?.receipt_title || 'RECEIPT FOR CLASS "B" INCOME TAX (MONTHLY)',
     });
     setShowReceiptFormModal(true);
   };
@@ -516,6 +528,7 @@ export default function AdminPage() {
       t1 + t2 > 0 ? (t1 + t2).toLocaleString('en-US') : cleanVal(r.payable_special);
 
     setReceiptForm({
+      receipt_title: r.receipt_title || 'RECEIPT FOR CLASS "B" INCOME TAX (MONTHLY)',
       member_num: r.member_num || '',
       management_no: r.management_no || r.member_num || String(r.id),
       license_no: r.license_no || '612-80-03137',
@@ -566,6 +579,7 @@ export default function AdminPage() {
     if (!confirm('본 내용을 기준으로 추가등록 하시겠습니까?')) return;
     try {
       const payload = {
+        receipt_title: r.receipt_title || 'RECEIPT FOR CLASS "B" INCOME TAX (MONTHLY)',
         member_num: r.member_num || '',
         management_no: r.management_no || '',
         license_no: r.license_no || '612-80-03137',
@@ -627,6 +641,69 @@ export default function AdminPage() {
     }
   };
 
+  // Multi-Select Receipt Helpers
+  const selectedReceiptList = Object.values(selectedReceiptsMap);
+
+  const handleToggleSelectAllReceipts = () => {
+    if (receipts.length === 0) return;
+    const allSelected = receipts.every(r => selectedReceiptsMap[r.id]);
+    if (allSelected) {
+      setSelectedReceiptsMap(prev => {
+        const next = { ...prev };
+        receipts.forEach(r => delete next[r.id]);
+        return next;
+      });
+    } else {
+      setSelectedReceiptsMap(prev => {
+        const next = { ...prev };
+        receipts.forEach(r => {
+          next[r.id] = r;
+        });
+        return next;
+      });
+    }
+  };
+
+  const handleToggleSelectReceipt = (r: TaxReceipt) => {
+    setSelectedReceiptsMap(prev => {
+      const next = { ...prev };
+      if (next[r.id]) {
+        delete next[r.id];
+      } else {
+        next[r.id] = r;
+      }
+      return next;
+    });
+  };
+
+  const handleDownloadSelectedReceiptsPdf = async () => {
+    if (selectedReceiptList.length === 0) {
+      alert('PDF로 일괄 저장할 영수증을 먼저 선택해 주세요.');
+      return;
+    }
+    if (!batchContainerRef.current) return;
+
+    setIsBatchGenerating(true);
+    setBatchProgress({ current: 0, total: selectedReceiptList.length });
+
+    try {
+      const childrenEls = Array.from(batchContainerRef.current.children) as HTMLElement[];
+      await downloadReceiptsBundlePdf(
+        childrenEls,
+        `GTA_Selected_Receipts_${selectedReceiptList.length}ea.pdf`,
+        (curr, total) => {
+          setBatchProgress({ current: curr, total });
+        }
+      );
+    } catch (err) {
+      console.error(err);
+      alert('PDF 일괄 저장 중 오류가 발생했습니다.');
+    } finally {
+      setIsBatchGenerating(false);
+      setBatchProgress(null);
+    }
+  };
+
   // Auto-sum [1] Basic Salary + [2] Bonus + [3] Other Income -> [4] Total Salary (both upper and lower)
   const handleOverseasSalaryChange = (
     field: 'overseas_basicsalary' | 'overseas_bonus' | 'overseas_income',
@@ -678,7 +755,13 @@ export default function AdminPage() {
   };
 
   const submitReceiptData = async (downloadPdfAfterSave = false) => {
+    const taxPeriod =
+      receiptForm.tax_month === 0
+        ? String(receiptForm.tax_year)
+        : toUnixFromYmd(receiptForm.tax_year, receiptForm.tax_month, receiptForm.tax_day);
+
     const payload = {
+      receipt_title: receiptForm.receipt_title,
       member_num: receiptForm.member_num,
       management_no: receiptForm.management_no,
       license_no: receiptForm.license_no,
@@ -689,7 +772,7 @@ export default function AdminPage() {
       name: receiptForm.name,
       resident_no2: receiptForm.resident_no2,
       address2: receiptForm.address2,
-      taxation_period: toUnixFromYmd(receiptForm.tax_year, receiptForm.tax_month, receiptForm.tax_day),
+      taxation_period: taxPeriod,
       reg_date: toUnixFromYmd(receiptForm.reg_year, receiptForm.reg_month, receiptForm.reg_day),
       local_name: receiptForm.local_name,
       local_basicsalary: receiptForm.local_basicsalary,
@@ -806,9 +889,12 @@ export default function AdminPage() {
       addressDetail: '',
       email: m.email || '',
       company: m.company || '',
+      workPlace: m.work_place || '',
+      projectName: m.project_name || '',
       phone: m.phon || '',
       dateFrom: df.length === 10 ? df : '',
       dateTo: dt.length === 10 ? dt : '',
+      workedBefore2004: m.worked_before_2004 === 'Yes' ? 'Yes' : 'No',
       maritalStatus: isMarried ? 'Married' : 'Single',
       spouseName,
       spouseDob,
@@ -926,9 +1012,12 @@ export default function AdminPage() {
       address: memberAppForm.address,
       email: memberAppForm.email,
       company: memberAppForm.company,
+      work_place: memberAppForm.workPlace,
+      project_name: memberAppForm.projectName,
       phon: memberAppForm.phone,
       date_from: memberAppForm.dateFrom ? toUnixFromDate(memberAppForm.dateFrom) : editingMember.date_from,
       date_to: memberAppForm.dateTo ? toUnixFromDate(memberAppForm.dateTo) : editingMember.date_to,
+      worked_before_2004: memberAppForm.workedBefore2004,
       married: memberAppForm.maritalStatus === 'Married' ? '2' : '1',
       age: memberAppForm.childrenCount === '0' ? '-' : memberAppForm.childrenCount,
       spouse: memberAppForm.spouseIncome === 'Yes' ? '1' : '2',
@@ -1175,15 +1264,6 @@ export default function AdminPage() {
           </Link>
 
           <button
-            type="button"
-            onClick={() => handleOpenWriteReceipt(selectedReceiptMember)}
-            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs px-3.5 py-2.5 rounded-xl shadow flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
-          >
-            <Receipt className="w-4 h-4 shrink-0" />
-            <span>+ 영수증 직접 작성</span>
-          </button>
-
-          <button
             onClick={handleDownloadExcel}
             title="전체 회원검색 및 영수증 발급 탭의 선택 옵션에 따른 회원 목록 엑셀 다운로드"
             className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold text-xs px-3.5 py-2.5 rounded-xl shadow flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
@@ -1212,13 +1292,13 @@ export default function AdminPage() {
           onClick={() => setActiveTab('members')}
           className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === 'members'
-              ? 'bg-gta-900 text-white shadow-md'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              ? 'bg-slate-700 text-white shadow-md'
+              : 'bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200'
           }`}
         >
           <Users className="w-4 h-4 shrink-0" />
           <span>👥 전체 회원 검색 및 영수증 발급</span>
-          <span className="bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
+          <span className="bg-slate-900 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
             {membersTotal.toLocaleString()}
           </span>
         </button>
@@ -1231,13 +1311,13 @@ export default function AdminPage() {
           }}
           className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === 'receipts'
-              ? 'bg-gta-900 text-white shadow-md'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              ? 'bg-amber-400 text-slate-950 font-black shadow-md border border-amber-500'
+              : 'bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100'
           }`}
         >
           <Receipt className="w-4 h-4 shrink-0" />
           <span>🧾 영수증 내역 및 관리</span>
-          <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
+          <span className="bg-amber-600 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
             {receiptsTotal.toLocaleString()}
           </span>
         </button>
@@ -1354,7 +1434,6 @@ export default function AdminPage() {
                     <th className="px-3 py-2.5">remark</th>
                     <th className="px-3 py-2.5">Telephone</th>
                     <th className="px-3 py-2.5">Date of Stay &amp; Work</th>
-                    <th className="px-2.5 py-2.5">Receipts</th>
                     <th className="px-2.5 py-2.5">Modify</th>
                     <th className="px-2.5 py-2.5">Receipt</th>
                   </tr>
@@ -1362,13 +1441,13 @@ export default function AdminPage() {
                 <tbody className="divide-y divide-slate-300">
                   {membersLoading ? (
                     <tr>
-                      <td colSpan={10} className="px-6 py-12 text-center text-slate-400 font-semibold">
+                      <td colSpan={9} className="px-6 py-12 text-center text-slate-400 font-semibold">
                         회원 데이터를 불러오는 중입니다...
                       </td>
                     </tr>
                   ) : members.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="px-6 py-12 text-center text-slate-400">
+                      <td colSpan={9} className="px-6 py-12 text-center text-slate-400">
                         검색 조건에 일치하는 회원이 없습니다.
                       </td>
                     </tr>
@@ -1403,11 +1482,6 @@ export default function AdminPage() {
                           </td>
                           <td className="px-3 py-2 font-mono text-xs text-slate-800 whitespace-nowrap">
                             {formatUnixDate(m.date_from)} ~ {formatUnixDate(m.date_to)}
-                          </td>
-                          <td className="px-2.5 py-2 whitespace-nowrap">
-                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-xs font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                              {m.receipt_count ?? 0}건
-                            </span>
                           </td>
                           <td className="px-2 py-2 whitespace-nowrap">
                             <button
@@ -1551,6 +1625,22 @@ export default function AdminPage() {
                   전체 영수증 보기
                 </button>
               )}
+              <button
+                type="button"
+                onClick={handleDownloadSelectedReceiptsPdf}
+                disabled={isBatchGenerating || selectedReceiptList.length === 0}
+                className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-extrabold text-xs px-3 py-1.5 rounded-xs shadow flex items-center space-x-1.5 transition-all cursor-pointer disabled:cursor-not-allowed whitespace-nowrap shrink-0"
+                title="체크된 영수증들을 하나의 PDF 파일로 묶어서 일괄 다운로드"
+              >
+                <FileDown className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  {isBatchGenerating && batchProgress
+                    ? `PDF 생성 중 (${batchProgress.current}/${batchProgress.total})...`
+                    : isBatchGenerating
+                    ? 'PDF 생성 중...'
+                    : `선택 영수증 PDF 일괄 저장 (${selectedReceiptList.length}건)`}
+                </span>
+              </button>
             </div>
 
             <form
@@ -1616,10 +1706,20 @@ export default function AdminPage() {
             <table className="w-full border-collapse border border-[#CCCCCC] text-center text-[12px] text-black">
               <thead>
                 <tr className="bg-[#FFFBC8] h-[34px] font-bold whitespace-nowrap">
-                  <td className="border border-[#CCCCCC] px-3 w-[6%]">no</td>
-                  <td className="border border-[#CCCCCC] px-3 w-[22%]">name</td>
+                  <td className="border border-[#CCCCCC] px-2 w-[3%]">
+                    <input
+                      type="checkbox"
+                      checked={receipts.length > 0 && receipts.every(r => !!selectedReceiptsMap[r.id])}
+                      onChange={handleToggleSelectAllReceipts}
+                      title="전체 선택 / 해제"
+                      aria-label="전체 영수증 선택"
+                      className="cursor-pointer"
+                    />
+                  </td>
+                  <td className="border border-[#CCCCCC] px-3 w-[5%]">no</td>
+                  <td className="border border-[#CCCCCC] px-3 w-[20%]">name</td>
                   <td className="border border-[#CCCCCC] px-3 w-[15%]">Payer Resident-No</td>
-                  <td className="border border-[#CCCCCC] px-3 w-[20%]">Association-Name</td>
+                  <td className="border border-[#CCCCCC] px-3 w-[18%]">Association-Name</td>
                   <td className="border border-[#CCCCCC] px-3 w-[12%]">License-No</td>
                   <td className="border border-[#CCCCCC] px-3 w-[9%]">Date</td>
                   <td className="border border-[#CCCCCC] px-2 w-[6%]">Modify</td>
@@ -1630,13 +1730,13 @@ export default function AdminPage() {
               <tbody>
                 {receiptsLoading ? (
                   <tr>
-                    <td colSpan={9} className="border border-[#CCCCCC] py-10 text-center text-slate-500">
+                    <td colSpan={10} className="border border-[#CCCCCC] py-10 text-center text-slate-500">
                       영수증 목록을 불러오는 중입니다...
                     </td>
                   </tr>
                 ) : receipts.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="border border-[#CCCCCC] py-10 text-center text-slate-500">
+                    <td colSpan={10} className="border border-[#CCCCCC] py-10 text-center text-slate-500">
                       등록된 영수증이 없습니다. 우측 하단 [WRITE] 버튼을 눌러 영수증을 작성하세요.
                     </td>
                   </tr>
@@ -1645,6 +1745,15 @@ export default function AdminPage() {
                     const rowNo = receiptsTotal - ((receiptsPage - 1) * 25 + idx);
                     return (
                       <tr key={r.id} className="bg-white hover:bg-yellow-50/40 h-[30px] whitespace-nowrap">
+                        <td className="border border-[#CCCCCC] px-2 py-1">
+                          <input
+                            type="checkbox"
+                            checked={!!selectedReceiptsMap[r.id]}
+                            onChange={() => handleToggleSelectReceipt(r)}
+                            aria-label={`${r.name} 영수증 선택`}
+                            className="cursor-pointer"
+                          />
+                        </td>
                         <td className="border border-[#CCCCCC] px-2 py-1">{rowNo > 0 ? rowNo : idx + 1}</td>
                         <td className="border border-[#CCCCCC] px-2.5 py-1 font-bold">
                           <button
@@ -1698,6 +1807,25 @@ export default function AdminPage() {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Offscreen container for combined PDF generation */}
+          <div
+            ref={batchContainerRef}
+            style={{
+              position: 'fixed',
+              left: '-9999px',
+              top: 0,
+              width: '740px',
+              pointerEvents: 'none',
+              zIndex: -1,
+            }}
+          >
+            {selectedReceiptList.map((rcpt, idx) => (
+              <div key={`batch-${rcpt.id}-${idx}`} data-batch-receipt-item style={{ background: '#ffffff', padding: '16px', marginBottom: '24px' }}>
+                <ReceiptDocument receipt={rcpt} />
+              </div>
+            ))}
           </div>
 
           {/* Bottom Bar: Pagination on left, [WRITE] button on right */}
@@ -1861,9 +1989,9 @@ export default function AdminPage() {
       {/* MODAL 1: RECEIPT WRITE / MODIFY POPUP (Matching GTA Excel Sample) */}
       {/* ========================================================================= */}
       {showReceiptFormModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:hidden">
-          <div className="bg-white border-2 border-slate-500 shadow-2xl max-w-[820px] w-full p-4 sm:p-6 my-4 max-h-[95vh] overflow-y-auto">
-            <div className="flex justify-between items-center pb-2.5 mb-3 border-b border-slate-300 text-xs">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-start justify-center p-2 sm:p-6 overflow-y-auto print:hidden">
+          <div className="bg-white border-2 border-slate-500 shadow-2xl max-w-[820px] w-full p-4 sm:p-6 my-4 max-h-[92vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white z-20 flex justify-between items-center pb-2.5 mb-3 border-b border-slate-300 text-xs">
               <span className="font-bold text-slate-800 text-sm">
                 {editingReceiptId ? `영수증 수정 #${editingReceiptId}` : '영수증 작성'}
               </span>
@@ -1880,13 +2008,24 @@ export default function AdminPage() {
               <div className="overflow-x-auto">
                 <div className="w-[740px] mx-auto bg-white p-2 space-y-4">
                   {/* Title */}
-                  <div className="text-center text-[17px] font-bold tracking-wide py-2">
-                    RECEIPT FOR CLASS &quot;B&quot; INCOME TAX (MONTHLY)
+                  <div className="text-center py-2">
+                    <select
+                      value={receiptForm.receipt_title || 'RECEIPT FOR CLASS "B" INCOME TAX (MONTHLY)'}
+                      onChange={e => setReceiptForm({ ...receiptForm, receipt_title: e.target.value })}
+                      className="text-center text-[15px] sm:text-[17px] font-bold tracking-wide py-1.5 px-3 border border-slate-300 rounded bg-yellow-50/50 w-full max-w-[520px] cursor-pointer"
+                    >
+                      <option value='RECEIPT FOR CLASS "B" INCOME TAX (MONTHLY)'>
+                        RECEIPT FOR CLASS &quot;B&quot; INCOME TAX (MONTHLY)
+                      </option>
+                      <option value="RECEIPT FOR GLOBAL INCOME TAX RETURN">
+                        RECEIPT FOR GLOBAL INCOME TAX RETURN
+                      </option>
+                    </select>
                   </div>
 
                   {/* Top Meta Row */}
-                  <div className="flex justify-between items-center text-[12px] gap-4">
-                    <div className="flex items-center space-x-2 w-1/2">
+                  <div className="flex flex-wrap sm:flex-nowrap justify-between items-center text-[12px] gap-4">
+                    <div className="flex items-center space-x-2">
                       <span className="font-semibold whitespace-nowrap">GTA Management No. :</span>
                       <input
                         type="text"
@@ -1895,7 +2034,7 @@ export default function AdminPage() {
                         className="bg-[#F8F8F8] border border-slate-400 px-2 py-1 text-[12px] w-[180px]"
                       />
                     </div>
-                    <div className="flex items-center space-x-2 w-1/2 pl-2">
+                    <div className="flex items-center space-x-2 ml-auto">
                       <span className="font-semibold whitespace-nowrap">Taxation Period :</span>
                       <div className="flex items-center space-x-1">
                         <select
@@ -1915,6 +2054,7 @@ export default function AdminPage() {
                           onChange={e => setReceiptForm({ ...receiptForm, tax_month: Number(e.target.value) })}
                           className="bg-[#F3F3F3] border border-slate-400 text-[12px] px-1.5 py-1"
                         >
+                          <option value={0}>-</option>
                           {MONTH_OPTIONS.map(m => (
                             <option key={m} value={m}>
                               {String(m).padStart(2, '0')}
@@ -2347,12 +2487,12 @@ export default function AdminPage() {
       {/* MODAL 2: FULL APPLICATION FORM MEMBER EDIT MODAL */}
       {/* ========================================================================= */}
       {editingMember && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-start justify-center p-2 sm:p-4 overflow-y-auto print:hidden">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-4xl w-full p-6 sm:p-10 space-y-6 my-6">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-start justify-center p-2 sm:p-6 overflow-y-auto print:hidden">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-4xl w-full p-4 sm:p-8 space-y-6 my-4 max-h-[92vh] overflow-y-auto">
             {/* Top Header matching Application Form */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-5 gap-4">
+            <div className="sticky top-0 bg-white z-20 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-3 gap-2">
               <div>
-                <div className="inline-flex items-center space-x-2 text-emerald-700 font-bold text-xs bg-emerald-50 px-3 py-1 rounded-full mb-2 border border-emerald-200">
+                <div className="inline-flex items-center space-x-2 text-emerald-700 font-bold text-xs bg-emerald-50 px-3 py-1 rounded-full mb-1 border border-emerald-200">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   <span>
                     Authorized GTA Administrator Application Form (no. {editingMember.seq_no ?? editingMember.id} — #{editingMember.id})
@@ -2361,7 +2501,7 @@ export default function AdminPage() {
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight">
                   APPLICATION FOR ADMISSION TO GEOJE TAXPAYERS ASSOCIATION
                 </h2>
-                <p className="text-xs font-mono text-slate-500 mt-1">
+                <p className="text-xs font-mono text-slate-500 mt-0.5">
                   Tel: (055) 688-2141 &nbsp;|&nbsp; Fax: (055) 688-2142 &nbsp;|&nbsp; www.gtakorea.org
                 </p>
               </div>
@@ -2377,7 +2517,7 @@ export default function AdminPage() {
             </div>
 
             <form onSubmit={handleSaveMember} className="space-y-7">
-              {/* Section 1 ~ 3 & 5: Personal Information */}
+              {/* Section 1 ~ 3: Personal Information */}
               <div className="space-y-4">
                 <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
                   Personal Information
@@ -2392,7 +2532,7 @@ export default function AdminPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. KIM SILVIA"
+                      placeholder="e.g. JOHN DOE"
                       value={memberAppForm.applicantName}
                       onChange={e => {
                         const upperName = e.target.value.toUpperCase();
@@ -2418,12 +2558,12 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">2. Registration Number *</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">2. Alien Registration Number *</label>
                     <input
                       type="text"
-                      placeholder="e.g. 820012-3932521"
+                      placeholder="e.g. 800101-1234567"
                       value={memberAppForm.alienRegNo}
                       onChange={e => setMemberAppForm({ ...memberAppForm, alienRegNo: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 font-mono"
@@ -2431,24 +2571,13 @@ export default function AdminPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">3. E-mail Address *</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">E-mail Address *</label>
                     <input
                       type="text"
-                      placeholder="e.g. silvia@example.com"
+                      placeholder="e.g. member@example.com"
                       value={memberAppForm.email}
                       onChange={e => setMemberAppForm({ ...memberAppForm, email: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">5. Telephone (Mobile) *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 010-3700-3719"
-                      value={memberAppForm.phone}
-                      onChange={e => setMemberAppForm({ ...memberAppForm, phone: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 font-mono"
                     />
                   </div>
                 </div>
@@ -2503,7 +2632,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Section 4 & 6: Employment & Stay Info */}
+              {/* Section 4 ~ 7: Employment & Stay Info */}
               <div className="space-y-4">
                 <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
                   Employment &amp; Stay Information
@@ -2520,8 +2649,44 @@ export default function AdminPage() {
                   />
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      5. Work place : (ex : Hanwha Ocean, SHI, HHI, STX, ...)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Hanwha Ocean, SHI, HHI, STX, ..."
+                      value={memberAppForm.workPlace}
+                      onChange={e => setMemberAppForm({ ...memberAppForm, workPlace: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">(Project Name)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. FLNG Project / Hull No. 2401"
+                      value={memberAppForm.projectName}
+                      onChange={e => setMemberAppForm({ ...memberAppForm, projectName: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">6. Date of Stay &amp; Work *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">6. Telephone number in Korea (Mobile) *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 010-1234-5678"
+                    value={memberAppForm.phone}
+                    onChange={e => setMemberAppForm({ ...memberAppForm, phone: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 font-mono"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">7. Date of Stay &amp; Work *</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
                     <div className="flex items-center space-x-2">
                       <span className="font-bold text-slate-600 shrink-0">From:</span>
@@ -2542,13 +2707,41 @@ export default function AdminPage() {
                       />
                     </div>
                   </div>
+
+                  <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 text-xs flex flex-wrap items-center justify-between gap-3">
+                    <span className="font-bold text-amber-950">
+                      ※ Have you worked in Korea before 1st Jan. 2004?
+                    </span>
+                    <div className="flex items-center space-x-4">
+                      <label className="inline-flex items-center space-x-1.5 cursor-pointer font-bold text-slate-800">
+                        <input
+                          type="radio"
+                          name="workedBefore2004"
+                          checked={memberAppForm.workedBefore2004 === 'No'}
+                          onChange={() => setMemberAppForm({ ...memberAppForm, workedBefore2004: 'No' })}
+                          className="text-gta-600 focus:ring-gta-500"
+                        />
+                        <span>No</span>
+                      </label>
+                      <label className="inline-flex items-center space-x-1.5 cursor-pointer font-bold text-slate-800">
+                        <input
+                          type="radio"
+                          name="workedBefore2004"
+                          checked={memberAppForm.workedBefore2004 === 'Yes'}
+                          onChange={() => setMemberAppForm({ ...memberAppForm, workedBefore2004: 'Yes' })}
+                          className="text-gta-600 focus:ring-gta-500"
+                        />
+                        <span>Yes</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Section 7: Exemption (Marital & Children Details) */}
+              {/* Section 8: Exemption (Marital & Children Details) */}
               <div className="space-y-4">
                 <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
-                  7. Exemption Status (Check at least 1 item below)
+                  8. Exemption Status (Check at least 1 item below)
                 </h3>
 
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4 text-xs">
@@ -2675,10 +2868,10 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Section 8: Class B Income Details */}
+              {/* Section 9: Class B Income Details */}
               <div className="space-y-4">
                 <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
-                  8. The Class B Income (USD, EURO, NOK, GBP, DKK, CAD, AUD, SGD, SEK, JPY, KRW)
+                  9. The Class B Income (USD, EURO, NOK, GBP, DKK, CAD, AUD, SGD, SEK, JPY, KRW)
                 </h3>
 
                 {/* Currency Selection Bar */}
@@ -2787,10 +2980,10 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Section 9: Worked for other company */}
+              {/* Section 10: Worked for other company */}
               <div className="space-y-3">
                 <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
-                  9. Previous Employment Status
+                  10. Did you work for other company during the same year in Korea?
                 </h3>
 
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
@@ -2828,10 +3021,17 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Section 10: Remark (Memo) */}
+              {/* GTA Membership Declaration Statement */}
+              <div className="bg-slate-100 p-4 rounded-xl border border-slate-200 text-center">
+                <p className="text-xs sm:text-sm font-semibold text-slate-800 italic">
+                  &quot;In accordance with the above, I hereby apply for membership in the GTA.&quot;
+                </p>
+              </div>
+
+              {/* Section 11: Remark (Memo) */}
               <div className="space-y-3">
                 <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
-                  10. Remark (Administrator Memo / Notes)
+                  Remark (Administrator Memo / Notes)
                 </h3>
                 <div>
                   <textarea
@@ -2961,10 +3161,10 @@ export default function AdminPage() {
       {/* MODAL 3: PRINTABLE RECEIPT VIEW (Matching GTA Excel Sample) */}
       {/* ========================================================================= */}
       {selectedPrintReceipt && (
-        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:static print:bg-white print:p-0">
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-start justify-center p-2 sm:p-6 overflow-y-auto print:static print:bg-white print:p-0">
           <div className="bg-white border-2 border-slate-500 shadow-2xl max-w-[780px] w-full p-3 sm:p-5 my-4 print:shadow-none print:border-0 print:my-0 print:max-w-full print:p-0">
-            {/* Action Bar (Hidden when printing) */}
-            <div className="flex justify-between items-center pb-2.5 mb-2.5 border-b border-slate-300 print:hidden">
+            {/* Action Bar (Sticky and hidden when printing) */}
+            <div className="sticky top-0 bg-white z-20 flex justify-between items-center pb-2.5 mb-2.5 border-b border-slate-300 print:hidden">
               <span className="text-xs font-bold text-slate-700">
                 RECEIPT VIEW #{selectedPrintReceipt.id} — {selectedPrintReceipt.name}
               </span>

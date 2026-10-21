@@ -45,6 +45,8 @@ export default function ConsultPage() {
     addressDetail: '',
     email: '',
     company: '',
+    workPlace: '',
+    projectName: '',
     phone: '',
     dateFromYear: '2026',
     dateFromMonth: '10',
@@ -52,6 +54,7 @@ export default function ConsultPage() {
     dateToYear: '2026',
     dateToMonth: '10',
     dateToDay: '01',
+    workedBefore2004: 'No' as 'No' | 'Yes',
     maritalStatus: 'Single',
     spouseName: '',
     spouseDob: '',
@@ -146,27 +149,34 @@ export default function ConsultPage() {
         
         <table>
           <tr>
-            <td colspan="2"><b>1. Applicant's name:</b> (write in capital letters)</td>
+            <td><b>1. Applicant's name:</b> (write in capital letters)</td>
+            <td><b>Nationality:</b></td>
           </tr>
           <tr>
-            <td><b>2. Registration Number:</b></td>
-            <td><b>* Nationality:</b></td>
+            <td colspan="2"><b>2. Alien Registration Number:</b></td>
           </tr>
           <tr>
             <td><b>3. Address:</b></td>
-            <td><b>e-mail:</b></td>
+            <td><b>(e-mail):</b></td>
           </tr>
           <tr>
             <td colspan="2"><b>4. Company:</b></td>
           </tr>
           <tr>
-            <td colspan="2"><b>5. Telephone number in Korea (Mobile):</b></td>
+            <td><b>5. Work place :</b> (ex : Hanwha Ocean, SHI, HHI, STX, ...)</td>
+            <td><b>(Project Name):</b></td>
           </tr>
           <tr>
-            <td colspan="2"><b>6. Date of Stay & Work:</b> From ____/____/________ ~ To ____/____/________</td>
+            <td colspan="2"><b>6. Telephone number in Korea (Mobile):</b></td>
           </tr>
           <tr>
-            <td colspan="2" class="section-title">7. Exemption: Please check at least 1 item below.</td>
+            <td colspan="2">
+              <b>7. Date of Stay &amp; Work:</b> (from) ____.____.________ ~ (to) ____.____.________<br/>
+              &nbsp;&nbsp;&nbsp;※ Have you worked in Korea before 1st Jan. 2004? (Yes / No)
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" class="section-title">8. Exemption: Please check at least 1 item below.</td>
           </tr>
           <tr>
             <td colspan="2">
@@ -181,7 +191,7 @@ export default function ConsultPage() {
             </td>
           </tr>
           <tr>
-            <td colspan="2" class="section-title">8. The Class B Income (USD, EURO, NOK, GBP, DKK, CAD, AUD, SGD, SEK, JPY, KRW)</td>
+            <td colspan="2" class="section-title">9. The Class B income (USD, EURO, NOK, GBP, DKK, CAD, AUD, SGD, SEK, JPY, KRW)</td>
           </tr>
           <tr>
             <td colspan="2">
@@ -194,8 +204,8 @@ export default function ConsultPage() {
           </tr>
           <tr>
             <td colspan="2">
-              <b>9. Did you work for other company during the same year?</b> (Yes / No)<br/>
-              <i>If Yes, you must submit a 'Receipt for wage and salary income Tax withholding' of your previous employment to GTA to avoid penalty tax.</i>
+              <b>10. Did you work for other company during the same year in Korea?</b> (Yes / No)<br/>
+              <i>* If Yes, you must submit a 'Receipt for wage and salary income Tax withholding' of your previous employment to GTA to avoid penalty tax.</i>
             </td>
           </tr>
           <tr>
@@ -206,9 +216,9 @@ export default function ConsultPage() {
         </table>
         
         <br/><br/>
-        <p>I have read and ratified the charter of Geoje Taxpayers Association and hereby apply for admission.</p>
+        <p>In accordance with the above, I hereby apply for membership in the GTA.</p>
         <br/>
-        <p>Applicant's Signature: ___________________________ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date: ____/____/________</p>
+        <p>Applicant's Signature: ___________________________ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date: ____.____.________</p>
       </body>
       </html>
     `;
@@ -323,6 +333,9 @@ ${childrenLines}
             family_txt: familyParts.join('|'),
             other_worked: formData.workedOtherCompany === 'Yes' ? 1 : 0,
             remark: formData.remark,
+            work_place: formData.workPlace,
+            project_name: formData.projectName,
+            worked_before_2004: formData.workedBefore2004,
           },
         }),
       });
@@ -502,7 +515,7 @@ ${childrenLines}
                   <input
                     type="text"
                     required
-                    placeholder="e.g. KIM SILVIA"
+                    placeholder="e.g. JOHN DOE"
                     value={formData.applicantName}
                     onChange={e => {
                       const upperName = e.target.value.toUpperCase();
@@ -535,7 +548,7 @@ ${childrenLines}
                   <input
                     type="text"
                     required
-                    placeholder="e.g. 820012-3932521"
+                    placeholder="e.g. 800101-1234567"
                     value={formData.alienRegNo}
                     onChange={e => setFormData({ ...formData, alienRegNo: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 font-mono"
@@ -547,7 +560,7 @@ ${childrenLines}
                   <input
                     type="email"
                     required
-                    placeholder="e.g. silvia@example.com"
+                    placeholder="e.g. johndoe@example.com"
                     value={formData.email}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
@@ -555,11 +568,11 @@ ${childrenLines}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">5. Telephone (Mobile) *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">6. Telephone (Mobile) *</label>
                   <input
                     type="tel"
                     required
-                    placeholder="e.g. 010-3700-3719"
+                    placeholder="e.g. 010-1234-5678"
                     value={formData.phone}
                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 font-mono"
@@ -571,7 +584,7 @@ ${childrenLines}
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <label className="block text-xs font-bold text-slate-700">
-                    Residential Address in Korea * <span className="text-slate-400 font-normal">(Search road address to auto-fill in English)</span>
+                    3. Residential Address in Korea * <span className="text-slate-400 font-normal">(Search road address to auto-fill in English)</span>
                   </label>
                   <button
                     type="button"
@@ -617,26 +630,50 @@ ${childrenLines}
               </div>
             </div>
 
-            {/* Section 4 & 6: Employment & Stay Info */}
+            {/* Section 4, 5, 7: Employment & Stay Info */}
             <div className="space-y-4">
               <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
                 Employment &amp; Stay Information
               </h3>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">4. Company Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Northern Marine / Subsea 7"
-                  value={formData.company}
-                  onChange={e => setFormData({ ...formData, company: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">4. Company Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Northern Marine / Subsea 7"
+                    value={formData.company}
+                    onChange={e => setFormData({ ...formData, company: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    5. Work place <span className="font-normal text-slate-500">(ex : Hanwha Ocean, SHI, HHI, STX, ...)</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Work place"
+                      value={formData.workPlace}
+                      onChange={e => setFormData({ ...formData, workPlace: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Project Name"
+                      value={formData.projectName}
+                      onChange={e => setFormData({ ...formData, projectName: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">6. Date of Stay &amp; Work *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">7. Date of Stay &amp; Work *</label>
                 <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
                   <div className="flex items-center space-x-2">
                     <span className="font-bold text-slate-600 shrink-0">From:</span>
@@ -667,13 +704,39 @@ ${childrenLines}
                     />
                   </div>
                 </div>
+
+                <div className="mt-2 p-2.5 bg-amber-50/60 rounded-lg border border-amber-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <span className="font-bold text-slate-700">※ Have you worked in Korea before 1st Jan. 2004?</span>
+                  <div className="flex items-center space-x-4">
+                    <label className="inline-flex items-center space-x-1.5 cursor-pointer font-bold">
+                      <input
+                        type="radio"
+                        name="consultWorkedBefore2004"
+                        checked={formData.workedBefore2004 === 'Yes'}
+                        onChange={() => setFormData({ ...formData, workedBefore2004: 'Yes' })}
+                        className="w-4 h-4 text-gta-600"
+                      />
+                      <span>Yes</span>
+                    </label>
+                    <label className="inline-flex items-center space-x-1.5 cursor-pointer font-bold">
+                      <input
+                        type="radio"
+                        name="consultWorkedBefore2004"
+                        checked={formData.workedBefore2004 === 'No'}
+                        onChange={() => setFormData({ ...formData, workedBefore2004: 'No' })}
+                        className="w-4 h-4 text-gta-600"
+                      />
+                      <span>No</span>
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Section 7: Exemption (Marital & Children Details) */}
+            {/* Section 8: Exemption (Marital & Children Details) */}
             <div className="space-y-4">
               <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
-                7. Exemption Status (Check at least 1 item below)
+                8. Exemption Status (Check at least 1 item below)
               </h3>
 
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4 text-xs">
@@ -790,10 +853,10 @@ ${childrenLines}
               </div>
             </div>
 
-            {/* Section 8: Class B Income Details */}
+            {/* Section 9: Class B Income Details */}
             <div className="space-y-4">
               <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
-                8. The Class B Income (USD, EURO, NOK, GBP, DKK, CAD, AUD, SGD, SEK, JPY, KRW)
+                9. The Class B Income (USD, EURO, NOK, GBP, DKK, CAD, AUD, SGD, SEK, JPY, KRW)
               </h3>
 
               {/* Currency Selection Bar */}
@@ -900,10 +963,10 @@ ${childrenLines}
               </div>
             </div>
 
-            {/* Section 9: Worked for other company */}
+            {/* Section 10: Worked for other company */}
             <div className="space-y-3">
               <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
-                9. Previous Employment Status
+                10. Previous Employment Status
               </h3>
 
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
@@ -939,10 +1002,10 @@ ${childrenLines}
               </div>
             </div>
 
-            {/* Section 10: Remark (Memo) */}
+            {/* Remark (Memo) */}
             <div className="space-y-3">
               <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
-                10. Remark (Administrator Memo / Notes)
+                Remark (Administrator Memo / Notes)
               </h3>
               <div>
                 <textarea
@@ -1003,6 +1066,11 @@ ${childrenLines}
                   onChange={e => setFormData({ ...formData, signature: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-serif italic font-bold bg-slate-50"
                 />
+              </div>
+
+              {/* Agreement text */}
+              <div className="p-4 bg-slate-100 rounded-xl border border-slate-300 text-xs text-slate-800 font-semibold text-center italic">
+                &quot;In accordance with the above, I hereby apply for membership in the GTA.&quot;
               </div>
             </div>
 

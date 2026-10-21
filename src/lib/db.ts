@@ -67,10 +67,14 @@ export interface ApplicationMember {
   remark: string;
   seq_no?: number;
   receipt_count?: number;
+  work_place?: string;
+  project_name?: string;
+  worked_before_2004?: string;
 }
 
 export interface TaxReceipt {
   id: number;
+  receipt_title?: string;
   member_num: string;
   management_no: string;
   license_no: string;
@@ -371,12 +375,14 @@ export async function createMember(data: Partial<ApplicationMember>): Promise<Ap
       id, name, number, address, email, company, nationality, phon,
       date_from, date_to, married, age, spouse,
       money_01, money_02, money_03, money_04,
-      name2, name3, date_end, family_txt, other_worked, remark
+      name2, name3, date_end, family_txt, other_worked, remark,
+      work_place, project_name, worked_before_2004
     ) VALUES (
       $1,$2,$3,$4,$5,$6,$7,$8,
       $9,$10,$11,$12,$13,
       $14,$15,$16,$17,
-      $18,$19,$20,$21,$22,$23
+      $18,$19,$20,$21,$22,$23,
+      $24,$25,$26
     ) RETURNING *`,
     [
       nextId,
@@ -401,7 +407,10 @@ export async function createMember(data: Partial<ApplicationMember>): Promise<Ap
       data.date_end || nowUnix,
       data.family_txt || '',
       data.other_worked || 0,
-      data.remark || ''
+      data.remark || '',
+      data.work_place ?? '',
+      data.project_name ?? '',
+      data.worked_before_2004 ?? ''
     ]
   );
   return res.rows[0];
@@ -435,8 +444,11 @@ export async function updateMember(id: number, data: Partial<ApplicationMember>)
       family_txt = $19,
       other_worked = $20,
       remark = $21,
-      date_end = $22
-     WHERE id = $23
+      date_end = $22,
+      work_place = $23,
+      project_name = $24,
+      worked_before_2004 = $25
+     WHERE id = $26
      RETURNING *`,
     [
       data.name ?? existing.name,
@@ -461,6 +473,9 @@ export async function updateMember(id: number, data: Partial<ApplicationMember>)
       data.other_worked ?? existing.other_worked,
       data.remark ?? existing.remark,
       data.date_end ?? existing.date_end,
+      data.work_place ?? (existing as any).work_place ?? '',
+      data.project_name ?? (existing as any).project_name ?? '',
+      data.worked_before_2004 ?? (existing as any).worked_before_2004 ?? '',
       id
     ]
   );
@@ -653,7 +668,7 @@ export async function createReceipt(data: Partial<TaxReceipt>): Promise<TaxRecei
       total_basicsalary, total_bonus, total_income, total_totalsalary, total_salary,
       computed_tax, deduction_overseas, deduction_deduction,
       payable_income, payable_resident, payable_special,
-      reg_date, reg_name, non_taxable_salary, service_fee, yearend_fee
+      reg_date, reg_name, non_taxable_salary, service_fee, yearend_fee, receipt_title
     ) VALUES (
       $1,$2,$3,$4,$5,$6,
       $7,$8,$9,$10,$11,$12,
@@ -662,7 +677,7 @@ export async function createReceipt(data: Partial<TaxReceipt>): Promise<TaxRecei
       $23,$24,$25,$26,$27,
       $28,$29,$30,
       $31,$32,$33,
-      $34,$35,$36,$37,$38
+      $34,$35,$36,$37,$38,$39
     ) RETURNING *`,
     [
       nextId,
@@ -702,7 +717,8 @@ export async function createReceipt(data: Partial<TaxReceipt>): Promise<TaxRecei
       data.reg_name ?? (data.name ?? '').toUpperCase(),
       data.non_taxable_salary ?? '',
       data.service_fee ?? '30,000',
-      data.yearend_fee ?? ''
+      data.yearend_fee ?? '',
+      data.receipt_title ?? 'RECEIPT FOR CLASS "B" INCOME TAX (MONTHLY)'
     ]
   );
   return res.rows[0];
@@ -752,8 +768,9 @@ export async function updateReceipt(id: number, data: Partial<TaxReceipt>): Prom
       resident_no1 = $34,
       address1 = $35,
       service_fee = $36,
-      yearend_fee = $37
-     WHERE id = $38
+      yearend_fee = $37,
+      receipt_title = $38
+     WHERE id = $39
      RETURNING *`,
     [
       data.member_num ?? ex.member_num,
@@ -793,6 +810,7 @@ export async function updateReceipt(id: number, data: Partial<TaxReceipt>): Prom
       data.address1 ?? ex.address1,
       data.service_fee ?? ex.service_fee ?? '30,000',
       data.yearend_fee ?? ex.yearend_fee ?? '',
+      data.receipt_title ?? ex.receipt_title ?? 'RECEIPT FOR CLASS "B" INCOME TAX (MONTHLY)',
       id
     ]
   );

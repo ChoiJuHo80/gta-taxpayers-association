@@ -128,7 +128,7 @@ export default function LookupPage() {
               <input
                 type="text"
                 required
-                placeholder="e.g. KIM SILVIA"
+                placeholder="e.g. JOHN DOE"
                 value={name}
                 onChange={e => setName(e.target.value.toUpperCase())}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 text-sm font-mono uppercase focus:ring-2 focus:ring-gta-500"
@@ -145,7 +145,7 @@ export default function LookupPage() {
               <input
                 type="text"
                 required
-                placeholder="e.g. 820012-3932521"
+                placeholder="e.g. 800101-1234567"
                 value={registrationNumber}
                 onChange={e => setRegistrationNumber(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-gta-500"
@@ -168,7 +168,7 @@ export default function LookupPage() {
         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
           <div className="font-bold text-slate-800">📌 Login Guide for GTA Members:</div>
           <div>• <strong>Name:</strong> Write down your full name in CAPITAL letters and spaces as shown on your KOR Residence Card (or Membership Card ID).</div>
-          <div>• <strong>Registration Number:</strong> Write down your Registration Number (e.g., <code>750409-5500019</code>) or Membership Password.</div>
+          <div>• <strong>Registration Number:</strong> Write down your Registration Number (e.g., <code>800101-1234567</code>) or Membership Password.</div>
         </div>
 
         {errorMsg && (
