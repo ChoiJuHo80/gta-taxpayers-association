@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { Search, FileText, CheckCircle2, AlertCircle, Printer, Download, User, CreditCard, LogOut } from 'lucide-react';
 import { ApplicationMember, TaxReceipt } from '@/lib/db';
-import ReceiptDocument, { downloadReceiptPdf } from '@/components/ReceiptDocument';
+import ReceiptDocument, { downloadReceiptPdf, printReceiptDocument } from '@/components/ReceiptDocument';
 
 function formatUnixMonth(val?: string): string {
   if (!val) return '-';
@@ -285,9 +285,9 @@ export default function LookupPage() {
       {/* Official Printable Tax Withholding Receipt Modal */}
       {selectedReceipt && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:static print:bg-white print:p-0">
-          <div className="bg-white border-2 border-slate-500 shadow-2xl max-w-[780px] w-full p-3 sm:p-5 my-4 print:shadow-none print:border-0 print:my-0 print:max-w-full print:p-0">
+          <div className="bg-white border-2 border-slate-500 shadow-2xl max-w-[760px] w-full p-3 sm:p-4 my-auto max-h-[96vh] flex flex-col print:shadow-none print:border-0 print:my-0 print:max-w-full print:p-0 print:max-h-none">
             {/* Modal Action Bar (Hidden when printing) */}
-            <div className="flex justify-between items-center border-b border-slate-300 pb-2.5 mb-2.5 print:hidden">
+            <div className="shrink-0 flex justify-between items-center border-b border-slate-300 pb-2 mb-2 print:hidden">
               <div className="flex items-center space-x-2">
                 <span className="bg-gta-100 text-gta-800 text-xs font-extrabold px-3 py-1 rounded-full">
                   Official GTA Tax Receipt #{selectedReceipt.id}
@@ -308,7 +308,13 @@ export default function LookupPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={() => {
+                    if (receiptPrintRef.current) {
+                      printReceiptDocument(receiptPrintRef.current);
+                    } else {
+                      window.print();
+                    }
+                  }}
                   className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold px-4 py-1.5 flex items-center space-x-1.5 shadow cursor-pointer"
                 >
                   <Printer className="w-3.5 h-3.5" />
@@ -324,7 +330,7 @@ export default function LookupPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto print:overflow-visible">
+            <div className="overflow-y-auto overflow-x-hidden flex-1">
               <ReceiptDocument receipt={selectedReceipt} containerRef={receiptPrintRef} />
             </div>
           </div>

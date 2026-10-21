@@ -19,7 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen print:min-h-0 flex flex-col antialiased relative">
-        <Header />
+        <div className="print:hidden">
+          <Header />
+        </div>
         <main className="flex-1">{children}</main>
         <div className="print:hidden">
           <Footer />

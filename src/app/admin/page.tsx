@@ -29,7 +29,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { Consultation, Notice, ApplicationMember, TaxReceipt } from '@/lib/db';
-import ReceiptDocument, { downloadReceiptPdf, downloadReceiptsBundlePdf } from '@/components/ReceiptDocument';
+import ReceiptDocument, { downloadReceiptPdf, downloadReceiptsBundlePdf, printReceiptDocument } from '@/components/ReceiptDocument';
 
 const CURRENCIES = ['USD', 'EURO', 'NOK', 'GBP', 'DKK', 'CAD', 'AUD', 'SGD', 'SEK', 'JPY', 'KRW'] as const;
 
@@ -3161,10 +3161,10 @@ export default function AdminPage() {
       {/* MODAL 3: PRINTABLE RECEIPT VIEW (Matching GTA Excel Sample) */}
       {/* ========================================================================= */}
       {selectedPrintReceipt && (
-        <div className="fixed inset-0 bg-black/60 z-[60] flex items-start justify-center p-2 sm:p-6 overflow-y-auto print:static print:bg-white print:p-0">
-          <div className="bg-white border-2 border-slate-500 shadow-2xl max-w-[780px] w-full p-3 sm:p-5 my-4 print:shadow-none print:border-0 print:my-0 print:max-w-full print:p-0">
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:static print:bg-white print:p-0">
+          <div className="bg-white border-2 border-slate-500 shadow-2xl max-w-[760px] w-full p-3 sm:p-4 my-auto max-h-[96vh] flex flex-col print:shadow-none print:border-0 print:my-0 print:max-w-full print:p-0 print:max-h-none">
             {/* Action Bar (Sticky and hidden when printing) */}
-            <div className="sticky top-0 bg-white z-20 flex justify-between items-center pb-2.5 mb-2.5 border-b border-slate-300 print:hidden">
+            <div className="shrink-0 bg-white z-20 flex justify-between items-center pb-2 mb-2 border-b border-slate-300 print:hidden">
               <span className="text-xs font-bold text-slate-700">
                 RECEIPT VIEW #{selectedPrintReceipt.id} — {selectedPrintReceipt.name}
               </span>
@@ -3183,7 +3183,13 @@ export default function AdminPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={() => {
+                    if (receiptPrintRef.current) {
+                      printReceiptDocument(receiptPrintRef.current);
+                    } else {
+                      window.print();
+                    }
+                  }}
                   className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold px-3.5 py-1.5 flex items-center space-x-1.5 shadow cursor-pointer"
                 >
                   <Printer className="w-3.5 h-3.5" />
@@ -3210,7 +3216,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto print:overflow-visible">
+            <div className="overflow-y-auto overflow-x-hidden flex-1">
               <ReceiptDocument receipt={selectedPrintReceipt} containerRef={receiptPrintRef} />
             </div>
           </div>
