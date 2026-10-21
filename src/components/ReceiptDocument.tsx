@@ -136,11 +136,20 @@ export async function downloadReceiptsBundlePdf(
   pdf.save(filename);
 }
 
+let isPrintingGlobal = false;
+
 export function printReceiptDocument(element: HTMLElement) {
   if (typeof window === 'undefined' || !element) {
     if (typeof window !== 'undefined') window.print();
     return;
   }
+
+  // Prevent multiple executions if user clicks repeatedly
+  if (isPrintingGlobal) return;
+  isPrintingGlobal = true;
+  setTimeout(() => {
+    isPrintingGlobal = false;
+  }, 2500);
 
   // Create isolated hidden iframe for clean 1-page printing
   const iframe = document.createElement('iframe');
@@ -209,7 +218,16 @@ export function printReceiptDocument(element: HTMLElement) {
   `);
   doc.close();
 
+  let printed = false;
+  let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+
   const doPrint = () => {
+    if (printed) return;
+    printed = true;
+    if (fallbackTimer) {
+      clearTimeout(fallbackTimer);
+      fallbackTimer = null;
+    }
     try {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
@@ -228,9 +246,9 @@ export function printReceiptDocument(element: HTMLElement) {
   if (img && !img.complete) {
     img.onload = doPrint;
     img.onerror = doPrint;
-    setTimeout(doPrint, 500);
+    fallbackTimer = setTimeout(doPrint, 500);
   } else {
-    setTimeout(doPrint, 250);
+    fallbackTimer = setTimeout(doPrint, 200);
   }
 }
 
