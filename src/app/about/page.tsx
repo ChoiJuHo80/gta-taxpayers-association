@@ -50,11 +50,11 @@ function AboutContent() {
       </div>
 
       {/* Sub Navigation Tabs */}
-      <div className="flex justify-center border-b border-slate-200">
-        <div className="flex space-x-2 sm:space-x-4">
+      <div className="flex justify-center border-b border-slate-200 overflow-x-auto">
+        <div className="flex space-x-2 sm:space-x-4 min-w-max">
           <button
             onClick={() => setActiveTab('introduction')}
-            className={`py-3 px-6 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 ${
+            className={`py-3 px-6 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'introduction'
                 ? 'border-gta-600 text-gta-600 bg-gta-50/50 rounded-t-xl'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -65,7 +65,7 @@ function AboutContent() {
 
           <button
             onClick={() => setActiveTab('benefit')}
-            className={`py-3 px-6 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 ${
+            className={`py-3 px-6 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'benefit'
                 ? 'border-gta-600 text-gta-600 bg-gta-50/50 rounded-t-xl'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -76,7 +76,7 @@ function AboutContent() {
 
           <button
             onClick={() => setActiveTab('location')}
-            className={`py-3 px-6 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 ${
+            className={`py-3 px-6 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'location'
                 ? 'border-gta-600 text-gta-600 bg-gta-50/50 rounded-t-xl'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -97,14 +97,14 @@ function AboutContent() {
             
             <div className="max-w-3xl space-y-6 relative z-10">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="bg-amber-400 text-slate-950 font-bold text-xs px-3 py-1 rounded-full uppercase tracking-wider">
+                <span className="bg-amber-400 text-slate-950 font-bold text-xs px-3 py-1 rounded-full uppercase tracking-wider whitespace-nowrap">
                   Authorized by National Tax Service
                 </span>
                 <a
                   href="https://www.nts.go.kr/english/main.do"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs px-3 py-1 rounded-full flex items-center space-x-1 transition-colors shadow-sm"
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs px-3 py-1 rounded-full flex items-center space-x-1 transition-colors shadow-sm whitespace-nowrap"
                 >
                   <span>🏛️ NTS National Tax Service Portal ↗</span>
                 </a>
@@ -115,10 +115,10 @@ function AboutContent() {
               <p className="text-slate-200 text-base leading-relaxed">
                 GTA was authorized by the National Tax Service of Republic of Korea and organized on June 16th, 2005. We were organized to assist and advice for foreigners’ Income tax matters.
               </p>
-              <div className="pt-2 flex flex-wrap gap-4 text-xs font-semibold text-slate-300">
-                <span className="bg-white/10 px-3 py-1.5 rounded-lg border border-white/20">Established: June 16, 2005</span>
-                <span className="bg-white/10 px-3 py-1.5 rounded-lg border border-white/20">Official Site: www.gtakorea.org</span>
-                <span className="bg-white/10 px-3 py-1.5 rounded-lg border border-white/20">Authorized: National Tax Service (NTS)</span>
+              <div className="pt-2 flex flex-wrap gap-3 text-xs font-semibold text-slate-300">
+                <span className="bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 whitespace-nowrap">Established: June 16, 2005</span>
+                <span className="bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 whitespace-nowrap">Official Site: www.gtakorea.org</span>
+                <span className="bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 whitespace-nowrap">Authorized: National Tax Service (NTS)</span>
               </div>
             </div>
           </div>
@@ -126,7 +126,7 @@ function AboutContent() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-4">
               <div className="flex items-center space-x-3 text-gta-600 font-bold text-lg">
-                <Award className="w-6 h-6" />
+                <Award className="w-6 h-6 shrink-0" />
                 <h3>Our Core Mission</h3>
               </div>
               <p className="text-slate-700 leading-relaxed text-sm">
@@ -139,25 +139,25 @@ function AboutContent() {
 
             <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 space-y-4">
               <h3 className="font-bold text-slate-900 text-lg flex items-center space-x-2">
-                <Target className="w-5 h-5 text-gta-500" />
+                <Target className="w-5 h-5 text-gta-500 shrink-0" />
                 <span>{lang === 'ko' ? '주요 협력 및 지원 조선사' : 'Major Serving Shipyards & Clients'}</span>
               </h3>
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 font-bold text-slate-800 text-sm flex items-center space-x-2 shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 font-bold text-slate-800 text-sm flex items-center space-x-2 shadow-xs whitespace-nowrap">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
                   <span>Hanwha Ocean</span>
                 </div>
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 font-bold text-slate-800 text-sm flex items-center space-x-2 shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 font-bold text-slate-800 text-sm flex items-center space-x-2 shadow-xs whitespace-nowrap">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
                   <span>SHI (Samsung)</span>
                 </div>
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 font-bold text-slate-800 text-sm flex items-center space-x-2 shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 font-bold text-slate-800 text-sm flex items-center space-x-2 shadow-xs whitespace-nowrap">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
                   <span>HD Hyundai (HHI)</span>
                 </div>
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 font-bold text-slate-800 text-sm flex items-center space-x-2 shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                  <span>HMD & Contractors</span>
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 font-bold text-slate-800 text-sm flex items-center space-x-2 shadow-xs whitespace-nowrap">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+                  <span>HMD &amp; Contractors</span>
                 </div>
               </div>
             </div>

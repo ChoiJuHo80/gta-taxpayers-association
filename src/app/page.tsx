@@ -102,16 +102,16 @@ export default function Home() {
             <div className="pt-2 flex flex-wrap items-center gap-4">
               <Link
                 href="/consult/lookup"
-                className="bg-[#1d3b6b] hover:bg-[#152c52] text-white font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all inline-flex items-center space-x-2.5 text-base"
+                className="bg-[#1d3b6b] hover:bg-[#152c52] text-white font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all inline-flex items-center space-x-2.5 text-base whitespace-nowrap shrink-0"
               >
                 <span>Get Started</span>
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-5 h-5 shrink-0" />
               </Link>
               <Link
                 href="/tax-guide?tab=income-tax-table"
-                className="bg-white/90 hover:bg-white text-[#1d3b6b] border border-slate-300 font-bold px-7 py-4 rounded-xl shadow-sm transition-all inline-flex items-center space-x-2 text-base"
+                className="bg-white/90 hover:bg-white text-[#1d3b6b] border border-slate-300 font-bold px-7 py-4 rounded-xl shadow-sm transition-all inline-flex items-center space-x-2 text-base whitespace-nowrap shrink-0"
               >
-                <FileText className="w-5 h-5" />
+                <FileText className="w-5 h-5 shrink-0" />
                 <span>Income Tax Table</span>
               </Link>
             </div>
@@ -130,25 +130,25 @@ export default function Home() {
               <Link
                 key={card.title}
                 href={card.href}
-                className="bg-white rounded-2xl p-7 shadow-md hover:shadow-xl border border-slate-200/90 transition-all duration-200 group flex flex-col items-center text-center hover:-translate-y-1"
+                className="bg-white rounded-2xl p-6 sm:p-7 shadow-md hover:shadow-xl border border-slate-200/90 transition-all duration-200 group flex flex-col items-center text-center hover:-translate-y-1"
               >
                 <div
-                  className={`w-16 h-16 rounded-2xl border flex items-center justify-center mb-5 group-hover:scale-105 transition-transform shadow-sm ${card.iconBg}`}
+                  className={`w-16 h-16 rounded-2xl border flex items-center justify-center mb-5 group-hover:scale-105 transition-transform shadow-sm shrink-0 ${card.iconBg}`}
                 >
                   <IconComponent className="w-8 h-8" />
                 </div>
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1 whitespace-nowrap">
                   {card.badge}
                 </span>
-                <h3 className="text-xl font-extrabold text-[#162d54] mb-2 group-hover:text-blue-700 transition-colors">
+                <h3 className="text-xl font-extrabold text-[#162d54] mb-2 group-hover:text-blue-700 transition-colors whitespace-nowrap">
                   {card.title}
                 </h3>
                 <p className="text-slate-600 text-sm leading-relaxed mb-5 flex-1">
                   {card.desc}
                 </p>
-                <span className="inline-flex items-center text-xs font-extrabold text-[#1d3b6b] group-hover:translate-x-1 transition-transform">
+                <span className="inline-flex items-center text-xs font-extrabold text-[#1d3b6b] group-hover:translate-x-1 transition-transform whitespace-nowrap">
                   <span>View Details</span>
-                  <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  <ArrowRight className="w-3.5 h-3.5 ml-1 shrink-0" />
                 </span>
               </Link>
             );
@@ -162,8 +162,8 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-14">
         <div className="bg-gradient-to-r from-[#162d54] via-[#1d3b6b] to-[#264b82] text-white p-8 sm:p-10 rounded-3xl shadow-lg flex flex-col lg:flex-row items-center justify-between gap-8">
           <div className="space-y-3 text-center lg:text-left max-w-2xl">
-            <div className="inline-flex items-center space-x-2 text-amber-300 text-xs font-extrabold tracking-wider uppercase bg-white/10 px-3.5 py-1 rounded-full">
-              <Percent className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center space-x-2 text-amber-300 text-xs font-extrabold tracking-wider uppercase bg-white/10 px-3.5 py-1 rounded-full whitespace-nowrap">
+              <Percent className="w-3.5 h-3.5 shrink-0" />
               <span>Benefit of GTA Members</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
@@ -177,17 +177,17 @@ export default function Home() {
           <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
             <Link
               href="/consult/lookup"
-              className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-sm px-6 py-3.5 rounded-xl shadow-md transition-all flex items-center space-x-2"
+              className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-sm px-6 py-3.5 rounded-xl shadow-md transition-all flex items-center space-x-2 whitespace-nowrap shrink-0"
             >
-              <Receipt className="w-4 h-4" />
+              <Receipt className="w-4 h-4 shrink-0" />
               <span>Check My Receipt</span>
             </Link>
             <Link
               href="/about?tab=benefit"
-              className="bg-white/15 hover:bg-white/25 text-white border border-white/25 font-bold text-sm px-6 py-3.5 rounded-xl transition-all flex items-center space-x-2"
+              className="bg-white/15 hover:bg-white/25 text-white border border-white/25 font-bold text-sm px-6 py-3.5 rounded-xl transition-all flex items-center space-x-2 whitespace-nowrap shrink-0"
             >
               <span>Learn More</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 shrink-0" />
             </Link>
           </div>
         </div>

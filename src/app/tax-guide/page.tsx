@@ -70,7 +70,7 @@ function TaxGuideContent() {
         <div className="flex space-x-2 sm:space-x-4 min-w-max pb-1">
           <button
             onClick={() => setActiveTab('tax-flow')}
-            className={`py-3 px-5 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 ${
+            className={`py-3 px-5 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'tax-flow'
                 ? 'border-gta-600 text-gta-600 bg-gta-50/50 rounded-t-xl'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -81,7 +81,7 @@ function TaxGuideContent() {
 
           <button
             onClick={() => setActiveTab('necessary-docs')}
-            className={`py-3 px-5 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 ${
+            className={`py-3 px-5 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'necessary-docs'
                 ? 'border-gta-600 text-gta-600 bg-gta-50/50 rounded-t-xl'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -92,7 +92,7 @@ function TaxGuideContent() {
 
           <button
             onClick={() => setActiveTab('income-tax-table')}
-            className={`py-3 px-5 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 ${
+            className={`py-3 px-5 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'income-tax-table'
                 ? 'border-gta-600 text-gta-600 bg-gta-50/50 rounded-t-xl'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -103,7 +103,7 @@ function TaxGuideContent() {
 
           <button
             onClick={() => setActiveTab('tax-deduction')}
-            className={`py-3 px-5 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 ${
+            className={`py-3 px-5 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'tax-deduction'
                 ? 'border-gta-600 text-gta-600 bg-gta-50/50 rounded-t-xl'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -118,57 +118,57 @@ function TaxGuideContent() {
       {activeTab === 'tax-flow' && (
         <div className="space-y-12 animate-in fade-in duration-200">
           <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-3xl font-extrabold text-slate-900">5-Step Monthly & Annual Tax Flow</h2>
+            <h2 className="text-3xl font-extrabold text-slate-900">5-Step Monthly &amp; Annual Tax Flow</h2>
             <p className="text-slate-600 text-sm">
               Standard tax administration workflow handled by Geoje Taxpayers Association for members.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between relative">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between relative">
               <div className="space-y-2">
-                <span className="text-xs font-black text-gta-600 bg-gta-100 px-2.5 py-1 rounded-full">STEP 01</span>
-                <h3 className="font-bold text-slate-900 text-base pt-1">Joining the GTA</h3>
+                <span className="inline-block text-xs font-black text-gta-600 bg-gta-100 px-2.5 py-1 rounded-full whitespace-nowrap">STEP 01</span>
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base pt-1 whitespace-nowrap">Joining the GTA</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
                   Submit GTA application form with a copy of your KOR residence card, marriage cert (if married), child birth cert, and salary pay-slips.
                 </p>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between relative">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between relative">
               <div className="space-y-2">
-                <span className="text-xs font-black text-blue-600 bg-blue-100 px-2.5 py-1 rounded-full">STEP 02</span>
-                <h3 className="font-bold text-slate-900 text-base pt-1">Issuing Tax Invoice</h3>
+                <span className="inline-block text-xs font-black text-blue-600 bg-blue-100 px-2.5 py-1 rounded-full whitespace-nowrap">STEP 02</span>
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base pt-1 whitespace-nowrap">Issuing Tax Invoice</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
                   GTA emails you a monthly tax invoice between 15th and 20th of every month.
                 </p>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between relative border-l-4 border-l-emerald-500">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between relative border-l-4 border-l-emerald-500">
               <div className="space-y-2">
-                <span className="text-xs font-black text-emerald-600 bg-emerald-100 px-2.5 py-1 rounded-full">STEP 03</span>
-                <h3 className="font-bold text-slate-900 text-base pt-1">Tax Payment & Report</h3>
+                <span className="inline-block text-xs font-black text-emerald-600 bg-emerald-100 px-2.5 py-1 rounded-full whitespace-nowrap">STEP 03</span>
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base pt-1 whitespace-nowrap">Tax Payment &amp; Report</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
                   Pay tax to GTA by end of month. GTA reports and pays to NTS and issues monthly receipts. Monthly payment yields 3% deduction.
                 </p>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between relative">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between relative">
               <div className="space-y-2">
-                <span className="text-xs font-black text-amber-600 bg-amber-100 px-2.5 py-1 rounded-full">STEP 04</span>
-                <h3 className="font-bold text-slate-900 text-base pt-1">Year-end Settlement</h3>
+                <span className="inline-block text-xs font-black text-amber-600 bg-amber-100 px-2.5 py-1 rounded-full whitespace-nowrap">STEP 04</span>
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base pt-1 whitespace-nowrap">Year-end Settlement</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
                   In January, recalculate tax based on fixed annual salary and exchange rate. Refund issued if overpaid or additional payment collected.
                 </p>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between relative">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between relative">
               <div className="space-y-2">
-                <span className="text-xs font-black text-purple-600 bg-purple-100 px-2.5 py-1 rounded-full">STEP 05</span>
-                <h3 className="font-bold text-slate-900 text-base pt-1">Tax Certificates</h3>
+                <span className="inline-block text-xs font-black text-purple-600 bg-purple-100 px-2.5 py-1 rounded-full whitespace-nowrap">STEP 05</span>
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base pt-1 whitespace-nowrap">Tax Certificates</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
                   Certificates of Full Payment issued. Avoids double taxation in home country. Mid-year departure tax cert supported.
                 </p>
@@ -263,13 +263,13 @@ function TaxGuideContent() {
           <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-4 gap-4">
               <div>
-                <span className="text-xs font-bold text-gta-600 bg-gta-50 px-3 py-1 rounded-full uppercase">Exchange Rate $1 = KRW 1,300</span>
+                <span className="text-xs font-bold text-gta-600 bg-gta-50 px-3 py-1 rounded-full uppercase whitespace-nowrap">Exchange Rate $1 = KRW 1,300</span>
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2 flex items-center space-x-2">
-                  <Calculator className="w-7 h-7 text-gta-600" />
-                  <span>Salary Information & Monthly Payable Tax Table</span>
+                  <Calculator className="w-7 h-7 text-gta-600 shrink-0" />
+                  <span>Salary Information &amp; Monthly Payable Tax Table</span>
                 </h2>
               </div>
-              <div className="text-xs text-slate-500 font-bold bg-slate-100 px-3 py-2 rounded-xl border border-slate-200">
+              <div className="text-xs text-slate-500 font-bold bg-slate-100 px-3 py-2 rounded-xl border border-slate-200 whitespace-nowrap shrink-0">
                 Single Taxpayer Basis (USD / KRW)
               </div>
             </div>
@@ -313,7 +313,7 @@ function TaxGuideContent() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gta-900 text-white text-xs uppercase tracking-wider">
+                  <tr className="bg-gta-900 text-white text-xs uppercase tracking-wider whitespace-nowrap">
                     <th className="py-3.5 px-4 rounded-tl-xl">Monthly Salary (USD)</th>
                     <th className="py-3.5 px-4">Annual Salary (USD)</th>
                     <th className="py-3.5 px-4">Effective Rate</th>
@@ -321,7 +321,7 @@ function TaxGuideContent() {
                     <th className="py-3.5 px-4 rounded-tr-xl">Applied Tax Method</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 text-sm font-semibold">
+                <tbody className="divide-y divide-slate-200 text-sm font-semibold whitespace-nowrap">
                   {SALARY_TAX_TABLE_1300.map((row, idx) => (
                     <tr
                       key={idx}
@@ -336,7 +336,7 @@ function TaxGuideContent() {
                         ₩{row.monthlyPayableTaxKrw.toLocaleString()}
                       </td>
                       <td className="py-3.5 px-4 text-xs font-bold">
-                        <span className={`px-2.5 py-1 rounded-full ${
+                        <span className={`px-2.5 py-1 rounded-full whitespace-nowrap ${
                           row.taxType.includes('Flat')
                             ? 'bg-purple-100 text-purple-700'
                             : 'bg-emerald-100 text-emerald-700'

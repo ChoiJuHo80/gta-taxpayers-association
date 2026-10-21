@@ -11,6 +11,12 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+button, a, th {
+  word-break: keep-all;
 }
 
 .glass-panel {

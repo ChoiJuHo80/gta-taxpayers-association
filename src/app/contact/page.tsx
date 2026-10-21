@@ -161,8 +161,8 @@ export default function ContactUsPage() {
       {/* Official Admission Application Form Download Card */}
       <div className="bg-gradient-to-r from-sky-900 via-gta-900 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-sky-700/50 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="space-y-2 text-center md:text-left">
-          <div className="inline-flex items-center space-x-2 bg-sky-500/20 text-sky-300 text-xs font-bold px-3 py-1 rounded-full border border-sky-400/30">
-            <FileText className="w-3.5 h-3.5 text-sky-400" />
+          <div className="inline-flex items-center space-x-2 bg-sky-500/20 text-sky-300 text-xs font-bold px-3 py-1 rounded-full border border-sky-400/30 whitespace-nowrap">
+            <FileText className="w-3.5 h-3.5 text-sky-400 shrink-0" />
             <span>Official Admission Document</span>
           </div>
           <h2 className="text-2xl font-black tracking-tight text-white">
@@ -175,9 +175,9 @@ export default function ContactUsPage() {
 
         <button
           onClick={handleDownloadWordForm}
-          className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-sm px-6 py-4 rounded-2xl shadow-xl flex items-center space-x-2.5 transition-all shrink-0 hover:scale-105 active:scale-95 cursor-pointer"
+          className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-sm px-6 py-4 rounded-2xl shadow-xl flex items-center space-x-2.5 transition-all shrink-0 whitespace-nowrap hover:scale-105 active:scale-95 cursor-pointer"
         >
-          <Download className="w-5 h-5 animate-pulse" />
+          <Download className="w-5 h-5 animate-pulse shrink-0" />
           <span>DOWNLOAD FORM (.DOC)</span>
         </button>
       </div>

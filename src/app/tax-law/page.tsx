@@ -56,11 +56,11 @@ function TaxLawContent() {
       </div>
 
       {/* Sub Navigation Tabs */}
-      <div className="flex justify-center border-b border-slate-200">
-        <div className="flex space-x-2 sm:space-x-4">
+      <div className="flex justify-center border-b border-slate-200 overflow-x-auto">
+        <div className="flex space-x-2 sm:space-x-4 min-w-max">
           <button
             onClick={() => setActiveTab('korean-tax-law')}
-            className={`py-3 px-6 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 ${
+            className={`py-3 px-6 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'korean-tax-law'
                 ? 'border-gta-600 text-gta-600 bg-gta-50/50 rounded-t-xl'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -71,7 +71,7 @@ function TaxLawContent() {
 
           <button
             onClick={() => setActiveTab('treaties')}
-            className={`py-3 px-6 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 ${
+            className={`py-3 px-6 font-bold text-sm sm:text-base border-b-2 transition-all flex items-center space-x-2 whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'treaties'
                 ? 'border-gta-600 text-gta-600 bg-gta-50/50 rounded-t-xl'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -88,7 +88,7 @@ function TaxLawContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
               <div className="flex items-center space-x-3 text-gta-600 font-bold text-lg">
-                <FileText className="w-6 h-6" />
+                <FileText className="w-6 h-6 shrink-0" />
                 <h3>1. Taxpayer (Income tax law Article 1 of 1)</h3>
               </div>
               <div className="p-4 rounded-xl bg-gta-50 border border-gta-200 text-gta-900 font-bold text-sm">
@@ -101,11 +101,11 @@ function TaxLawContent() {
 
             <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
               <div className="flex items-center space-x-3 text-emerald-600 font-bold text-lg">
-                <Shield className="w-6 h-6" />
+                <Shield className="w-6 h-6 shrink-0" />
                 <h3>2. Taxpayers Association (Article 149, 150-3)</h3>
               </div>
               <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-bold text-sm">
-                Class B Wage Earners & 3% Tax Credit
+                Class B Wage Earners &amp; 3% Tax Credit
               </div>
               <p className="text-slate-700 leading-relaxed text-sm">
                 ‘Class B’ wage and income earners (who receive their income from overseas company) may organize taxpayer association through which they may pay taxes. If taxpayer pays taxes through taxpayers association, the taxpayer gets the benefit of a <strong>3% Tax Credit</strong> for payment of taxes.
@@ -116,7 +116,7 @@ function TaxLawContent() {
           <div className="bg-white p-8 md:p-10 rounded-3xl border border-slate-200 shadow-md space-y-6">
             <div className="border-b border-slate-200 pb-4">
               <h3 className="text-2xl font-extrabold text-slate-900 flex items-center space-x-2">
-                <Scale className="w-6 h-6 text-gta-600" />
+                <Scale className="w-6 h-6 text-gta-600 shrink-0" />
                 <span>Progressive Tax Rate vs Flat Tax Rate</span>
               </h3>
             </div>
@@ -124,7 +124,7 @@ function TaxLawContent() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-950 text-white text-sm uppercase tracking-wider">
+                  <tr className="bg-slate-950 text-white text-sm uppercase tracking-wider whitespace-nowrap">
                     <th className="py-4 px-6 rounded-tl-xl">Items</th>
                     <th className="py-4 px-6">Progressive Tax Rate</th>
                     <th className="py-4 px-6 rounded-tr-xl">Flat Tax Rate</th>
@@ -132,24 +132,24 @@ function TaxLawContent() {
                 </thead>
                 <tbody className="divide-y divide-slate-200 text-sm font-semibold">
                   <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-6 text-slate-900 font-bold bg-slate-50">Taxpayer</td>
+                    <td className="py-4 px-6 text-slate-900 font-bold bg-slate-50 whitespace-nowrap">Taxpayer</td>
                     <td className="py-4 px-6 text-slate-700">Local Individuals or Expatriates</td>
-                    <td className="py-4 px-6 text-gta-700 font-extrabold">Expatriates ONLY</td>
+                    <td className="py-4 px-6 text-gta-700 font-extrabold whitespace-nowrap">Expatriates ONLY</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-6 text-slate-900 font-bold bg-slate-50">Tax Rate</td>
+                    <td className="py-4 px-6 text-slate-900 font-bold bg-slate-50 whitespace-nowrap">Tax Rate</td>
                     <td className="py-4 px-6 text-slate-700">6 - 45% (Graduated)</td>
-                    <td className="py-4 px-6 text-emerald-600 font-extrabold">19% (Fixed Flat)</td>
+                    <td className="py-4 px-6 text-emerald-600 font-extrabold whitespace-nowrap">19% (Fixed Flat)</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-6 text-slate-900 font-bold bg-slate-50">Deduction</td>
+                    <td className="py-4 px-6 text-slate-900 font-bold bg-slate-50 whitespace-nowrap">Deduction</td>
                     <td className="py-4 px-6 text-emerald-600">Applicable (Personal, Medical, etc.)</td>
-                    <td className="py-4 px-6 text-slate-400">Not Applicable</td>
+                    <td className="py-4 px-6 text-slate-400 whitespace-nowrap">Not Applicable</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-6 text-slate-900 font-bold bg-slate-50">Tax Return</td>
+                    <td className="py-4 px-6 text-slate-900 font-bold bg-slate-50 whitespace-nowrap">Tax Return</td>
                     <td className="py-4 px-6 text-emerald-600">Applicable (Year-end Settlement)</td>
-                    <td className="py-4 px-6 text-slate-400">Not Applicable</td>
+                    <td className="py-4 px-6 text-slate-400 whitespace-nowrap">Not Applicable</td>
                   </tr>
                 </tbody>
               </table>
@@ -169,7 +169,7 @@ function TaxLawContent() {
       {activeTab === 'treaties' && (
         <div className="space-y-8 animate-in fade-in duration-200">
           <div className="bg-gradient-to-r from-gta-900 to-slate-900 text-white p-8 md:p-10 rounded-3xl shadow-lg space-y-4">
-            <span className="bg-emerald-400 text-slate-950 text-xs font-bold px-3 py-1 rounded-full uppercase">
+            <span className="inline-block bg-emerald-400 text-slate-950 text-xs font-bold px-3 py-1 rounded-full uppercase whitespace-nowrap">
               As of July 2025
             </span>
             <h2 className="text-3xl font-black">Treaties with Foreign Countries</h2>
@@ -189,21 +189,21 @@ function TaxLawContent() {
                 className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-gta-500 text-sm font-semibold"
               />
             </div>
-            <div className="text-xs text-slate-500 font-bold whitespace-nowrap">
+            <div className="text-xs text-slate-500 font-bold whitespace-nowrap shrink-0">
               Showing {filteredCountries.length} of 99 Tax Treaty Countries
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {filteredCountries.map(item => (
               <div
                 key={item.no}
-                className="bg-white p-3.5 rounded-xl border border-slate-200 hover:border-gta-400 hover:shadow-md transition-all flex items-center space-x-2 text-xs font-bold text-slate-800"
+                className="bg-white p-3.5 rounded-xl border border-slate-200 hover:border-gta-400 hover:shadow-md transition-all flex items-center space-x-2.5 text-xs font-bold text-slate-800"
               >
                 <span className="w-6 h-6 rounded-full bg-gta-50 text-gta-700 flex items-center justify-center text-[10px] shrink-0 font-extrabold">
                   {item.no}
                 </span>
-                <span className="truncate">{item.country}</span>
+                <span className="leading-snug">{item.country}</span>
               </div>
             ))}
           </div>

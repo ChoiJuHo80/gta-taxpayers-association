@@ -1148,7 +1148,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
           <button
             onClick={() => {
               fetchMembers(memberQuery, membersPage, memberSearchField);
@@ -1160,35 +1160,35 @@ export default function AdminPage() {
               );
               fetchNotices();
             }}
-            className="bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1 cursor-pointer"
+            className="bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1 cursor-pointer whitespace-nowrap shrink-0"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${membersLoading || receiptsLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${membersLoading || receiptsLoading ? 'animate-spin' : ''}`} />
             <span>새로고침</span>
           </button>
 
           <Link
             href="/consult"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-3.5 py-2.5 rounded-xl shadow flex items-center space-x-1.5 transition-all"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-3.5 py-2.5 rounded-xl shadow flex items-center space-x-1.5 transition-all whitespace-nowrap shrink-0"
           >
-            <FileText className="w-4 h-4" />
+            <FileText className="w-4 h-4 shrink-0" />
             <span>+ 신규 회원 신청서 등록</span>
           </Link>
 
           <button
             type="button"
             onClick={() => handleOpenWriteReceipt(selectedReceiptMember)}
-            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs px-3.5 py-2.5 rounded-xl shadow flex items-center space-x-1.5 transition-all cursor-pointer"
+            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs px-3.5 py-2.5 rounded-xl shadow flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
           >
-            <Receipt className="w-4 h-4" />
+            <Receipt className="w-4 h-4 shrink-0" />
             <span>+ 영수증 직접 작성</span>
           </button>
 
           <button
             onClick={handleDownloadExcel}
             title="전체 회원검색 및 영수증 발급 탭의 선택 옵션에 따른 회원 목록 엑셀 다운로드"
-            className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold text-xs px-3.5 py-2.5 rounded-xl shadow flex items-center space-x-1.5 transition-all cursor-pointer"
+            className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold text-xs px-3.5 py-2.5 rounded-xl shadow flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
           >
-            <FileSpreadsheet className="w-4 h-4" />
+            <FileSpreadsheet className="w-4 h-4 shrink-0" />
             <span>엑셀 다운로드</span>
           </button>
 
@@ -1199,7 +1199,7 @@ export default function AdminPage() {
                 sessionStorage.removeItem('gta_admin_logged');
               }
             }}
-            className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg cursor-pointer"
+            className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg cursor-pointer whitespace-nowrap shrink-0"
           >
             로그아웃
           </button>
@@ -1210,13 +1210,13 @@ export default function AdminPage() {
       <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2 print:hidden">
         <button
           onClick={() => setActiveTab('members')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === 'members'
               ? 'bg-gta-900 text-white shadow-md'
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
           }`}
         >
-          <Users className="w-4 h-4" />
+          <Users className="w-4 h-4 shrink-0" />
           <span>👥 전체 회원 검색 및 영수증 발급</span>
           <span className="bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
             {membersTotal.toLocaleString()}
@@ -1229,13 +1229,13 @@ export default function AdminPage() {
             setReceiptsPage(1);
             setActiveTab('receipts');
           }}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === 'receipts'
               ? 'bg-gta-900 text-white shadow-md'
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
           }`}
         >
-          <Receipt className="w-4 h-4" />
+          <Receipt className="w-4 h-4 shrink-0" />
           <span>🧾 영수증 내역 및 관리</span>
           <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
             {receiptsTotal.toLocaleString()}
@@ -1244,13 +1244,13 @@ export default function AdminPage() {
 
         <button
           onClick={() => setActiveTab('notices')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === 'notices'
               ? 'bg-gta-900 text-white shadow-md'
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
           }`}
         >
-          <Megaphone className="w-4 h-4" />
+          <Megaphone className="w-4 h-4 shrink-0" />
           <span>📢 공지사항 관리</span>
           <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
             {notices.length}
@@ -1271,8 +1271,8 @@ export default function AdminPage() {
             }}
             className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col lg:flex-row justify-between items-center gap-3"
           >
-            <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-slate-700">
-              <span className="text-sm font-black text-slate-900 mr-2">- Member List</span>
+            <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-slate-700 shrink-0">
+              <span className="text-sm font-black text-slate-900 mr-2 whitespace-nowrap shrink-0">- Member List</span>
               {(
                 [
                   { value: 'name', label: 'name' },
@@ -1280,7 +1280,7 @@ export default function AdminPage() {
                   { value: 'phone', label: 'phone' },
                 ] as const
               ).map(opt => (
-                <label key={opt.value} className="inline-flex items-center space-x-1.5 cursor-pointer">
+                <label key={opt.value} className="inline-flex items-center space-x-1.5 cursor-pointer whitespace-nowrap shrink-0">
                   <input
                     type="radio"
                     name="memberSearchField"
@@ -1309,7 +1309,7 @@ export default function AdminPage() {
               <div className="flex items-center space-x-2 w-full sm:w-auto justify-end shrink-0">
                 <button
                   type="submit"
-                  className="bg-gta-600 hover:bg-gta-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow cursor-pointer whitespace-nowrap"
+                  className="bg-gta-600 hover:bg-gta-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow cursor-pointer whitespace-nowrap shrink-0"
                 >
                   검색
                 </button>
@@ -1321,7 +1321,7 @@ export default function AdminPage() {
                       setMemberQuery('');
                       setMembersPage(1);
                     }}
-                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-3.5 py-2.5 rounded-xl cursor-pointer whitespace-nowrap"
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-3.5 py-2.5 rounded-xl cursor-pointer whitespace-nowrap shrink-0"
                   >
                     초기화
                   </button>
@@ -1333,7 +1333,7 @@ export default function AdminPage() {
                     setReceiptsPage(1);
                     setActiveTab('receipts');
                   }}
-                  className="bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl cursor-pointer whitespace-nowrap"
+                  className="bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl cursor-pointer whitespace-nowrap shrink-0"
                 >
                   영수증전체보기
                 </button>
@@ -1346,7 +1346,7 @@ export default function AdminPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-center text-xs border-collapse">
                 <thead className="bg-[#FFFBC8] text-slate-900 font-bold border-b border-slate-300">
-                  <tr className="divide-x divide-slate-300">
+                  <tr className="divide-x divide-slate-300 whitespace-nowrap">
                     <th className="px-2.5 py-2.5">no</th>
                     <th className="px-3 py-2.5">name</th>
                     <th className="px-3 py-2.5">number</th>
@@ -1377,10 +1377,10 @@ export default function AdminPage() {
                       const cleanRemark = (m.remark || '').replace(/\\r\\n|\\n|\\r/g, ' ').trim();
                       return (
                         <tr key={m.id} className="hover:bg-yellow-50/40 transition-colors divide-x divide-slate-300">
-                          <td className="px-2.5 py-2 font-mono text-xs text-slate-800">
+                          <td className="px-2.5 py-2 font-mono text-xs text-slate-800 whitespace-nowrap">
                             {m.seq_no ?? m.id}
                           </td>
-                          <td className="px-3 py-2 font-bold text-slate-900">
+                          <td className="px-3 py-2 font-bold text-slate-900 whitespace-nowrap">
                             <button
                               type="button"
                               onClick={() => handleViewMemberReceipts(m)}
@@ -1389,23 +1389,23 @@ export default function AdminPage() {
                               {m.name}
                             </button>
                           </td>
-                          <td className="px-3 py-2 font-mono text-xs text-slate-800">
+                          <td className="px-3 py-2 font-mono text-xs text-slate-800 whitespace-nowrap">
                             {m.number || ''}
                           </td>
-                          <td className="px-3 py-2 text-xs text-slate-800 font-mono">
+                          <td className="px-3 py-2 text-xs text-slate-800 font-mono whitespace-nowrap">
                             {m.email || ''}
                           </td>
                           <td className="px-3 py-2 text-xs text-slate-800 max-w-xs">
                             {cleanRemark}
                           </td>
-                          <td className="px-3 py-2 font-mono text-xs font-bold text-slate-900">
+                          <td className="px-3 py-2 font-mono text-xs font-bold text-slate-900 whitespace-nowrap">
                             {m.phon || ''}
                           </td>
                           <td className="px-3 py-2 font-mono text-xs text-slate-800 whitespace-nowrap">
                             {formatUnixDate(m.date_from)} ~ {formatUnixDate(m.date_to)}
                           </td>
                           <td className="px-2.5 py-2 whitespace-nowrap">
-                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-xs font-bold px-2.5 py-0.5 rounded-full">
+                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-xs font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
                               {m.receipt_count ?? 0}건
                             </span>
                           </td>
@@ -1413,7 +1413,7 @@ export default function AdminPage() {
                             <button
                               type="button"
                               onClick={() => handleOpenEditMember(m)}
-                              className="bg-slate-100 hover:bg-slate-200 border border-slate-400 text-slate-800 text-[11px] font-bold px-2 py-0.5 rounded-xs cursor-pointer"
+                              className="bg-slate-100 hover:bg-slate-200 border border-slate-400 text-slate-800 text-[11px] font-bold px-2 py-0.5 rounded-xs cursor-pointer whitespace-nowrap"
                             >
                               MODIFY
                             </button>
@@ -1422,7 +1422,7 @@ export default function AdminPage() {
                             <button
                               type="button"
                               onClick={() => handleViewMemberReceipts(m)}
-                              className="bg-blue-50 hover:bg-blue-100 border border-blue-400 text-blue-800 text-[11px] font-bold px-2.5 py-0.5 rounded-xs cursor-pointer"
+                              className="bg-blue-50 hover:bg-blue-100 border border-blue-400 text-blue-800 text-[11px] font-bold px-2.5 py-0.5 rounded-xs cursor-pointer whitespace-nowrap"
                             >
                               VIEW
                             </button>
@@ -1451,14 +1451,14 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => setMembersPage(Math.max(1, blockStart - 10))}
-                            className="text-slate-700 hover:text-blue-700 underline font-bold px-1 py-0.5 cursor-pointer"
+                            className="text-slate-700 hover:text-blue-700 underline font-bold px-1 py-0.5 cursor-pointer whitespace-nowrap"
                           >
                             [BACK 10]
                           </button>
                           <button
                             type="button"
                             onClick={() => setMembersPage(1)}
-                            className="text-slate-700 hover:text-blue-700 underline font-bold px-1 py-0.5 cursor-pointer"
+                            className="text-slate-700 hover:text-blue-700 underline font-bold px-1 py-0.5 cursor-pointer whitespace-nowrap"
                           >
                             [1]
                           </button>
@@ -1496,7 +1496,7 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => setMembersPage(Math.min(totalMemberPages, blockEnd + 1))}
-                            className="text-blue-700 hover:text-blue-900 underline font-bold px-1 py-0.5 cursor-pointer"
+                            className="text-blue-700 hover:text-blue-900 underline font-bold px-1 py-0.5 cursor-pointer whitespace-nowrap"
                           >
                             [NEXT 10]
                           </button>
@@ -1509,7 +1509,7 @@ export default function AdminPage() {
 
               <Link
                 href="/consult"
-                className="bg-slate-100 hover:bg-slate-200 border border-slate-400 text-slate-800 text-xs font-bold px-3 py-1 rounded-xs"
+                className="bg-slate-100 hover:bg-slate-200 border border-slate-400 text-slate-800 text-xs font-bold px-3 py-1 rounded-xs whitespace-nowrap shrink-0"
               >
                 WRITE
               </Link>
@@ -1523,19 +1523,19 @@ export default function AdminPage() {
       {/* ========================================================================= */}
       {activeTab === 'receipts' && (
         <div className="w-full space-y-3 print:hidden bg-white p-4 sm:p-6 rounded-xl border border-slate-300 shadow-xs">
-          {/* Header Row: "- Receipt List" on left, Radio Search on right */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-1">
-            <div className="flex items-center space-x-3">
-              <span className="text-[15px] font-bold text-black">- Receipt List</span>
+          {/* Header Row: "- Receipt List" on left, Radio Search on right (Single-row clean alignment) */}
+          <div className="flex flex-wrap lg:flex-nowrap justify-between items-center gap-3 pb-2">
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
+              <span className="text-[15px] font-bold text-black whitespace-nowrap shrink-0">- Receipt List</span>
               {selectedReceiptMember && (
-                <span className="text-xs font-bold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded border border-blue-200">
+                <span className="text-xs font-bold text-blue-800 bg-blue-50 px-3 py-1 rounded border border-blue-200 whitespace-nowrap">
                   {selectedReceiptMember.name} ({selectedReceiptMember.number})
                 </span>
               )}
               <button
                 type="button"
                 onClick={() => setActiveTab('members')}
-                className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-1 rounded-xs cursor-pointer"
+                className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-1 rounded-xs cursor-pointer whitespace-nowrap shrink-0"
               >
                 ← 회원목록
               </button>
@@ -1546,7 +1546,7 @@ export default function AdminPage() {
                     setSelectedReceiptMember(null);
                     setReceiptsPage(1);
                   }}
-                  className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-1 rounded-xs cursor-pointer"
+                  className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-1 rounded-xs cursor-pointer whitespace-nowrap shrink-0"
                 >
                   전체 영수증 보기
                 </button>
@@ -1560,36 +1560,38 @@ export default function AdminPage() {
                 setReceiptsPage(1);
                 setReceiptQuery(receiptSearchInput);
               }}
-              className="flex flex-wrap items-center gap-3 text-xs text-black"
+              className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 text-xs text-black shrink-0"
             >
-              {(
-                [
-                  { value: 'name', label: 'name' },
-                  { value: 'number', label: 'number' },
-                  { value: 'phone', label: 'phone' },
-                ] as const
-              ).map(opt => (
-                <label key={opt.value} className="inline-flex items-center space-x-1 cursor-pointer font-semibold">
-                  <input
-                    type="radio"
-                    name="search_mode"
-                    value={opt.value}
-                    checked={receiptSearchField === opt.value}
-                    onChange={() => setReceiptSearchField(opt.value)}
-                  />
-                  <span>{opt.label}</span>
-                </label>
-              ))}
+              <div className="flex items-center space-x-2.5 shrink-0">
+                {(
+                  [
+                    { value: 'name', label: 'name' },
+                    { value: 'number', label: 'number' },
+                    { value: 'phone', label: 'phone' },
+                  ] as const
+                ).map(opt => (
+                  <label key={opt.value} className="inline-flex items-center space-x-1 cursor-pointer font-semibold whitespace-nowrap shrink-0">
+                    <input
+                      type="radio"
+                      name="search_mode"
+                      value={opt.value}
+                      checked={receiptSearchField === opt.value}
+                      onChange={() => setReceiptSearchField(opt.value)}
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
               <input
                 type="text"
                 value={receiptSearchInput}
                 onChange={e => setReceiptSearchInput(e.target.value)}
                 placeholder="name / number / phone"
-                className="border border-slate-400 px-2.5 py-1 text-xs w-48 rounded-xs"
+                className="border border-slate-400 px-2.5 py-1 text-xs w-44 sm:w-48 rounded-xs shrink-0"
               />
               <button
                 type="submit"
-                className="bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 text-white font-bold text-xs px-4 py-1 rounded-xs cursor-pointer"
+                className="bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 text-white font-bold text-xs px-4 py-1 rounded-xs cursor-pointer whitespace-nowrap shrink-0"
               >
                 검색
               </button>
@@ -1601,7 +1603,7 @@ export default function AdminPage() {
                     setReceiptQuery('');
                     setReceiptsPage(1);
                   }}
-                  className="bg-slate-200 hover:bg-slate-300 border border-slate-400 text-black font-bold text-xs px-2.5 py-1 cursor-pointer"
+                  className="bg-slate-200 hover:bg-slate-300 border border-slate-400 text-black font-bold text-xs px-2.5 py-1 cursor-pointer whitespace-nowrap shrink-0"
                 >
                   초기화
                 </button>
@@ -1613,15 +1615,15 @@ export default function AdminPage() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse border border-[#CCCCCC] text-center text-[12px] text-black">
               <thead>
-                <tr className="bg-[#FFFBC8] h-[34px] font-bold">
+                <tr className="bg-[#FFFBC8] h-[34px] font-bold whitespace-nowrap">
                   <td className="border border-[#CCCCCC] px-3 w-[6%]">no</td>
-                  <td className="border border-[#CCCCCC] px-3 w-[19%]">name</td>
-                  <td className="border border-[#CCCCCC] px-3 w-[16%]">Payer Resident-No</td>
+                  <td className="border border-[#CCCCCC] px-3 w-[22%]">name</td>
+                  <td className="border border-[#CCCCCC] px-3 w-[15%]">Payer Resident-No</td>
                   <td className="border border-[#CCCCCC] px-3 w-[20%]">Association-Name</td>
                   <td className="border border-[#CCCCCC] px-3 w-[12%]">License-No</td>
-                  <td className="border border-[#CCCCCC] px-3 w-[10%]">Date</td>
+                  <td className="border border-[#CCCCCC] px-3 w-[9%]">Date</td>
                   <td className="border border-[#CCCCCC] px-2 w-[6%]">Modify</td>
-                  <td className="border border-[#CCCCCC] px-2 w-[5%]">Del</td>
+                  <td className="border border-[#CCCCCC] px-2 w-[4%]">Del</td>
                   <td className="border border-[#CCCCCC] px-2 w-[6%]">+ Write</td>
                 </tr>
               </thead>
@@ -1642,13 +1644,13 @@ export default function AdminPage() {
                   receipts.map((r, idx) => {
                     const rowNo = receiptsTotal - ((receiptsPage - 1) * 25 + idx);
                     return (
-                      <tr key={r.id} className="bg-white hover:bg-yellow-50/40 h-[28px]">
-                        <td className="border border-[#CCCCCC] px-1.5 py-1">{rowNo > 0 ? rowNo : idx + 1}</td>
-                        <td className="border border-[#CCCCCC] px-2 py-1 font-bold">
+                      <tr key={r.id} className="bg-white hover:bg-yellow-50/40 h-[30px] whitespace-nowrap">
+                        <td className="border border-[#CCCCCC] px-2 py-1">{rowNo > 0 ? rowNo : idx + 1}</td>
+                        <td className="border border-[#CCCCCC] px-2.5 py-1 font-bold">
                           <button
                             type="button"
                             onClick={() => setSelectedPrintReceipt(r)}
-                            className="text-[#0000EE] hover:text-blue-900 underline font-bold cursor-pointer"
+                            className="text-[#0000EE] hover:text-blue-900 underline font-bold cursor-pointer whitespace-nowrap"
                             title="영수증 보기 / 인쇄 (View Receipt)"
                           >
                             {r.name}
@@ -1666,7 +1668,7 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => handleOpenEditReceipt(r)}
-                            className="bg-slate-100 hover:bg-slate-200 border border-slate-400 text-slate-800 text-[11px] font-bold px-2 py-0.5 rounded-xs cursor-pointer"
+                            className="bg-slate-100 hover:bg-slate-200 border border-slate-400 text-slate-800 text-[11px] font-bold px-2 py-0.5 rounded-xs cursor-pointer whitespace-nowrap"
                           >
                             MODIFY
                           </button>
@@ -1675,7 +1677,7 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => handleDeleteReceipt(r.id)}
-                            className="bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 text-[11px] font-bold px-2 py-0.5 rounded-xs cursor-pointer"
+                            className="bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 text-[11px] font-bold px-2 py-0.5 rounded-xs cursor-pointer whitespace-nowrap"
                           >
                             DEL
                           </button>
@@ -1684,7 +1686,7 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => handleDuplicateReceipt(r)}
-                            className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-400 text-emerald-800 text-[11px] font-bold px-2 py-0.5 rounded-xs cursor-pointer"
+                            className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-400 text-emerald-800 text-[11px] font-bold px-2 py-0.5 rounded-xs cursor-pointer whitespace-nowrap"
                             title="본 내용을 기준으로 추가등록"
                           >
                             + WRITE
