@@ -1222,7 +1222,7 @@ export default function AdminPage() {
   const totalReceiptPages = Math.max(1, Math.ceil(receiptsTotal / 25));
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 print:p-0 print:m-0 print:space-y-0 print:max-w-none">
+    <div className="w-full max-w-[1720px] mx-auto px-2 sm:px-4 lg:px-6 py-6 space-y-5 print:p-0 print:m-0 print:space-y-0 print:max-w-none">
       {/* Top Header & Quick Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gta-900 text-white p-6 rounded-2xl shadow-xl print:hidden">
         <div className="flex items-center space-x-3">
@@ -1426,16 +1426,16 @@ export default function AdminPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-center text-xs border-collapse">
                 <thead className="bg-[#FFFBC8] text-slate-900 font-bold border-b border-slate-300">
-                  <tr className="divide-x divide-slate-300 whitespace-nowrap">
-                    <th className="px-2.5 py-2.5">no</th>
-                    <th className="px-3 py-2.5">name</th>
-                    <th className="px-3 py-2.5">number</th>
-                    <th className="px-3 py-2.5">email</th>
-                    <th className="px-3 py-2.5">remark</th>
-                    <th className="px-3 py-2.5">Telephone</th>
-                    <th className="px-3 py-2.5">Date of Stay &amp; Work</th>
-                    <th className="px-2.5 py-2.5">Modify</th>
-                    <th className="px-2.5 py-2.5">Receipt</th>
+                  <tr className="divide-x divide-slate-300">
+                    <th className="px-1.5 py-2 w-[4%] min-w-[45px]">no</th>
+                    <th className="px-2 py-2 w-[16%] min-w-[130px]">name</th>
+                    <th className="px-2 py-2 w-[11%] min-w-[100px]">number</th>
+                    <th className="px-2 py-2 w-[18%] min-w-[150px]">email</th>
+                    <th className="px-2 py-2 w-[12%] min-w-[95px]">remark</th>
+                    <th className="px-2 py-2 w-[13%] min-w-[110px]">Telephone</th>
+                    <th className="px-2 py-2 w-[14%] min-w-[130px]">Date of Stay &amp; Work</th>
+                    <th className="px-1 py-2 w-[6%] min-w-[55px]">Modify</th>
+                    <th className="px-1 py-2 w-[6%] min-w-[55px]">Receipt</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-300">
@@ -1456,47 +1456,47 @@ export default function AdminPage() {
                       const cleanRemark = (m.remark || '').replace(/\\r\\n|\\n|\\r/g, ' ').trim();
                       return (
                         <tr key={m.id} className="hover:bg-yellow-50/40 transition-colors divide-x divide-slate-300">
-                          <td className="px-2.5 py-2 font-mono text-xs text-slate-800 whitespace-nowrap">
+                          <td className="px-1.5 py-1.5 font-mono text-xs text-slate-800 whitespace-nowrap">
                             {m.seq_no ?? m.id}
                           </td>
-                          <td className="px-3 py-2 font-bold text-slate-900 whitespace-nowrap">
+                          <td className="px-2 py-1.5 font-bold text-slate-900 leading-tight">
                             <button
                               type="button"
                               onClick={() => handleViewMemberReceipts(m)}
-                              className="hover:underline text-slate-900 font-bold cursor-pointer"
+                              className="hover:underline text-slate-900 font-bold cursor-pointer text-left"
                             >
                               {m.name}
                             </button>
                           </td>
-                          <td className="px-3 py-2 font-mono text-xs text-slate-800 whitespace-nowrap">
+                          <td className="px-2 py-1.5 font-mono text-xs text-slate-800 whitespace-nowrap">
                             {m.number || ''}
                           </td>
-                          <td className="px-3 py-2 text-xs text-slate-800 font-mono whitespace-nowrap">
+                          <td className="px-2 py-1.5 text-xs text-slate-800 font-mono break-all leading-tight" title={m.email || ''}>
                             {m.email || ''}
                           </td>
-                          <td className="px-3 py-2 text-xs text-slate-800 max-w-xs">
+                          <td className="px-2 py-1.5 text-xs text-slate-800 leading-tight whitespace-pre-line">
                             {cleanRemark}
                           </td>
-                          <td className="px-3 py-2 font-mono text-xs font-bold text-slate-900 whitespace-nowrap">
+                          <td className="px-2 py-1.5 font-mono text-xs font-bold text-slate-900 whitespace-nowrap">
                             {m.phon || ''}
                           </td>
-                          <td className="px-3 py-2 font-mono text-xs text-slate-800 whitespace-nowrap">
+                          <td className="px-2 py-1.5 font-mono text-[11px] text-slate-800 whitespace-nowrap">
                             {formatUnixDate(m.date_from)} ~ {formatUnixDate(m.date_to)}
                           </td>
-                          <td className="px-2 py-2 whitespace-nowrap">
+                          <td className="px-1 py-1.5 whitespace-nowrap">
                             <button
                               type="button"
                               onClick={() => handleOpenEditMember(m)}
-                              className="bg-slate-100 hover:bg-slate-200 border border-slate-400 text-slate-800 text-[11px] font-bold px-2 py-0.5 rounded-xs cursor-pointer whitespace-nowrap"
+                              className="bg-slate-100 hover:bg-slate-200 border border-slate-400 text-slate-800 text-[11px] font-bold px-2 py-1 rounded-xs cursor-pointer whitespace-nowrap"
                             >
                               MODIFY
                             </button>
                           </td>
-                          <td className="px-2 py-2 whitespace-nowrap">
+                          <td className="px-1 py-1.5 whitespace-nowrap">
                             <button
                               type="button"
                               onClick={() => handleViewMemberReceipts(m)}
-                              className="bg-blue-50 hover:bg-blue-100 border border-blue-400 text-blue-800 text-[11px] font-bold px-2.5 py-0.5 rounded-xs cursor-pointer whitespace-nowrap"
+                              className="bg-blue-50 hover:bg-blue-100 border border-blue-400 text-blue-800 text-[11px] font-bold px-2.5 py-1 rounded-xs cursor-pointer whitespace-nowrap"
                             >
                               VIEW
                             </button>
