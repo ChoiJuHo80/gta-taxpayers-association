@@ -119,11 +119,11 @@ export async function downloadReceiptPdf(element: HTMLElement, receipt: TaxRecei
   });
 
   const pageWidth = 210;
-  // Professional A4 presentation width: 175mm (leaves balanced ~17.5mm left/right margins)
-  const renderW = 175;
+  // Professional A4 presentation width: 180mm (leaves balanced 15mm left/right margins)
+  const renderW = 180;
   const renderH = (canvas.height * renderW) / canvas.width;
   const x = (pageWidth - renderW) / 2;
-  // Clean, professional top margin (14mm) - zero unwanted displacement
+  // Clean, professional top margin (14mm) matching print preview
   const y = 14;
 
   pdf.addImage(imgData, 'JPEG', x, y, renderW, renderH, undefined, 'FAST');
@@ -148,7 +148,7 @@ export async function downloadReceiptsBundlePdf(
   });
 
   const pageWidth = 210;
-  const renderW = 175;
+  const renderW = 180;
   const x = (pageWidth - renderW) / 2;
   const y = 14;
 
@@ -334,7 +334,7 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
     <div
       id="printable-receipt-area"
       ref={containerRef}
-      className="w-[700px] max-w-full mx-auto bg-white text-black p-4 sm:p-5 text-[11px] sm:text-[12px] leading-tight select-text"
+      className="w-[720px] max-w-full mx-auto bg-white text-black p-4 sm:p-5 text-[11px] sm:text-[12px] leading-tight select-text"
       style={{ fontFamily: "'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif" }}
     >
       <style>{`
@@ -376,21 +376,37 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
           <tr className="h-[28px]" style={{ verticalAlign: 'middle' }}>
             <td
               rowSpan={3}
-              className="border border-slate-400 bg-[#DCE6F1] text-center font-semibold w-[150px] px-2 py-1"
+              className="border border-slate-400 bg-[#DCE6F1] text-center font-semibold w-[130px] px-2 py-1"
               style={{ verticalAlign: 'middle' }}
             >
-              TAXPAYER
+              <div className="flex items-center justify-center min-h-[78px] text-center font-semibold">
+                TAXPAYER
+              </div>
             </td>
-            <td className="border border-slate-300 px-2.5 py-1 w-[160px] font-medium text-left" style={{ verticalAlign: 'middle' }}>Name</td>
-            <td className="border border-slate-300 px-2.5 py-1 font-semibold text-left" style={{ verticalAlign: 'middle' }}>{receipt.name}</td>
+            <td className="border border-slate-300 px-2.5 py-1 w-[140px] font-medium text-left" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center min-h-[26px]">Name</div>
+            </td>
+            <td className="border border-slate-300 px-2.5 py-1 font-semibold text-left" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center min-h-[26px] font-semibold">{receipt.name}</div>
+            </td>
           </tr>
           <tr className="h-[28px]" style={{ verticalAlign: 'middle' }}>
-            <td className="border border-slate-300 px-2.5 py-1 font-medium text-left" style={{ verticalAlign: 'middle' }}>Registration Number</td>
-            <td className="border border-slate-300 px-2.5 py-1 text-left" style={{ verticalAlign: 'middle' }}>{receipt.resident_no2}</td>
+            <td className="border border-slate-300 px-2.5 py-1 font-medium text-left" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center min-h-[26px]">Registration Number</div>
+            </td>
+            <td className="border border-slate-300 px-2.5 py-1 text-left" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center min-h-[26px]">{receipt.resident_no2}</div>
+            </td>
           </tr>
           <tr className="h-[28px]" style={{ verticalAlign: 'middle' }}>
-            <td className="border border-slate-300 px-2.5 py-1 font-medium text-left" style={{ verticalAlign: 'middle' }}>Address</td>
-            <td className="border border-slate-300 px-2.5 py-1 text-[10.5px] sm:text-[11px] text-left" style={{ verticalAlign: 'middle' }}>{receipt.address2}</td>
+            <td className="border border-slate-300 px-2.5 py-1 font-medium text-left" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center min-h-[26px]">Address</div>
+            </td>
+            <td className="border border-slate-300 px-2.5 py-1 text-left" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center min-h-[26px] text-[10px] whitespace-nowrap overflow-hidden">
+                {receipt.address2}
+              </div>
+            </td>
           </tr>
 
           {/* TAXPAYER ASSOCIATION (4 rows) */}
@@ -400,27 +416,45 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
               className="border border-slate-400 bg-[#DCE6F1] text-center font-semibold px-2 py-1 leading-tight"
               style={{ verticalAlign: 'middle' }}
             >
-              TAXPAYER
-              <br />
-              ASSOCIATION
+              <div className="flex items-center justify-center min-h-[104px] text-center font-semibold leading-tight">
+                TAXPAYER
+                <br />
+                ASSOCIATION
+              </div>
             </td>
-            <td className="border border-slate-300 px-2.5 py-1 font-medium text-left" style={{ verticalAlign: 'middle' }}>Association</td>
+            <td className="border border-slate-300 px-2.5 py-1 font-medium text-left" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center min-h-[26px]">Association</div>
+            </td>
             <td className="border border-slate-300 px-2.5 py-1 text-left" style={{ verticalAlign: 'middle' }}>
-              {receipt.association_name || 'Geoje Taxpayer Association'}
+              <div className="flex items-center min-h-[26px]">
+                {receipt.association_name || 'Geoje Taxpayer Association'}
+              </div>
             </td>
           </tr>
           <tr className="h-[28px]" style={{ verticalAlign: 'middle' }}>
-            <td className="border border-slate-300 px-2.5 py-1 font-medium text-left" style={{ verticalAlign: 'middle' }}>Licence number</td>
-            <td className="border border-slate-300 px-2.5 py-1 text-left" style={{ verticalAlign: 'middle' }}>{receipt.license_no || '612-80-03137'}</td>
-          </tr>
-          <tr className="h-[28px]" style={{ verticalAlign: 'middle' }}>
-            <td className="border border-slate-300 px-2.5 py-1 font-medium text-left" style={{ verticalAlign: 'middle' }}>Chairman</td>
-            <td className="border border-slate-300 px-2.5 py-1 text-left" style={{ verticalAlign: 'middle' }}>{receipt.chairman_name || 'kim Se Kwang'}</td>
-          </tr>
-          <tr className="h-[28px]" style={{ verticalAlign: 'middle' }}>
-            <td className="border border-slate-300 px-2.5 py-1 font-medium text-left" style={{ verticalAlign: 'middle' }}>Address</td>
+            <td className="border border-slate-300 px-2.5 py-1 font-medium text-left" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center min-h-[26px]">Licence number</div>
+            </td>
             <td className="border border-slate-300 px-2.5 py-1 text-left" style={{ verticalAlign: 'middle' }}>
-              {receipt.address1 || '#107, 3696 Geoje-daero, Geoje-city gyeongnam Korea'}
+              <div className="flex items-center min-h-[26px]">{receipt.license_no || '612-80-03137'}</div>
+            </td>
+          </tr>
+          <tr className="h-[28px]" style={{ verticalAlign: 'middle' }}>
+            <td className="border border-slate-300 px-2.5 py-1 font-medium text-left" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center min-h-[26px]">Chairman</div>
+            </td>
+            <td className="border border-slate-300 px-2.5 py-1 text-left" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center min-h-[26px]">{receipt.chairman_name || 'kim Se Kwang'}</div>
+            </td>
+          </tr>
+          <tr className="h-[28px]" style={{ verticalAlign: 'middle' }}>
+            <td className="border border-slate-300 px-2.5 py-1 font-medium text-left" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center min-h-[26px]">Address</div>
+            </td>
+            <td className="border border-slate-300 px-2.5 py-1 text-left" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center min-h-[26px] text-[10px] whitespace-nowrap overflow-hidden">
+                {receipt.address1 || '#107, 3696 Geoje-daero, Geoje-city gyeongnam Korea'}
+              </div>
             </td>
           </tr>
         </tbody>
@@ -431,27 +465,47 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
       <table className="w-full border-collapse border border-slate-500 text-[11px] sm:text-[12px] text-center mb-3">
         <thead>
           <tr className="bg-[#DCE6F1] h-[28px]" style={{ verticalAlign: 'middle' }}>
-            <th className="border border-slate-400 font-medium px-2 w-[18%]" style={{ verticalAlign: 'middle' }}>Company</th>
-            <th className="border border-slate-400 font-medium px-2 w-[20.5%]" style={{ verticalAlign: 'middle' }}>[1] Basic Salary</th>
-            <th className="border border-slate-400 font-medium px-2 w-[20.5%]" style={{ verticalAlign: 'middle' }}>[2] Bonus</th>
-            <th className="border border-slate-400 font-medium px-2 w-[20.5%]" style={{ verticalAlign: 'middle' }}>[3] Other Income</th>
-            <th className="border border-slate-400 font-medium px-2 w-[20.5%]" style={{ verticalAlign: 'middle' }}>[4] Total Salary</th>
+            <th className="border border-slate-400 font-medium px-2 w-[18%]" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-center min-h-[26px]">Company</div>
+            </th>
+            <th className="border border-slate-400 font-medium px-2 w-[20.5%]" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-center min-h-[26px]">[1] Basic Salary</div>
+            </th>
+            <th className="border border-slate-400 font-medium px-2 w-[20.5%]" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-center min-h-[26px]">[2] Bonus</div>
+            </th>
+            <th className="border border-slate-400 font-medium px-2 w-[20.5%]" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-center min-h-[26px]">[3] Other Income</div>
+            </th>
+            <th className="border border-slate-400 font-medium px-2 w-[20.5%]" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-center min-h-[26px]">[4] Total Salary</div>
+            </th>
           </tr>
         </thead>
         <tbody>
           <tr className="h-[36px]" style={{ verticalAlign: 'middle' }}>
-            <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}>{company}</td>
             <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}>
-              {basicSalary > 0 ? formatNum(basicSalary, true) : ''}
+              <div className="flex items-center justify-center min-h-[34px]">{company}</div>
             </td>
             <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}>
-              {bonus > 0 ? formatNum(bonus, true) : ''}
+              <div className="flex items-center justify-center min-h-[34px]">
+                {basicSalary > 0 ? formatNum(basicSalary, true) : ''}
+              </div>
             </td>
             <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}>
-              {otherIncome > 0 ? formatNum(otherIncome, true) : ''}
+              <div className="flex items-center justify-center min-h-[34px]">
+                {bonus > 0 ? formatNum(bonus, true) : ''}
+              </div>
+            </td>
+            <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-center min-h-[34px]">
+                {otherIncome > 0 ? formatNum(otherIncome, true) : ''}
+              </div>
             </td>
             <td className="border border-slate-400 px-2 font-semibold" style={{ verticalAlign: 'middle' }}>
-              {computedTotalSalary > 0 ? formatNum(computedTotalSalary, true) : ''}
+              <div className="flex items-center justify-center min-h-[34px] font-semibold">
+                {computedTotalSalary > 0 ? formatNum(computedTotalSalary, true) : ''}
+              </div>
             </td>
           </tr>
         </tbody>
@@ -463,64 +517,96 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
         <tbody>
           {/* Row 1: [4] Total Salary | [5] * Non Taxable Salary | blank */}
           <tr className="bg-[#DCE6F1] h-[26px]" style={{ verticalAlign: 'middle' }}>
-            <td className="border border-slate-400 font-medium px-2 w-1/3" style={{ verticalAlign: 'middle' }}>[4] Total Salary</td>
             <td className="border border-slate-400 font-medium px-2 w-1/3" style={{ verticalAlign: 'middle' }}>
-              [5] * Non Taxable Salary
+              <div className="flex items-center justify-center min-h-[24px] font-medium">[4] Total Salary</div>
             </td>
-            <td className="border border-slate-400 bg-white px-2 w-1/3" style={{ verticalAlign: 'middle' }}></td>
+            <td className="border border-slate-400 font-medium px-2 w-1/3" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-center min-h-[24px] font-medium">[5] * Non Taxable Salary</div>
+            </td>
+            <td className="border border-slate-400 bg-white px-2 w-1/3" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-center min-h-[24px]"></div>
+            </td>
           </tr>
           <tr className="h-[36px]" style={{ verticalAlign: 'middle' }}>
             <td className="border border-slate-400 px-2 font-semibold" style={{ verticalAlign: 'middle' }}>
-              {computedTotalSalary > 0 ? formatNum(computedTotalSalary, true) : ''}
+              <div className="flex items-center justify-center min-h-[34px] font-semibold">
+                {computedTotalSalary > 0 ? formatNum(computedTotalSalary, true) : ''}
+              </div>
             </td>
             <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}>
-              {nonTaxableSalary && nonTaxableSalary !== '0' ? formatNum(nonTaxableSalary, true) : ''}
+              <div className="flex items-center justify-center min-h-[34px]">
+                {nonTaxableSalary && nonTaxableSalary !== '0' ? formatNum(nonTaxableSalary, true) : ''}
+              </div>
             </td>
-            <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}></td>
+            <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-center min-h-[34px]"></div>
+            </td>
           </tr>
 
           {/* Row 2: [6] Payable Income Tax | [7] Local Income Tax | [8] Total tax */}
           <tr className="bg-[#DCE6F1] h-[26px]" style={{ verticalAlign: 'middle' }}>
-            <td className="border border-slate-400 font-medium px-2" style={{ verticalAlign: 'middle' }}>[6] Payable Income Tax</td>
-            <td className="border border-slate-400 font-medium px-2" style={{ verticalAlign: 'middle' }}>[7] Local Income Tax</td>
-            <td className="border border-slate-400 font-medium px-2" style={{ verticalAlign: 'middle' }}>[8] Total tax</td>
+            <td className="border border-slate-400 font-medium px-2" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-center min-h-[24px] font-medium">[6] Payable Income Tax</div>
+            </td>
+            <td className="border border-slate-400 font-medium px-2" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-center min-h-[24px] font-medium">[7] Local Income Tax</div>
+            </td>
+            <td className="border border-slate-400 font-medium px-2" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-center min-h-[24px] font-medium">[8] Total tax</div>
+            </td>
           </tr>
           <tr className="h-[36px]" style={{ verticalAlign: 'middle' }}>
             <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}>
-              {payableIncomeTax > 0 ? formatNum(payableIncomeTax, true) : ''}
+              <div className="flex items-center justify-center min-h-[34px]">
+                {payableIncomeTax > 0 ? formatNum(payableIncomeTax, true) : ''}
+              </div>
             </td>
             <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}>
-              {localIncomeTax > 0 ? formatNum(localIncomeTax, true) : ''}
+              <div className="flex items-center justify-center min-h-[34px]">
+                {localIncomeTax > 0 ? formatNum(localIncomeTax, true) : ''}
+              </div>
             </td>
             <td className="border border-slate-400 px-2 font-semibold" style={{ verticalAlign: 'middle' }}>
-              {totalTax > 0 ? formatNum(totalTax, true) : ''}
+              <div className="flex items-center justify-center min-h-[34px] font-semibold">
+                {totalTax > 0 ? formatNum(totalTax, true) : ''}
+              </div>
             </td>
           </tr>
 
           {/* Row 3 & 4: Service Fee & Year-end settlement Fee */}
           <tr className="h-[28px]" style={{ verticalAlign: 'middle' }}>
-            <td rowSpan={2} className="border border-slate-400 bg-white px-2" style={{ verticalAlign: 'middle' }}></td>
-            <td className="border border-slate-400 bg-[#DCE6F1] font-medium px-2" style={{ verticalAlign: 'middle' }}>[8] Monthly service Fee</td>
+            <td rowSpan={2} className="border border-slate-400 bg-white px-2" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-center min-h-[56px]"></div>
+            </td>
+            <td className="border border-slate-400 bg-[#DCE6F1] font-medium px-2" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-center min-h-[26px] font-medium">[8] Monthly service Fee</div>
+            </td>
             <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}>
-              {serviceFeeNum > 0 ? formatNum(serviceFeeNum, true) : rawServiceFee === '0' ? '₩0' : ''}
+              <div className="flex items-center justify-center min-h-[26px]">
+                {serviceFeeNum > 0 ? formatNum(serviceFeeNum, true) : rawServiceFee === '0' ? '₩0' : ''}
+              </div>
             </td>
           </tr>
           <tr className="h-[28px]" style={{ verticalAlign: 'middle' }}>
             <td className="border border-slate-400 bg-[#DCE6F1] font-medium px-2" style={{ verticalAlign: 'middle' }}>
-              [9] Year-end settlement Fee
+              <div className="flex items-center justify-center min-h-[26px] font-medium">[9] Year-end settlement Fee</div>
             </td>
             <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}>
-              {yearEndFeeNum > 0 ? formatNum(yearEndFeeNum, true) : ''}
+              <div className="flex items-center justify-center min-h-[26px]">
+                {yearEndFeeNum > 0 ? formatNum(yearEndFeeNum, true) : ''}
+              </div>
             </td>
           </tr>
 
           {/* Row 5: [10] Grand total amount */}
           <tr className="h-[38px]" style={{ verticalAlign: 'middle' }}>
             <td colSpan={2} className="border border-slate-400 bg-[#DCE6F1] font-semibold px-2" style={{ verticalAlign: 'middle' }}>
-              [10] Grand total amount
+              <div className="flex items-center justify-center min-h-[36px] font-semibold">[10] Grand total amount</div>
             </td>
             <td className="border border-slate-400 px-2 font-bold text-[12.5px]" style={{ verticalAlign: 'middle' }}>
-              {grandTotal > 0 ? formatNum(grandTotal, true) : ''}
+              <div className="flex items-center justify-center min-h-[36px] font-bold text-[12.5px]">
+                {grandTotal > 0 ? formatNum(grandTotal, true) : ''}
+              </div>
             </td>
           </tr>
         </tbody>
