@@ -303,7 +303,8 @@ export default function AdminPage() {
     setMembersLoading(true);
     try {
       const res = await fetch(
-        `/api/members?query=${encodeURIComponent(q)}&field=${encodeURIComponent(field)}&page=${p}&limit=20`
+        `/api/members?query=${encodeURIComponent(q)}&field=${encodeURIComponent(field)}&page=${p}&limit=20&_t=${Date.now()}`,
+        { cache: 'no-store' }
       );
       const json = await res.json();
       if (json.success) {
@@ -331,8 +332,9 @@ export default function AdminPage() {
         }
         params.set('page', String(p));
         params.set('limit', '25');
+        params.set('_t', String(Date.now()));
 
-        const res = await fetch(`/api/receipts?${params.toString()}`);
+        const res = await fetch(`/api/receipts?${params.toString()}`, { cache: 'no-store' });
         const json = await res.json();
         if (json.success) {
           setReceipts(json.receipts || []);
@@ -840,21 +842,27 @@ export default function AdminPage() {
   };
 
   const handleDeleteReceipt = async (id: number) => {
-    if (!confirm('정말 삭제 하시겠습니까?')) return;
+    if (!confirm(`영수증(#${id})을 정말 삭제하시겠습니까?\n삭제된 영수증은 복구할 수 없습니다.`)) return;
     try {
-      const res = await fetch(`/api/receipts?id=${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/receipts?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       const json = await res.json();
       if (json.success) {
-        fetchReceipts(
+        alert(`영수증(#${id})이 정상적으로 삭제되었습니다.`);
+        await fetchReceipts(
           receiptQuery,
           receiptsPage,
           selectedReceiptMember ? String(selectedReceiptMember.id) : undefined,
           receiptSearchField
         );
-        fetchMembers(memberQuery, membersPage, memberSearchField);
+        await fetchMembers(memberQuery, membersPage, memberSearchField);
+      } else {
+        alert(json.error || json.message || '영수증 삭제에 실패했습니다.');
       }
-    } catch (e) {
-      alert('Failed to delete receipt');
+    } catch (e: any) {
+      alert(`삭제 중 오류가 발생했습니다: ${e?.message || '네트워크 오류'}`);
     }
   };
 
@@ -1052,16 +1060,28 @@ export default function AdminPage() {
     }
   };
 
-  const handleDeleteMember = async (id: number, name: string) => {
-    if (!confirm('정말 삭제 하시겠습니까?')) return;
+  const handleDeleteMember = async (id: number, name: string): Promise<boolean> => {
+    if (!confirm(`'${name}' 회원 정보를 정말 삭제하시겠습니까?\n삭제 후에는 해당 회원의 데이터가 복구되지 않습니다.`)) {
+      return false;
+    }
     try {
-      const res = await fetch(`/api/members?id=${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/members?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       const json = await res.json();
       if (json.success) {
-        fetchMembers(memberQuery, membersPage, memberSearchField);
+        alert(`'${name}' 회원 정보가 정상적으로 삭제되었습니다.`);
+        setEditingMember(null);
+        await fetchMembers(memberQuery, membersPage, memberSearchField);
+        return true;
+      } else {
+        alert(json.error || json.message || '회원 삭제에 실패하였습니다.');
+        return false;
       }
-    } catch (err) {
-      alert('Failed to delete member');
+    } catch (err: any) {
+      alert(`삭제 처리 중 오류가 발생했습니다: ${err?.message || '네트워크 오류'}`);
+      return false;
     }
   };
 
@@ -3126,10 +3146,8 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={async () => {
-                    const id = editingMember.id;
-                    const nm = editingMember.name;
-                    setEditingMember(null);
-                    await handleDeleteMember(id, nm);
+                    if (!editingMember) return;
+                    await handleDeleteMember(editingMember.id, editingMember.name);
                   }}
                   className="px-4 py-2.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 text-xs font-bold rounded-xl cursor-pointer inline-flex items-center space-x-1.5"
                 >
