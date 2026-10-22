@@ -548,7 +548,7 @@ ${childrenLines}
                   <input
                     type="text"
                     required
-                    placeholder="e.g. 800101-1234567"
+                    placeholder="e.g. 800101-3000000"
                     value={formData.alienRegNo}
                     onChange={e => setFormData({ ...formData, alienRegNo: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 font-mono"
