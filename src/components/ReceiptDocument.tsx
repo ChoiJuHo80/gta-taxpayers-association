@@ -70,6 +70,25 @@ async function captureReceiptCanvas(element: HTMLElement): Promise<HTMLCanvasEle
   clone.style.background = '#ffffff';
   clone.style.boxShadow = 'none';
   clone.style.border = 'none';
+  clone.style.fontFamily = "Arial, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif";
+
+  // Normalize all table cells and wrapper divs inside clone for html2canvas vertical centering
+  const cells = clone.querySelectorAll<HTMLElement>('td, th');
+  cells.forEach(cell => {
+    cell.style.verticalAlign = 'middle';
+    const innerDiv = cell.querySelector<HTMLElement>(':scope > div');
+    if (innerDiv) {
+      innerDiv.style.minHeight = '0';
+      innerDiv.style.height = 'auto';
+      innerDiv.style.display = 'block';
+      if (innerDiv.classList.contains('justify-center')) {
+        innerDiv.style.textAlign = 'center';
+      } else {
+        innerDiv.style.textAlign = 'left';
+      }
+      innerDiv.style.lineHeight = '1.3';
+    }
+  });
 
   sandbox.appendChild(clone);
   document.body.appendChild(sandbox);
@@ -226,7 +245,7 @@ export function printReceiptDocument(element: HTMLElement) {
             padding: 0 !important;
             background: #ffffff !important;
             color: #000000 !important;
-            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif !important;
+            font-family: Arial, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif !important;
             overflow: visible !important;
             height: auto !important;
           }
@@ -335,9 +354,12 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
       id="printable-receipt-area"
       ref={containerRef}
       className="w-[720px] max-w-full mx-auto bg-white text-black p-4 sm:p-5 text-[11px] sm:text-[12px] leading-tight select-text"
-      style={{ fontFamily: "'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif" }}
+      style={{ fontFamily: "Arial, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif" }}
     >
       <style>{`
+        #printable-receipt-area {
+          font-family: Arial, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif !important;
+        }
         #printable-receipt-area table {
           border-collapse: collapse !important;
           width: 100% !important;
@@ -515,31 +537,25 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
       <div className="font-semibold text-[11px] sm:text-[12px] mb-1">TAX CALCULATION (KRW)</div>
       <table className="w-full border-collapse border border-slate-500 text-[11px] sm:text-[12px] text-center mb-2.5">
         <tbody>
-          {/* Row 1: [4] Total Salary | [5] * Non Taxable Salary | blank */}
+          {/* Row 1: [4] Total Salary | [5] * Non Taxable Salary */}
           <tr className="bg-[#DCE6F1] h-[26px]" style={{ verticalAlign: 'middle' }}>
             <td className="border border-slate-400 font-medium px-2 w-1/3" style={{ verticalAlign: 'middle' }}>
               <div className="flex items-center justify-center min-h-[24px] font-medium">[4] Total Salary</div>
             </td>
-            <td className="border border-slate-400 font-medium px-2 w-1/3" style={{ verticalAlign: 'middle' }}>
+            <td colSpan={2} className="border border-slate-400 font-medium px-2 w-2/3" style={{ verticalAlign: 'middle' }}>
               <div className="flex items-center justify-center min-h-[24px] font-medium">[5] * Non Taxable Salary</div>
-            </td>
-            <td className="border border-slate-400 bg-white px-2 w-1/3" style={{ verticalAlign: 'middle' }}>
-              <div className="flex items-center justify-center min-h-[24px]"></div>
             </td>
           </tr>
           <tr className="h-[36px]" style={{ verticalAlign: 'middle' }}>
-            <td className="border border-slate-400 px-2 font-semibold" style={{ verticalAlign: 'middle' }}>
+            <td className="border border-slate-400 px-2 font-semibold w-1/3" style={{ verticalAlign: 'middle' }}>
               <div className="flex items-center justify-center min-h-[34px] font-semibold">
                 {computedTotalSalary > 0 ? formatNum(computedTotalSalary, true) : ''}
               </div>
             </td>
-            <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}>
+            <td colSpan={2} className="border border-slate-400 px-2 w-2/3" style={{ verticalAlign: 'middle' }}>
               <div className="flex items-center justify-center min-h-[34px]">
                 {nonTaxableSalary && nonTaxableSalary !== '0' ? formatNum(nonTaxableSalary, true) : ''}
               </div>
-            </td>
-            <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}>
-              <div className="flex items-center justify-center min-h-[34px]"></div>
             </td>
           </tr>
 
@@ -600,7 +616,7 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
 
           {/* Row 5: [10] Grand total amount */}
           <tr className="h-[38px]" style={{ verticalAlign: 'middle' }}>
-            <td colSpan={2} className="border border-slate-400 bg-[#DCE6F1] font-semibold px-2" style={{ verticalAlign: 'middle' }}>
+            <td colSpan={2} className="border border-slate-400 bg-white font-semibold px-2" style={{ verticalAlign: 'middle' }}>
               <div className="flex items-center justify-center min-h-[36px] font-semibold">[10] Grand total amount</div>
             </td>
             <td className="border border-slate-400 px-2 font-bold text-[12.5px]" style={{ verticalAlign: 'middle' }}>
@@ -629,7 +645,12 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
       </div>
 
       <div className="mt-1 flex justify-end items-center space-x-3 pr-2">
-        <span className="text-[11px] sm:text-[12px] font-medium tracking-wider">GEOJE TAXPAYER ASSOCIATION</span>
+        <span
+          className="text-[15px] sm:text-[16px] font-bold tracking-[0.05em] text-slate-900"
+          style={{ fontFamily: "'Times New Roman', Georgia, 'Batang', serif" }}
+        >
+          GEOJE TAXPAYER ASSOCIATION
+        </span>
         <img
           src="/img/official_seal.png"
           alt="Geoje Taxpayer Association Official Seal"
