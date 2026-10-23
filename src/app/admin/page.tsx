@@ -1369,7 +1369,7 @@ export default function AdminPage() {
               setMembersPage(1);
               setMemberQuery(memberSearchInput);
             }}
-            className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col lg:flex-row justify-between items-center gap-3"
+            className="bg-slate-100 p-4 rounded-2xl border border-slate-300 shadow-xs flex flex-col lg:flex-row justify-between items-center gap-3"
           >
             <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-slate-700 shrink-0">
               <span className="text-sm font-black text-slate-900 mr-2 whitespace-nowrap shrink-0">- Member List</span>
@@ -1402,7 +1402,7 @@ export default function AdminPage() {
                   placeholder="회원 이름(name), 등록번호(number), 연락처(phone) 검색..."
                   value={memberSearchInput}
                   onChange={e => setMemberSearchInput(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-gta-500"
+                  className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-gta-500 bg-white"
                 />
               </div>
 
@@ -1421,7 +1421,7 @@ export default function AdminPage() {
                       setMemberQuery('');
                       setMembersPage(1);
                     }}
-                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-3.5 py-2.5 rounded-xl cursor-pointer whitespace-nowrap shrink-0"
+                    className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs px-3.5 py-2.5 rounded-xl cursor-pointer whitespace-nowrap shrink-0"
                   >
                     초기화
                   </button>
@@ -1441,11 +1441,11 @@ export default function AdminPage() {
             </div>
           </form>
 
-          {/* Members Table (Matching Legacy member_list.html) */}
+          {/* Members Table (Matching Legacy member_list.html - Gray Theme) */}
           <div className="bg-white rounded-xl border border-slate-300 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-center text-xs border-collapse">
-                <thead className="bg-[#FFFBC8] text-slate-900 font-bold border-b border-slate-300">
+                <thead className="bg-slate-200 text-slate-800 font-bold border-b border-slate-300">
                   <tr className="divide-x divide-slate-300">
                     <th className="px-1.5 py-2 w-[4%] min-w-[45px]">no</th>
                     <th className="px-2 py-2 w-[16%] min-w-[130px]">name</th>
@@ -1616,11 +1616,11 @@ export default function AdminPage() {
       {/* TAB 2: RECEIPT LIST (Full-width expanded layout) */}
       {/* ========================================================================= */}
       {activeTab === 'receipts' && (
-        <div className="w-full space-y-3 print:hidden bg-white p-4 sm:p-6 rounded-xl border border-slate-300 shadow-xs">
-          {/* Header Row: "- Receipt List" on left, Radio Search on right (Single-row clean alignment) */}
-          <div className="flex flex-wrap lg:flex-nowrap justify-between items-center gap-3 pb-2">
+        <div className="w-full space-y-3 print:hidden bg-white p-4 sm:p-6 rounded-xl border border-amber-300 shadow-xs">
+          {/* Header Row: "- Receipt List" on left, Radio Search on right (Yellow Theme) */}
+          <div className="flex flex-wrap lg:flex-nowrap justify-between items-center gap-3 p-3 bg-amber-50/80 rounded-xl border border-amber-200">
             <div className="flex flex-wrap items-center gap-2 min-w-0">
-              <span className="text-[15px] font-bold text-black whitespace-nowrap shrink-0">- Receipt List</span>
+              <span className="text-[15px] font-bold text-slate-900 whitespace-nowrap shrink-0">- Receipt List</span>
               {selectedReceiptMember && (
                 <span className="text-xs font-bold text-blue-800 bg-blue-50 px-3 py-1 rounded border border-blue-200 whitespace-nowrap">
                   {selectedReceiptMember.name} ({selectedReceiptMember.number})
@@ -1629,7 +1629,7 @@ export default function AdminPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('members')}
-                className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-1 rounded-xs cursor-pointer whitespace-nowrap shrink-0"
+                className="text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 px-3 py-1 rounded-xs cursor-pointer whitespace-nowrap shrink-0"
               >
                 ← 회원목록
               </button>
@@ -1640,7 +1640,7 @@ export default function AdminPage() {
                     setSelectedReceiptMember(null);
                     setReceiptsPage(1);
                   }}
-                  className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-1 rounded-xs cursor-pointer whitespace-nowrap shrink-0"
+                  className="text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 px-3 py-1 rounded-xs cursor-pointer whitespace-nowrap shrink-0"
                 >
                   전체 영수증 보기
                 </button>
@@ -1697,7 +1697,7 @@ export default function AdminPage() {
                 value={receiptSearchInput}
                 onChange={e => setReceiptSearchInput(e.target.value)}
                 placeholder="name / number / phone"
-                className="border border-slate-400 px-2.5 py-1 text-xs w-44 sm:w-48 rounded-xs shrink-0"
+                className="border border-slate-400 px-2.5 py-1 text-xs w-44 sm:w-48 rounded-xs shrink-0 bg-white"
               />
               <button
                 type="submit"
@@ -1713,7 +1713,7 @@ export default function AdminPage() {
                     setReceiptQuery('');
                     setReceiptsPage(1);
                   }}
-                  className="bg-slate-200 hover:bg-slate-300 border border-slate-400 text-black font-bold text-xs px-2.5 py-1 cursor-pointer whitespace-nowrap shrink-0"
+                  className="bg-white hover:bg-slate-100 border border-slate-400 text-black font-bold text-xs px-2.5 py-1 cursor-pointer whitespace-nowrap shrink-0"
                 >
                   초기화
                 </button>
@@ -1721,11 +1721,11 @@ export default function AdminPage() {
             </form>
           </div>
 
-          {/* Expanded Receipt List Table */}
+          {/* Expanded Receipt List Table (Yellow Theme Matching Client Request) */}
           <div className="overflow-x-auto">
             <table className="w-full border-collapse border border-[#CCCCCC] text-center text-[12px] text-black">
               <thead>
-                <tr className="bg-[#FFFBC8] h-[34px] font-bold whitespace-nowrap">
+                <tr className="bg-[#FFFBC8] h-[34px] font-bold whitespace-nowrap text-slate-900 border-b border-amber-300">
                   <td className="border border-[#CCCCCC] px-2 w-[3%]">
                     <input
                       type="checkbox"
@@ -1736,12 +1736,12 @@ export default function AdminPage() {
                       className="cursor-pointer"
                     />
                   </td>
-                  <td className="border border-[#CCCCCC] px-3 w-[5%]">no</td>
-                  <td className="border border-[#CCCCCC] px-3 w-[20%]">name</td>
-                  <td className="border border-[#CCCCCC] px-3 w-[15%]">Payer Resident-No</td>
-                  <td className="border border-[#CCCCCC] px-3 w-[18%]">Association-Name</td>
-                  <td className="border border-[#CCCCCC] px-3 w-[12%]">License-No</td>
-                  <td className="border border-[#CCCCCC] px-3 w-[9%]">Date</td>
+                  <td className="border border-[#CCCCCC] px-2 w-[4%]">no</td>
+                  <td className="border border-[#CCCCCC] px-3 w-[18%]">name</td>
+                  <td className="border border-[#CCCCCC] px-3 w-[14%]">Payer Resident-No</td>
+                  <td className="border border-[#CCCCCC] px-3 w-[18%]">Company</td>
+                  <td className="border border-[#CCCCCC] px-3 w-[12%]">Taxation</td>
+                  <td className="border border-[#CCCCCC] px-3 w-[11%]">Issue date</td>
                   <td className="border border-[#CCCCCC] px-2 w-[6%]">Modify</td>
                   <td className="border border-[#CCCCCC] px-2 w-[4%]">Del</td>
                   <td className="border border-[#CCCCCC] px-2 w-[6%]">+ Write</td>
@@ -1785,14 +1785,14 @@ export default function AdminPage() {
                             {r.name}
                           </button>
                         </td>
-                        <td className="border border-[#CCCCCC] px-2 py-1">{r.resident_no2}</td>
-                        <td className="border border-[#CCCCCC] px-2 py-1 font-bold">
-                          {r.association_name || 'Geoje Taxpayers Association'}
+                        <td className="border border-[#CCCCCC] px-2 py-1 font-mono">{r.resident_no2}</td>
+                        <td className="border border-[#CCCCCC] px-2 py-1 font-bold text-slate-800">
+                          {r.overseas_name || r.local_name || '-'}
                         </td>
-                        <td className="border border-[#CCCCCC] px-2 py-1 font-bold">
-                          {r.license_no || '612-80-03137'}
+                        <td className="border border-[#CCCCCC] px-2 py-1 font-mono text-slate-700">
+                          {formatUnixDate(r.taxation_period)}
                         </td>
-                        <td className="border border-[#CCCCCC] px-2 py-1">{formatUnixDate(r.reg_date)}</td>
+                        <td className="border border-[#CCCCCC] px-2 py-1 font-mono text-slate-700">{formatUnixDate(r.reg_date)}</td>
                         <td className="border border-[#CCCCCC] px-1.5 py-1">
                           <button
                             type="button"
