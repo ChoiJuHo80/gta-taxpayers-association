@@ -87,7 +87,7 @@ export default function Header() {
       <header className="sticky top-0 z-50 glass-panel shadow-sm border-b border-slate-200 w-full bg-white/95 backdrop-blur-md print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Row 1: Brand Logo & Top Actions */}
-          <div className="flex justify-between items-center py-1 min-h-[70px] sm:min-h-[80px] gap-4 border-b border-slate-100">
+          <div className="flex justify-between items-center py-1.5 sm:py-2 min-h-[80px] sm:min-h-[96px] gap-4 border-b border-slate-100">
             {/* Brand Logo */}
             <Link href="/" className="flex items-center group shrink-0">
               <GtaLogo size="md" />
