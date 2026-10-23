@@ -3055,19 +3055,30 @@ export default function AdminPage() {
                     </span>
                   </div>
 
-                  <input
-                    type="file"
-                    onChange={e => {
-                      if (e.target.files && e.target.files[0]) {
-                        const f = e.target.files[0];
-                        setMemberAppForm(prev => ({
-                          ...prev,
-                          files: [...prev.files, { name: f.name, size: f.size }],
-                        }));
-                      }
-                    }}
-                    className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-gta-50 file:text-gta-700 hover:file:bg-gta-100"
-                  />
+                  <div className="flex items-center space-x-3 pt-1">
+                    <label className="cursor-pointer bg-white hover:bg-slate-50 active:bg-slate-100 text-gta-800 font-bold text-xs px-3.5 py-2 rounded-xl border border-slate-300 shadow-xs inline-flex items-center space-x-2 transition-all">
+                      <Upload className="w-3.5 h-3.5 text-gta-600" />
+                      <span>Choose File</span>
+                      <input
+                        type="file"
+                        onChange={e => {
+                          if (e.target.files && e.target.files[0]) {
+                            const f = e.target.files[0];
+                            setMemberAppForm(prev => ({
+                              ...prev,
+                              files: [...prev.files, { name: f.name, size: f.size }],
+                            }));
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                    <span className="text-xs text-slate-500 font-medium font-mono truncate max-w-xs">
+                      {memberAppForm.files.length > 0
+                        ? memberAppForm.files[memberAppForm.files.length - 1].name
+                        : 'No file chosen'}
+                    </span>
+                  </div>
 
                   {memberAppForm.files.length > 0 && (
                     <div className="space-y-1 pt-1">
@@ -3079,7 +3090,22 @@ export default function AdminPage() {
                           <span>
                             📄 {f.name} ({(f.size / 1024).toFixed(1)} KB)
                           </span>
-                          <span className="text-emerald-600 font-bold text-[10px]">Encrypted</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-emerald-600 font-bold text-[10px]">Encrypted</span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setMemberAppForm(prev => ({
+                                  ...prev,
+                                  files: prev.files.filter((_, i) => i !== idx),
+                                }))
+                              }
+                              className="text-slate-400 hover:text-red-600 text-xs px-1 font-bold"
+                              title="Remove file"
+                            >
+                              ✕
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
