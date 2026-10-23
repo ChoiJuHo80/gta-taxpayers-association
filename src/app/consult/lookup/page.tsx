@@ -89,7 +89,7 @@ export default function LookupPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8 print:p-0 print:m-0 print:space-y-0 print:max-w-none">
+    <div className="max-w-6xl xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 print:p-0 print:m-0 print:space-y-0 print:max-w-none">
       {/* Login / Lookup Card */}
       <div className="bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-slate-200 space-y-6 print:hidden">
         <div className="border-b border-slate-200 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -224,49 +224,51 @@ export default function LookupPage() {
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs sm:text-sm">
-                  <thead className="bg-slate-100 text-slate-700 text-xs uppercase font-bold border-b border-slate-200 whitespace-nowrap">
+                  <thead className="bg-slate-100 text-slate-700 text-[11px] sm:text-xs uppercase font-bold border-b border-slate-200">
                     <tr>
-                      <th className="px-4 py-3.5">No.</th>
-                      <th className="px-4 py-3.5">Taxation Period</th>
-                      <th className="px-4 py-3.5">Company</th>
-                      <th className="px-4 py-3.5 text-right">Total Salary (KRW)</th>
-                      <th className="px-4 py-3.5 text-right">Income Tax</th>
-                      <th className="px-4 py-3.5 text-right">Resident Tax</th>
-                      <th className="px-4 py-3.5 text-right">Total Paid (KRW)</th>
-                      <th className="px-4 py-3.5 text-center">Issue Date</th>
-                      <th className="px-4 py-3.5 text-right">Receipt</th>
+                      <th className="px-2.5 sm:px-3 py-3 text-center">No.</th>
+                      <th className="px-2.5 sm:px-3 py-3 whitespace-nowrap">Taxation Period</th>
+                      <th className="px-2.5 sm:px-3 py-3">Company</th>
+                      <th className="px-2.5 sm:px-3 py-3 text-right whitespace-nowrap">Total Salary</th>
+                      <th className="px-2.5 sm:px-3 py-3 text-right whitespace-nowrap">Income Tax</th>
+                      <th className="px-2.5 sm:px-3 py-3 text-right whitespace-nowrap">Resident Tax</th>
+                      <th className="px-2.5 sm:px-3 py-3 text-right whitespace-nowrap">Total Paid</th>
+                      <th className="px-2.5 sm:px-3 py-3 text-center whitespace-nowrap">Issue Date</th>
+                      <th className="px-2.5 sm:px-3 py-3 text-center whitespace-nowrap">Receipt</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 whitespace-nowrap">
+                  <tbody className="divide-y divide-slate-200 text-xs sm:text-sm">
                     {receipts.map((r, idx) => (
                       <tr key={r.id} className="hover:bg-blue-50/40 transition-colors">
-                        <td className="px-4 py-3.5 font-mono text-xs text-slate-500">{receipts.length - idx}</td>
-                        <td className="px-4 py-3.5 font-mono font-bold text-gta-800">
+                        <td className="px-2.5 sm:px-3 py-3 font-mono text-xs text-slate-500 text-center">
+                          {receipts.length - idx}
+                        </td>
+                        <td className="px-2.5 sm:px-3 py-3 font-mono font-bold text-gta-800 whitespace-nowrap">
                           {formatUnixMonth(r.taxation_period)}
                         </td>
-                        <td className="px-4 py-3.5 font-semibold text-slate-800">
+                        <td className="px-2.5 sm:px-3 py-3 font-semibold text-slate-800 truncate max-w-[140px]" title={r.overseas_name || r.local_name || '-'}>
                           {r.overseas_name || r.local_name || '-'}
                         </td>
-                        <td className="px-4 py-3.5 text-right font-mono font-semibold text-slate-900">
+                        <td className="px-2.5 sm:px-3 py-3 text-right font-mono font-semibold text-slate-900 whitespace-nowrap">
                           ₩{r.total_salary || r.total_totalsalary || '0'}
                         </td>
-                        <td className="px-4 py-3.5 text-right font-mono text-slate-700">
+                        <td className="px-2.5 sm:px-3 py-3 text-right font-mono text-slate-700 whitespace-nowrap">
                           ₩{r.payable_income || '0'}
                         </td>
-                        <td className="px-4 py-3.5 text-right font-mono text-slate-700">
+                        <td className="px-2.5 sm:px-3 py-3 text-right font-mono text-slate-700 whitespace-nowrap">
                           ₩{r.payable_resident || '0'}
                         </td>
-                        <td className="px-4 py-3.5 text-right font-mono font-extrabold text-emerald-700">
+                        <td className="px-2.5 sm:px-3 py-3 text-right font-mono font-extrabold text-emerald-700 whitespace-nowrap">
                           ₩{r.payable_special || '0'}
                         </td>
-                        <td className="px-4 py-3.5 text-center font-mono text-xs text-slate-500">
+                        <td className="px-2.5 sm:px-3 py-3 text-center font-mono text-xs text-slate-500 whitespace-nowrap">
                           {formatUnixDate(r.reg_date)}
                         </td>
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-2.5 sm:px-3 py-3 text-center whitespace-nowrap">
                           <button
                             type="button"
                             onClick={() => setSelectedReceipt(r)}
-                            className="bg-gta-600 hover:bg-gta-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-xs inline-flex items-center space-x-1 cursor-pointer whitespace-nowrap"
+                            className="bg-gta-600 hover:bg-gta-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-xs inline-flex items-center space-x-1 cursor-pointer whitespace-nowrap"
                           >
                             <Printer className="w-3.5 h-3.5 shrink-0" />
                             <span>View / Print</span>
