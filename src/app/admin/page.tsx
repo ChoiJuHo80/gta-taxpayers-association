@@ -2727,34 +2727,6 @@ export default function AdminPage() {
                       />
                     </div>
                   </div>
-
-                  <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 text-xs flex flex-wrap items-center justify-between gap-3">
-                    <span className="font-bold text-amber-950">
-                      ※ Have you worked in Korea before 1st Jan. 2004?
-                    </span>
-                    <div className="flex items-center space-x-4">
-                      <label className="inline-flex items-center space-x-1.5 cursor-pointer font-bold text-slate-800">
-                        <input
-                          type="radio"
-                          name="workedBefore2004"
-                          checked={memberAppForm.workedBefore2004 === 'No'}
-                          onChange={() => setMemberAppForm({ ...memberAppForm, workedBefore2004: 'No' })}
-                          className="text-gta-600 focus:ring-gta-500"
-                        />
-                        <span>No</span>
-                      </label>
-                      <label className="inline-flex items-center space-x-1.5 cursor-pointer font-bold text-slate-800">
-                        <input
-                          type="radio"
-                          name="workedBefore2004"
-                          checked={memberAppForm.workedBefore2004 === 'Yes'}
-                          onChange={() => setMemberAppForm({ ...memberAppForm, workedBefore2004: 'Yes' })}
-                          className="text-gta-600 focus:ring-gta-500"
-                        />
-                        <span>Yes</span>
-                      </label>
-                    </div>
-                  </div>
                 </div>
               </div>
 

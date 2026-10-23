@@ -481,15 +481,6 @@ ${childrenLines}
                 Tel: (055) 688-2141 &nbsp;|&nbsp; Fax: (055) 688-2142 &nbsp;|&nbsp; www.gtakorea.org
               </p>
             </div>
-
-            <button
-              type="button"
-              onClick={handleDownloadWordForm}
-              className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-lg flex items-center space-x-2 transition-all shrink-0 group cursor-pointer"
-            >
-              <Download className="w-4 h-4" />
-              <span>DOWNLOAD FORM (.DOC)</span>
-            </button>
           </div>
 
           {errorMsg && (
@@ -542,7 +533,7 @@ ${childrenLines}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">2. Registration Number *</label>
                   <input
@@ -556,7 +547,7 @@ ${childrenLines}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">3. E-mail Address *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">E-mail Address *</label>
                   <input
                     type="email"
                     required
@@ -564,18 +555,6 @@ ${childrenLines}
                     value={formData.email}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">6. Telephone (Mobile) *</label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="e.g. 010-1234-5678"
-                    value={formData.phone}
-                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 font-mono"
                   />
                 </div>
               </div>
@@ -630,7 +609,7 @@ ${childrenLines}
               </div>
             </div>
 
-            {/* Section 4, 5, 7: Employment & Stay Info */}
+            {/* Section 4 ~ 7: Employment & Stay Info */}
             <div className="space-y-4">
               <h3 className="text-sm font-extrabold text-gta-900 uppercase tracking-wider bg-slate-100 p-2.5 rounded-lg border-l-4 border-gta-600">
                 Employment &amp; Stay Information
@@ -672,62 +651,50 @@ ${childrenLines}
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">7. Date of Stay &amp; Work *</label>
-                <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-slate-600 shrink-0">From:</span>
-                    <input
-                      type="date"
-                      value={`${formData.dateFromYear}-${formData.dateFromMonth}-${formData.dateFromDay}`}
-                      onChange={e => {
-                        const parts = e.target.value.split('-');
-                        if (parts.length === 3) {
-                          setFormData({ ...formData, dateFromYear: parts[0], dateFromMonth: parts[1], dateFromDay: parts[2] });
-                        }
-                      }}
-                      className="px-2 py-1 rounded border border-slate-300 text-xs font-mono w-full"
-                    />
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-slate-600 shrink-0">To:</span>
-                    <input
-                      type="date"
-                      value={`${formData.dateToYear}-${formData.dateToMonth}-${formData.dateToDay}`}
-                      onChange={e => {
-                        const parts = e.target.value.split('-');
-                        if (parts.length === 3) {
-                          setFormData({ ...formData, dateToYear: parts[0], dateToMonth: parts[1], dateToDay: parts[2] });
-                        }
-                      }}
-                      className="px-2 py-1 rounded border border-slate-300 text-xs font-mono w-full"
-                    />
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">6. Telephone (Mobile) *</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="e.g. 010-1234-5678"
+                    value={formData.phone}
+                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-gta-500 font-mono"
+                  />
                 </div>
 
-                <div className="mt-2 p-2.5 bg-amber-50/60 rounded-lg border border-amber-200 flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <span className="font-bold text-slate-700">※ Have you worked in Korea before 1st Jan. 2004?</span>
-                  <div className="flex items-center space-x-4">
-                    <label className="inline-flex items-center space-x-1.5 cursor-pointer font-bold">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">7. Date of Stay &amp; Work *</label>
+                  <div className="grid grid-cols-2 gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200 text-xs">
+                    <div className="flex items-center space-x-1.5">
+                      <span className="font-bold text-slate-600 shrink-0 text-[11px]">From:</span>
                       <input
-                        type="radio"
-                        name="consultWorkedBefore2004"
-                        checked={formData.workedBefore2004 === 'Yes'}
-                        onChange={() => setFormData({ ...formData, workedBefore2004: 'Yes' })}
-                        className="w-4 h-4 text-gta-600"
+                        type="date"
+                        value={`${formData.dateFromYear}-${formData.dateFromMonth}-${formData.dateFromDay}`}
+                        onChange={e => {
+                          const parts = e.target.value.split('-');
+                          if (parts.length === 3) {
+                            setFormData({ ...formData, dateFromYear: parts[0], dateFromMonth: parts[1], dateFromDay: parts[2] });
+                          }
+                        }}
+                        className="px-2 py-1 rounded border border-slate-300 text-xs font-mono w-full bg-white"
                       />
-                      <span>Yes</span>
-                    </label>
-                    <label className="inline-flex items-center space-x-1.5 cursor-pointer font-bold">
+                    </div>
+                    <div className="flex items-center space-x-1.5">
+                      <span className="font-bold text-slate-600 shrink-0 text-[11px]">To:</span>
                       <input
-                        type="radio"
-                        name="consultWorkedBefore2004"
-                        checked={formData.workedBefore2004 === 'No'}
-                        onChange={() => setFormData({ ...formData, workedBefore2004: 'No' })}
-                        className="w-4 h-4 text-gta-600"
+                        type="date"
+                        value={`${formData.dateToYear}-${formData.dateToMonth}-${formData.dateToDay}`}
+                        onChange={e => {
+                          const parts = e.target.value.split('-');
+                          if (parts.length === 3) {
+                            setFormData({ ...formData, dateToYear: parts[0], dateToMonth: parts[1], dateToDay: parts[2] });
+                          }
+                        }}
+                        className="px-2 py-1 rounded border border-slate-300 text-xs font-mono w-full bg-white"
                       />
-                      <span>No</span>
-                    </label>
+                    </div>
                   </div>
                 </div>
               </div>
