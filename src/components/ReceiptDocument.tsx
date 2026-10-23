@@ -53,14 +53,15 @@ async function captureReceiptCanvas(element: HTMLElement): Promise<HTMLCanvasEle
   // Create isolated sandbox on body to eliminate any parent modal scroll, offsets, or background bleeding
   const sandbox = document.createElement('div');
   sandbox.style.position = 'fixed';
-  sandbox.style.left = '-9999px';
   sandbox.style.top = '0';
-  sandbox.style.width = '700px';
+  sandbox.style.left = '0';
+  sandbox.style.width = '720px';
   sandbox.style.background = '#ffffff';
   sandbox.style.margin = '0';
-  sandbox.style.padding = '12px 16px';
+  sandbox.style.padding = '16px 20px';
   sandbox.style.boxSizing = 'border-box';
   sandbox.style.zIndex = '-99999';
+  sandbox.style.pointerEvents = 'none';
 
   const clone = element.cloneNode(true) as HTMLElement;
   clone.style.margin = '0';
@@ -70,25 +71,6 @@ async function captureReceiptCanvas(element: HTMLElement): Promise<HTMLCanvasEle
   clone.style.background = '#ffffff';
   clone.style.boxShadow = 'none';
   clone.style.border = 'none';
-  clone.style.fontFamily = "Arial, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif";
-
-  // Normalize all table cells and wrapper divs inside clone for html2canvas vertical centering
-  const cells = clone.querySelectorAll<HTMLElement>('td, th');
-  cells.forEach(cell => {
-    cell.style.verticalAlign = 'middle';
-    const innerDiv = cell.querySelector<HTMLElement>(':scope > div');
-    if (innerDiv) {
-      innerDiv.style.minHeight = '0';
-      innerDiv.style.height = 'auto';
-      innerDiv.style.display = 'block';
-      if (innerDiv.classList.contains('justify-center')) {
-        innerDiv.style.textAlign = 'center';
-      } else {
-        innerDiv.style.textAlign = 'left';
-      }
-      innerDiv.style.lineHeight = '1.3';
-    }
-  });
 
   sandbox.appendChild(clone);
   document.body.appendChild(sandbox);
@@ -108,9 +90,9 @@ async function captureReceiptCanvas(element: HTMLElement): Promise<HTMLCanvasEle
     )
   );
 
-  // Ultra-high definition capture: 3.2x scale (~325 DPI, publication print standard)
+  // High definition capture: 2.5x scale (~250 DPI)
   const canvas = await html2canvas(sandbox, {
-    scale: 3.2,
+    scale: 2.5,
     useCORS: true,
     backgroundColor: '#ffffff',
     scrollX: 0,
@@ -425,7 +407,7 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
               <div className="flex items-center min-h-[26px]">Address</div>
             </td>
             <td className="border border-slate-300 px-2.5 py-1 text-left" style={{ verticalAlign: 'middle' }}>
-              <div className="flex items-center min-h-[26px] text-[10px] whitespace-nowrap overflow-hidden">
+              <div className="flex items-center min-h-[26px] text-[10px] sm:text-[10.5px] leading-snug">
                 {receipt.address2}
               </div>
             </td>
@@ -466,7 +448,9 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
               <div className="flex items-center min-h-[26px]">Chairman</div>
             </td>
             <td className="border border-slate-300 px-2.5 py-1 text-left" style={{ verticalAlign: 'middle' }}>
-              <div className="flex items-center min-h-[26px]">{receipt.chairman_name || 'kim Se Kwang'}</div>
+              <div className="flex items-center min-h-[26px]">
+                {(receipt.chairman_name || 'Kim Se-Kwang').replace(/Kim\s+Se-\s*Kwang/i, 'Kim Se-Kwang')}
+              </div>
             </td>
           </tr>
           <tr className="h-[28px]" style={{ verticalAlign: 'middle' }}>
@@ -474,7 +458,7 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
               <div className="flex items-center min-h-[26px]">Address</div>
             </td>
             <td className="border border-slate-300 px-2.5 py-1 text-left" style={{ verticalAlign: 'middle' }}>
-              <div className="flex items-center min-h-[26px] text-[10px] whitespace-nowrap overflow-hidden">
+              <div className="flex items-center min-h-[26px] text-[10px] sm:text-[10.5px] leading-snug">
                 {receipt.address1 || '#107, 3696 Geoje-daero, Geoje-city gyeongnam Korea'}
               </div>
             </td>
@@ -591,24 +575,21 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
 
           {/* Row 3 & 4: Service Fee & Year-end settlement Fee */}
           <tr className="h-[28px]" style={{ verticalAlign: 'middle' }}>
-            <td rowSpan={2} className="border border-slate-400 bg-white px-2" style={{ verticalAlign: 'middle' }}>
-              <div className="flex items-center justify-center min-h-[56px]"></div>
+            <td colSpan={2} className="border border-slate-400 bg-[#DCE6F1] font-medium px-3 text-left w-2/3" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center min-h-[26px] font-medium">[8] Monthly service Fee</div>
             </td>
-            <td className="border border-slate-400 bg-[#DCE6F1] font-medium px-2" style={{ verticalAlign: 'middle' }}>
-              <div className="flex items-center justify-center min-h-[26px] font-medium">[8] Monthly service Fee</div>
-            </td>
-            <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}>
-              <div className="flex items-center justify-center min-h-[26px]">
+            <td className="border border-slate-400 px-3 text-right font-medium w-1/3" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-end min-h-[26px]">
                 {serviceFeeNum > 0 ? formatNum(serviceFeeNum, true) : rawServiceFee === '0' ? '₩0' : ''}
               </div>
             </td>
           </tr>
           <tr className="h-[28px]" style={{ verticalAlign: 'middle' }}>
-            <td className="border border-slate-400 bg-[#DCE6F1] font-medium px-2" style={{ verticalAlign: 'middle' }}>
-              <div className="flex items-center justify-center min-h-[26px] font-medium">[9] Year-end settlement Fee</div>
+            <td colSpan={2} className="border border-slate-400 bg-[#DCE6F1] font-medium px-3 text-left w-2/3" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center min-h-[26px] font-medium">[9] Year-end settlement Fee</div>
             </td>
-            <td className="border border-slate-400 px-2" style={{ verticalAlign: 'middle' }}>
-              <div className="flex items-center justify-center min-h-[26px]">
+            <td className="border border-slate-400 px-3 text-right w-1/3" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-end min-h-[26px]">
                 {yearEndFeeNum > 0 ? formatNum(yearEndFeeNum, true) : ''}
               </div>
             </td>
@@ -616,11 +597,11 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
 
           {/* Row 5: [10] Grand total amount */}
           <tr className="h-[38px]" style={{ verticalAlign: 'middle' }}>
-            <td colSpan={2} className="border border-slate-400 bg-white font-semibold px-2" style={{ verticalAlign: 'middle' }}>
-              <div className="flex items-center justify-center min-h-[36px] font-semibold">[10] Grand total amount</div>
+            <td colSpan={2} className="border border-slate-400 bg-[#DCE6F1] font-semibold px-3 text-left w-2/3" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center min-h-[36px] font-semibold">[10] Grand total amount</div>
             </td>
-            <td className="border border-slate-400 px-2 font-bold text-[12.5px]" style={{ verticalAlign: 'middle' }}>
-              <div className="flex items-center justify-center min-h-[36px] font-bold text-[12.5px]">
+            <td className="border border-slate-400 px-3 text-right font-bold text-[12.5px] w-1/3" style={{ verticalAlign: 'middle' }}>
+              <div className="flex items-center justify-end min-h-[36px] font-bold text-[12.5px]">
                 {grandTotal > 0 ? formatNum(grandTotal, true) : ''}
               </div>
             </td>
@@ -629,11 +610,11 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
       </table>
 
       {/* Certification & Official Seal */}
-      <div className="text-[11px] sm:text-[12px] pt-0.5">
+      <div className="text-[11px] sm:text-[12px] pt-1">
         We hereby certify that the above tax amount is duly paid.
       </div>
 
-      <div className="mt-2.5 space-y-1 text-[11px] sm:text-[12px]">
+      <div className="mt-3 space-y-1 text-[11px] sm:text-[12px]">
         <div>
           <span className="font-medium">Issue Date : </span>
           <span>{formatReceiptDate(receipt.reg_date)}</span>
@@ -644,17 +625,14 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
         </div>
       </div>
 
-      <div className="mt-1 flex justify-end items-center space-x-3 pr-2">
-        <span
-          className="text-[15px] sm:text-[16px] font-bold tracking-[0.05em] text-slate-900"
-          style={{ fontFamily: "'Times New Roman', Georgia, 'Batang', serif" }}
-        >
+      <div className="mt-1 flex justify-end items-center space-x-2.5 pr-1">
+        <span className="text-[13px] sm:text-[14px] font-bold tracking-normal text-slate-900">
           GEOJE TAXPAYER ASSOCIATION
         </span>
         <img
           src="/img/official_seal.png"
           alt="Geoje Taxpayer Association Official Seal"
-          className="w-[100px] h-[100px] object-contain -my-3"
+          className="w-[88px] h-[88px] object-contain -my-2"
         />
       </div>
     </div>
