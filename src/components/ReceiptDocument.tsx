@@ -50,61 +50,84 @@ export function formatReceiptDate(val?: string): string {
 async function captureReceiptCanvas(element: HTMLElement): Promise<HTMLCanvasElement> {
   const html2canvas = (await import('html2canvas')).default;
 
-  // Create isolated sandbox on body to eliminate any parent modal scroll, offsets, or background bleeding
-  const sandbox = document.createElement('div');
-  sandbox.style.position = 'fixed';
-  sandbox.style.top = '0';
-  sandbox.style.left = '0';
-  sandbox.style.width = '720px';
-  sandbox.style.background = '#ffffff';
-  sandbox.style.margin = '0';
-  sandbox.style.padding = '16px 20px';
-  sandbox.style.boxSizing = 'border-box';
-  sandbox.style.zIndex = '-99999';
-  sandbox.style.pointerEvents = 'none';
+  // Intercept Canvas fillText during html2canvas to counteract the Windows/Chromium baseline drop (~4.5px)
+  const originalFillText = CanvasRenderingContext2D.prototype.fillText;
+  const originalStrokeText = CanvasRenderingContext2D.prototype.strokeText;
+  CanvasRenderingContext2D.prototype.fillText = function (text: string, x: number, y: number, maxWidth?: number) {
+    const adjustedY = typeof y === 'number' ? y - 4.5 : y;
+    if (maxWidth !== undefined) {
+      return originalFillText.call(this, text, x, adjustedY, maxWidth);
+    }
+    return originalFillText.call(this, text, x, adjustedY);
+  };
+  CanvasRenderingContext2D.prototype.strokeText = function (text: string, x: number, y: number, maxWidth?: number) {
+    const adjustedY = typeof y === 'number' ? y - 4.5 : y;
+    if (maxWidth !== undefined) {
+      return originalStrokeText.call(this, text, x, adjustedY, maxWidth);
+    }
+    return originalStrokeText.call(this, text, x, adjustedY);
+  };
 
-  const clone = element.cloneNode(true) as HTMLElement;
-  clone.style.margin = '0';
-  clone.style.padding = '0';
-  clone.style.width = '100%';
-  clone.style.maxWidth = '100%';
-  clone.style.background = '#ffffff';
-  clone.style.boxShadow = 'none';
-  clone.style.border = 'none';
+  try {
+    // Create isolated sandbox on body to eliminate any parent modal scroll, offsets, or background bleeding
+    const sandbox = document.createElement('div');
+    sandbox.style.position = 'fixed';
+    sandbox.style.top = '0';
+    sandbox.style.left = '0';
+    sandbox.style.width = '720px';
+    sandbox.style.background = '#ffffff';
+    sandbox.style.margin = '0';
+    sandbox.style.padding = '16px 20px';
+    sandbox.style.boxSizing = 'border-box';
+    sandbox.style.zIndex = '-99999';
+    sandbox.style.pointerEvents = 'none';
 
-  sandbox.appendChild(clone);
-  document.body.appendChild(sandbox);
+    const clone = element.cloneNode(true) as HTMLElement;
+    clone.style.margin = '0';
+    clone.style.padding = '0';
+    clone.style.width = '100%';
+    clone.style.maxWidth = '100%';
+    clone.style.background = '#ffffff';
+    clone.style.boxShadow = 'none';
+    clone.style.border = 'none';
 
-  // Ensure all images (official seal, logo) inside clone are fully loaded
-  const images = Array.from(sandbox.querySelectorAll('img'));
-  await Promise.all(
-    images.map(
-      img =>
-        new Promise(resolve => {
-          if (img.complete && img.naturalHeight !== 0) resolve(true);
-          else {
-            img.onload = () => resolve(true);
-            img.onerror = () => resolve(true);
-          }
-        })
-    )
-  );
+    sandbox.appendChild(clone);
+    document.body.appendChild(sandbox);
 
-  // High definition capture: 2.5x scale (~250 DPI)
-  const canvas = await html2canvas(sandbox, {
-    scale: 2.5,
-    useCORS: true,
-    backgroundColor: '#ffffff',
-    scrollX: 0,
-    scrollY: 0,
-    x: 0,
-    y: 0,
-    logging: false,
-    imageTimeout: 5000,
-  });
+    // Ensure all images (official seal, logo) inside clone are fully loaded
+    const images = Array.from(sandbox.querySelectorAll('img'));
+    await Promise.all(
+      images.map(
+        img =>
+          new Promise(resolve => {
+            if (img.complete && img.naturalHeight !== 0) resolve(true);
+            else {
+              img.onload = () => resolve(true);
+              img.onerror = () => resolve(true);
+            }
+          })
+      )
+    );
 
-  document.body.removeChild(sandbox);
-  return canvas;
+    // High definition capture: 2.5x scale (~250 DPI)
+    const canvas = await html2canvas(sandbox, {
+      scale: 2.5,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      scrollX: 0,
+      scrollY: 0,
+      x: 0,
+      y: 0,
+      logging: false,
+      imageTimeout: 5000,
+    });
+
+    document.body.removeChild(sandbox);
+    return canvas;
+  } finally {
+    CanvasRenderingContext2D.prototype.fillText = originalFillText;
+    CanvasRenderingContext2D.prototype.strokeText = originalStrokeText;
+  }
 }
 
 export async function downloadReceiptPdf(element: HTMLElement, receipt: TaxReceipt) {
@@ -467,7 +490,7 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
       </table>
 
       {/* WAGE & SALARY DETAILS (KRW) */}
-      <div className="font-semibold text-[11px] sm:text-[12px] mb-1">WAGE &amp; SALARY DETAILS (KRW)</div>
+      <div className="font-semibold text-[11px] sm:text-[12px] pt-1 pb-1">WAGE &amp; SALARY DETAILS (KRW)</div>
       <table className="w-full border-collapse border border-slate-500 text-[11px] sm:text-[12px] text-center mb-3">
         <thead>
           <tr className="bg-[#DCE6F1] h-[28px]" style={{ verticalAlign: 'middle' }}>
@@ -518,7 +541,7 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
       </table>
 
       {/* TAX CALCULATION (KRW) */}
-      <div className="font-semibold text-[11px] sm:text-[12px] mb-1">TAX CALCULATION (KRW)</div>
+      <div className="font-semibold text-[11px] sm:text-[12px] pt-1.5 pb-1">TAX CALCULATION (KRW)</div>
       <table className="w-full border-collapse border border-slate-500 text-[11px] sm:text-[12px] text-center mb-2.5">
         <tbody>
           {/* Row 1: [4] Total Salary | [5] * Non Taxable Salary */}
