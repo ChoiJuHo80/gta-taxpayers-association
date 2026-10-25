@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileText, Upload, CheckCircle2, AlertCircle, Download, DollarSign, KeyRound, MapPin, Search } from 'lucide-react';
+import { FileText, Upload, CheckCircle2, AlertCircle, Download, DollarSign, KeyRound, MapPin, Search, FileSpreadsheet, Camera, Sparkles, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import * as XLSX from 'xlsx';
 
 declare global {
   interface Window {
     daum?: any;
+    Tesseract?: any;
   }
 }
 
@@ -133,6 +135,310 @@ export default function ConsultPage() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+  };
+
+  const [autoFillLoading, setAutoFillLoading] = useState(false);
+  const [autoFillMessage, setAutoFillMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  // Auto-Fill from Excel File (.xlsx)
+  const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    const file = e.target.files[0];
+    setAutoFillLoading(true);
+    setAutoFillMessage({ text: `엑셀 파일(${file.name}) 분석 중...`, type: 'info' });
+
+    try {
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data, { type: 'array' });
+      
+      const sheetName = wb.SheetNames.find(n => n === 'ENG' || n === 'KOR' || n === 'Sheet1') || wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+      if (!ws) throw new Error('엑셀 시트를 찾을 수 없습니다.');
+
+      const getRowVals = (rowNum: number) => {
+        const row: { col: string; colIdx: number; val: any }[] = [];
+        for (let c = 0; c < 28; c++) {
+          const colName = XLSX.utils.encode_col(c);
+          const cell = ws[`${colName}${rowNum}`];
+          if (cell && cell.v !== undefined && String(cell.v).trim() !== '') {
+            row.push({ col: colName, colIdx: c, val: cell.v });
+          }
+        }
+        return row;
+      };
+
+      const newFields: Partial<typeof formData> = {};
+      let filledCount = 0;
+
+      for (let r = 5; r <= 40; r++) {
+        const row = getRowVals(r);
+        if (row.length === 0) continue;
+        const rowText = row.map(c => String(c.val)).join(' ');
+
+        // 1. Applicant Name & Nationality
+        if (/Applicant'?s?\s*name|성함/i.test(rowText)) {
+          const natIdx = row.findIndex(c => /Nationality/i.test(String(c.val)));
+          if (natIdx > 0) {
+            const nameCell = row.slice(1, natIdx).find(c => String(c.val).trim() !== '');
+            if (nameCell) {
+              const uName = String(nameCell.val).trim().toUpperCase();
+              newFields.applicantName = uName;
+              newFields.signature = uName;
+              filledCount++;
+            }
+            const natCell = row.slice(natIdx + 1).find(c => String(c.val).trim() !== '');
+            if (natCell) {
+              newFields.nationality = String(natCell.val).trim();
+              filledCount++;
+            }
+          } else {
+            const nameCell = row.slice(1).find(c => String(c.val).trim() !== '');
+            if (nameCell) {
+              const uName = String(nameCell.val).trim().toUpperCase();
+              newFields.applicantName = uName;
+              newFields.signature = uName;
+              filledCount++;
+            }
+          }
+        }
+
+        // 2. Alien Registration Number / 주민등록번호
+        if (/Alien Registration Number|주민등록번호|외국인등록번호/i.test(rowText)) {
+          const valCell = row.slice(1).find(c => String(c.val).trim() !== '');
+          if (valCell) {
+            newFields.alienRegNo = String(valCell.val).trim();
+            filledCount++;
+          }
+        }
+
+        // 3. Address / 주소
+        if (/Address|주소/i.test(rowText) && !/e-mail/i.test(rowText)) {
+          const valCell = row.slice(1).find(c => String(c.val).trim() !== '');
+          if (valCell) {
+            newFields.address = String(valCell.val).trim();
+            filledCount++;
+          }
+        }
+
+        // 3.5 E-mail
+        if (/e-mail|이메일/i.test(rowText)) {
+          const valCell = row.slice(1).find(c => String(c.val).trim() !== '');
+          if (valCell) {
+            newFields.email = String(valCell.val).trim();
+            filledCount++;
+          }
+        }
+
+        // 4. Company / 회사명
+        if (/Company|회사명/i.test(rowText) && !/worked for other/i.test(rowText)) {
+          const valCell = row.slice(1).find(c => String(c.val).trim() !== '');
+          if (valCell) {
+            newFields.company = String(valCell.val).trim();
+            filledCount++;
+          }
+        }
+
+        // 5. Work place & Project Name
+        if (/Work place/i.test(rowText)) {
+          const projIdx = row.findIndex(c => /Project Name/i.test(String(c.val)));
+          if (projIdx > 0) {
+            const wpCell = row.slice(1, projIdx).find(c => String(c.val).trim() !== '');
+            if (wpCell) {
+              newFields.workPlace = String(wpCell.val).trim();
+              filledCount++;
+            }
+            const projCell = row.slice(projIdx + 1).find(c => String(c.val).trim() !== '');
+            if (projCell) {
+              newFields.projectName = String(projCell.val).trim();
+              filledCount++;
+            }
+          } else {
+            const wpCell = row.slice(1).find(c => String(c.val).trim() !== '');
+            if (wpCell) {
+              newFields.workPlace = String(wpCell.val).trim();
+              filledCount++;
+            }
+          }
+        }
+
+        // 6. Telephone / Mobile / 연락처
+        if (/Telephone|Mobile|연락처/i.test(rowText)) {
+          const valCell = row.slice(1).find(c => String(c.val).trim() !== '');
+          if (valCell) {
+            newFields.phone = String(valCell.val).trim();
+            filledCount++;
+          }
+        }
+
+        // 7. Date of Stay & Work / 근무계약기간
+        if (/Date of Stay|근무계약기간/i.test(rowText)) {
+          const dateMatches = rowText.match(/(\d{1,4})[./-](\d{1,2})[./-](\d{1,4})/g);
+          if (dateMatches && dateMatches.length >= 2) {
+            const parseDateParts = (dStr: string) => {
+              const p = dStr.split(/[./-]/);
+              if (p[0].length === 4) return { y: p[0], m: p[1].padStart(2, '0'), d: p[2].padStart(2, '0') };
+              return { y: p[2], m: p[1].padStart(2, '0'), d: p[0].padStart(2, '0') };
+            };
+            const dFrom = parseDateParts(dateMatches[0]);
+            const dTo = parseDateParts(dateMatches[1]);
+            newFields.dateFromYear = dFrom.y;
+            newFields.dateFromMonth = dFrom.m;
+            newFields.dateFromDay = dFrom.d;
+            newFields.dateToYear = dTo.y;
+            newFields.dateToMonth = dTo.m;
+            newFields.dateToDay = dTo.d;
+            filledCount += 2;
+          }
+        }
+
+        // 8. Marital Status & Spouse
+        if (/Married|기혼/i.test(rowText) && (/[vVoOxX■☑✔]/.test(rowText) || rowText.includes('Married'))) {
+          if (row.some(c => /[vVoOxX■☑✔]/.test(String(c.val)))) {
+            newFields.maritalStatus = 'Married';
+            filledCount++;
+          }
+        }
+        if (/Spouse’?s?\s*Name|배우자\s*이름/i.test(rowText)) {
+          const dobIdx = row.findIndex(c => /Date of Birth|생년월일/i.test(String(c.val)));
+          if (dobIdx > 0) {
+            const spCell = row.slice(1, dobIdx).find(c => String(c.val).trim() !== '');
+            if (spCell) {
+              newFields.spouseName = String(spCell.val).trim();
+              newFields.maritalStatus = 'Married';
+              filledCount++;
+            }
+            const dobCell = row.slice(dobIdx + 1).find(c => String(c.val).trim() !== '');
+            if (dobCell) {
+              newFields.spouseDob = String(dobCell.val).trim();
+              filledCount++;
+            }
+          }
+        }
+
+        // 9. Class B Income
+        if (/Basic Salary|기본급/i.test(rowText)) {
+          const valCell = row.slice(1).find(c => !isNaN(Number(String(c.val).replace(/,/g, ''))));
+          if (valCell) {
+            newFields.salaryBasic = String(valCell.val).trim();
+            filledCount++;
+          }
+        }
+        if (/Overseas allowance|해외수당/i.test(rowText)) {
+          const valCell = row.slice(1).find(c => !isNaN(Number(String(c.val).replace(/,/g, ''))));
+          if (valCell) {
+            newFields.salaryAllowance = String(valCell.val).trim();
+            filledCount++;
+          }
+        }
+        if (/Bonus|상여금/i.test(rowText)) {
+          const valCell = row.slice(1).find(c => !isNaN(Number(String(c.val).replace(/,/g, ''))));
+          if (valCell) {
+            newFields.salaryBonus = String(valCell.val).trim();
+            filledCount++;
+          }
+        }
+      }
+
+      setFormData(prev => ({ ...prev, ...newFields }));
+      setAutoFillMessage({
+        text: `✅ 엑셀 파일(${file.name})에서 ${filledCount}개 항목이 성공적으로 자동 입력되었습니다!`,
+        type: 'success',
+      });
+    } catch (err: any) {
+      setAutoFillMessage({ text: `엑셀 파싱 오류: ${err.message || '파일을 읽을 수 없습니다.'}`, type: 'error' });
+    } finally {
+      setAutoFillLoading(false);
+      e.target.value = '';
+    }
+  };
+
+  // Auto-Fill from Photo / Document Image (OCR)
+  const handlePhotoImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    const file = e.target.files[0];
+    setAutoFillLoading(true);
+    setAutoFillMessage({ text: `서류 이미지(${file.name}) OCR 텍스트 분석 중입니다... 잠시만 기다려주세요.`, type: 'info' });
+
+    try {
+      if (!window.Tesseract) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+          script.onload = resolve;
+          script.onerror = () => reject(new Error('OCR 모듈 로드에 실패했습니다.'));
+          document.body.appendChild(script);
+        });
+      }
+
+      const { data: { text } } = await window.Tesseract.recognize(file, 'eng+kor', {
+        logger: (m: any) => {
+          if (m.status === 'recognizing text') {
+            setAutoFillMessage({
+              text: `이미지 분석 진행 중... (${Math.round(m.progress * 100)}%)`,
+              type: 'info',
+            });
+          }
+        },
+      });
+
+      const newFields: Partial<typeof formData> = {};
+      let filledCount = 0;
+
+      const regMatch = text.match(/\b(\d{6}[-\s]?[1-8]\d{6})\b/);
+      if (regMatch) {
+        newFields.alienRegNo = regMatch[1].replace(/\s+/g, '-');
+        filledCount++;
+      }
+
+      const emailMatch = text.match(/\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b/);
+      if (emailMatch) {
+        newFields.email = emailMatch[1];
+        filledCount++;
+      }
+
+      const phoneMatch = text.match(/\b(01[016789][-\s]?\d{3,4}[-\s]?\d{4})\b/);
+      if (phoneMatch) {
+        newFields.phone = phoneMatch[1].replace(/\s+/g, '-');
+        filledCount++;
+      }
+
+      const nameMatch = text.match(/(?:Applicant'?s?\s*name|성함|성명)[:\s]+([A-Z\s]{2,30}|[가-힣]{2,5})/i);
+      if (nameMatch) {
+        const uName = nameMatch[1].trim().toUpperCase();
+        newFields.applicantName = uName;
+        newFields.signature = uName;
+        filledCount++;
+      }
+
+      const natMatch = text.match(/(?:Nationality|국적)[:\s]+([A-Za-z\s]{3,20}|[가-힣]{2,10})/i);
+      if (natMatch) {
+        newFields.nationality = natMatch[1].trim();
+        filledCount++;
+      }
+
+      const compMatch = text.match(/(?:Company|회사명)[:\s]+([^\n\r,]{2,40})/i);
+      if (compMatch) {
+        newFields.company = compMatch[1].trim();
+        filledCount++;
+      }
+
+      const salaryMatch = text.match(/(?:Basic\s*Salary|기본급)[^\d]*([\d,]{3,10})/i);
+      if (salaryMatch) {
+        newFields.salaryBasic = salaryMatch[1].replace(/,/g, '');
+        filledCount++;
+      }
+
+      setFormData(prev => ({ ...prev, ...newFields }));
+      setAutoFillMessage({
+        text: `✅ 서류 사진 분석 완료! ${filledCount}개 항목이 자동으로 채워졌습니다. 필요한 항목을 검토 후 등록해주세요.`,
+        type: 'success',
+      });
+    } catch (err: any) {
+      setAutoFillMessage({ text: `사진 분석 오류: ${err.message || '인식하지 못했습니다.'}`, type: 'error' });
+    } finally {
+      setAutoFillLoading(false);
+      e.target.value = '';
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -392,6 +698,68 @@ ${childrenLines}
               <span>{errorMsg}</span>
             </div>
           )}
+
+          {/* Smart Auto-Fill Toolbar: Excel Import & Camera / Photo OCR */}
+          <div className="bg-gradient-to-r from-sky-50 via-indigo-50 to-blue-50 border-2 border-dashed border-sky-300 rounded-2xl p-5 shadow-sm space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2 text-sky-900 font-extrabold text-sm">
+                  <Sparkles className="w-4 h-4 text-sky-600 animate-pulse" />
+                  <span>신청서 스마트 자동 입력 (Smart Auto-Fill)</span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  작성된 <strong>GTA 엑셀 파일(.xlsx)</strong>을 불러오거나 <strong>서류 사진/스캔본</strong>을 업로드하면 각 입력란이 자동으로 완성됩니다.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                {/* Excel Import Button */}
+                <label className="bg-white hover:bg-slate-50 text-emerald-700 hover:text-emerald-800 border border-emerald-300 font-bold text-xs px-4 py-2.5 rounded-xl shadow-xs flex items-center space-x-2 cursor-pointer transition-all hover:scale-105 active:scale-95">
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  <span>엑셀 파일 불러오기 (.xlsx)</span>
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    className="hidden"
+                    onChange={handleExcelImport}
+                    disabled={autoFillLoading}
+                  />
+                </label>
+
+                {/* Photo / Camera OCR Button */}
+                <label className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md flex items-center space-x-2 cursor-pointer transition-all hover:scale-105 active:scale-95">
+                  {autoFillLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Camera className="w-4 h-4" />
+                  )}
+                  <span>사진 촬영 / 서류 이미지 자동 입력</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handlePhotoImport}
+                    disabled={autoFillLoading}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Auto-Fill Status / Progress Banner */}
+            {autoFillMessage && (
+              <div className={`p-3 rounded-xl text-xs font-semibold flex items-center space-x-2 ${
+                autoFillMessage.type === 'success' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                autoFillMessage.type === 'error' ? 'bg-red-100 text-red-800 border border-red-300' :
+                'bg-sky-100 text-sky-800 border border-sky-300'
+              }`}>
+                {autoFillLoading && <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />}
+                {autoFillMessage.type === 'success' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                {autoFillMessage.type === 'error' && <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0" />}
+                <span>{autoFillMessage.text}</span>
+              </div>
+            )}
+          </div>
 
           {/* Official Admission Form */}
           <form onSubmit={handleSubmit} className="space-y-8">
