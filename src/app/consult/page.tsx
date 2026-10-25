@@ -125,108 +125,11 @@ export default function ConsultPage() {
   const [successResult, setSuccessResult] = useState<{ id: string; memberId?: number } | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Download official Word (.doc) form file
-  const handleDownloadWordForm = () => {
-    const content = `
-      <html xmlns:o='urn:schemas-microsoft-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head>
-        <meta charset="utf-8">
-        <title>APPLICATION FOR ADMISSION TO GEOJE TAXPAYERS ASSOCIATION</title>
-        <style>
-          body { font-family: 'Times New Roman', serif; padding: 25px; line-height: 1.5; }
-          h2 { text-align: center; margin-bottom: 5px; font-size: 18pt; }
-          .header-info { text-align: center; font-size: 11pt; margin-bottom: 20px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-          td, th { border: 1px solid #777; padding: 8px; font-size: 10pt; }
-          .section-title { font-weight: bold; background-color: #f0f0f0; }
-        </style>
-      </head>
-      <body>
-        <h2>APPLICATION FOR ADMISSION TO GEOJE TAXPAYERS ASSOCIATION</h2>
-        <div class="header-info">
-          Tel: (055) 688-2141 &nbsp;&nbsp; Fax: (055) 688-2142 &nbsp;&nbsp; www.gtakorea.org
-        </div>
-        
-        <table>
-          <tr>
-            <td><b>1. Applicant's name:</b> (write in capital letters)</td>
-            <td><b>Nationality:</b></td>
-          </tr>
-          <tr>
-            <td colspan="2"><b>2. Alien Registration Number:</b></td>
-          </tr>
-          <tr>
-            <td><b>3. Address:</b></td>
-            <td><b>(e-mail):</b></td>
-          </tr>
-          <tr>
-            <td colspan="2"><b>4. Company:</b></td>
-          </tr>
-          <tr>
-            <td><b>5. Work place :</b> (ex : Hanwha Ocean, SHI, HHI, STX, ...)</td>
-            <td><b>(Project Name):</b></td>
-          </tr>
-          <tr>
-            <td colspan="2"><b>6. Telephone number in Korea (Mobile):</b></td>
-          </tr>
-          <tr>
-            <td colspan="2">
-              <b>7. Date of Stay &amp; Work:</b> (from) ____.____.________ ~ (to) ____.____.________<br/>
-              &nbsp;&nbsp;&nbsp;※ Have you worked in Korea before 1st Jan. 2004? (Yes / No)
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2" class="section-title">8. Exemption: Please check at least 1 item below.</td>
-          </tr>
-          <tr>
-            <td colspan="2">
-              [  ] Single &nbsp;&nbsp;&nbsp;&nbsp; [  ] Married (A copy of your marriage certificate is required)<br/>
-              Spouse's name: ________________________ His/Her Date of Birth: ____________________<br/>
-              ※ Does your spouse have any form of income? (Yes / No)<br/>
-              Number of children below 20 years of age: _____ (A copy of child's birth certificate is required)<br/>
-              Child 1 Name: _____________________ DOB: ______________<br/>
-              Child 2 Name: _____________________ DOB: ______________<br/>
-              Child 3 Name: _____________________ DOB: ______________<br/>
-              Child 4 Name: _____________________ DOB: ______________
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2" class="section-title">9. The Class B income (USD, EURO, NOK, GBP, DKK, CAD, AUD, SGD, SEK, JPY, KRW)</td>
-          </tr>
-          <tr>
-            <td colspan="2">
-              Currency: _____________________________________________<br/>
-              ① Basic Salary per month: _________________________________<br/>
-              ② Overseas allowance per month: ___________________________<br/>
-              ③ Bonus per month: _____________________________________<br/>
-              Total per month (①+②+③): _______________________________
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2">
-              <b>10. Did you work for other company during the same year in Korea?</b> (Yes / No)<br/>
-              <i>* If Yes, you must submit a 'Receipt for wage and salary income Tax withholding' of your previous employment to GTA to avoid penalty tax.</i>
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2">
-              <b>Remark:</b> _________________________________________________
-            </td>
-          </tr>
-        </table>
-        
-        <br/><br/>
-        <p>In accordance with the above, I hereby apply for membership in the GTA.</p>
-        <br/>
-        <p>Applicant's Signature: ___________________________ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date: ____.____.________</p>
-      </body>
-      </html>
-    `;
-    const blob = new Blob(['\ufeff' + content], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
+  // Download official Excel (.xlsx) form file
+  const handleDownloadExcelForm = () => {
     const a = document.createElement('a');
-    a.href = url;
-    a.download = 'GTA_Admission_Application_Form.doc';
+    a.href = '/api/download/application-form';
+    a.download = '2026_GTA_Application_form.xlsx';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -411,7 +314,7 @@ ${childrenLines}
                 Application Form Submission Notice
               </h1>
               <p className="text-slate-600 text-sm leading-relaxed max-w-xl mx-auto">
-                Direct online web input is strictly managed by authorized GTA staff. General taxpayers should download the official Word (.doc) application form on the <strong>Contact Us</strong> page, fill it out, and submit it to GTA via Email (<strong>gta@gtakorea.org</strong>) or Fax.
+                Direct online web input is strictly managed by authorized GTA staff. General taxpayers should download the official Excel (.xlsx) application form on the <strong>Contact Us</strong> page, fill it out, and submit it to GTA via Email (<strong>gta@gtakorea.org</strong>) or Fax.
               </p>
             </div>
 
@@ -421,14 +324,14 @@ ${childrenLines}
                 className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-extrabold text-sm px-6 py-3.5 rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all cursor-pointer"
               >
                 <Download className="w-4 h-4" />
-                <span>Go to Contact Us &amp; Download Form (.DOC)</span>
+                <span>Go to Contact Us &amp; Download Form (.XLSX)</span>
               </Link>
               <button
                 type="button"
-                onClick={handleDownloadWordForm}
+                onClick={handleDownloadExcelForm}
                 className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm px-6 py-3.5 rounded-xl border border-slate-300 transition-all flex items-center justify-center space-x-2 cursor-pointer"
               >
-                <span>Direct Download (.DOC)</span>
+                <span>Direct Download (.XLSX)</span>
               </button>
             </div>
           </div>
