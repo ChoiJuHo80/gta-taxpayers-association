@@ -24,8 +24,18 @@ export default function ContactUsPage() {
   // Download official Excel (.xlsx) form file for general members
   const handleDownloadExcelForm = () => {
     const a = document.createElement('a');
-    a.href = '/api/download/application-form';
+    a.href = '/api/download/application-form?format=xlsx';
     a.download = '2026_GTA_Application_form.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  // Download official PDF form file
+  const handleDownloadPdfForm = () => {
+    const a = document.createElement('a');
+    a.href = '/api/download/application-form?format=pdf';
+    a.download = '2026_GTA_Application_form.pdf';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -142,29 +152,36 @@ export default function ContactUsPage() {
           <div className="space-y-2 text-center md:text-left">
             <div className="inline-flex items-center space-x-2 bg-sky-500/20 text-sky-300 text-xs font-bold px-3 py-1 rounded-full border border-sky-400/30 whitespace-nowrap">
               <FileSpreadsheet className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-              <span>Official Admission Document (.XLSX)</span>
+              <span>Official Admission Documents (.XLSX / .PDF)</span>
             </div>
             <h2 className="text-2xl font-black tracking-tight text-white">
               GTA Admission Application Form Download
             </h2>
             <p className="text-slate-300 text-xs sm:text-sm max-w-2xl leading-relaxed">
-              Download the official Excel form, fill in your details (Applicant name, Alien registration number, Company, Class B salary), and attach the saved file in the form below to submit directly!
+              Download the official Excel (.xlsx) or printable PDF form, complete your details, and attach the saved file in the form below to submit directly!
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 shrink-0">
             <button
               onClick={handleDownloadExcelForm}
-              className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-sm px-6 py-4 rounded-2xl shadow-xl flex items-center justify-center space-x-2.5 transition-all whitespace-nowrap hover:scale-105 active:scale-95 cursor-pointer"
+              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-sm px-5 py-3.5 rounded-2xl shadow-xl flex items-center justify-center space-x-2 transition-all whitespace-nowrap hover:scale-105 active:scale-95 cursor-pointer"
             >
-              <Download className="w-5 h-5 animate-pulse shrink-0" />
-              <span>DOWNLOAD FORM (.XLSX)</span>
+              <FileSpreadsheet className="w-4 h-4 shrink-0" />
+              <span>EXCEL FORM (.XLSX)</span>
+            </button>
+            <button
+              onClick={handleDownloadPdfForm}
+              className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-sm px-5 py-3.5 rounded-2xl shadow-xl flex items-center justify-center space-x-2 transition-all whitespace-nowrap hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              <FileText className="w-4 h-4 shrink-0" />
+              <span>PDF FORM (.PDF)</span>
             </button>
             <button
               onClick={scrollToContactForm}
-              className="bg-white/10 hover:bg-white/20 text-white font-bold text-sm px-5 py-4 rounded-2xl border border-white/20 flex items-center justify-center space-x-2 transition-all whitespace-nowrap cursor-pointer"
+              className="bg-white/10 hover:bg-white/20 text-white font-bold text-sm px-4 py-3.5 rounded-2xl border border-white/20 flex items-center justify-center space-x-1.5 transition-all whitespace-nowrap cursor-pointer"
             >
-              <span>Attach Written Form</span>
+              <span>Attach Form</span>
               <ArrowDown className="w-4 h-4 shrink-0" />
             </button>
           </div>
