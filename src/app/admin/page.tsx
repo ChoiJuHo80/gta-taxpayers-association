@@ -2268,16 +2268,15 @@ export default function AdminPage() {
                       <tbody>
                         {/* Row 1: [4] Total Salary | [5] * Non Taxable Salary */}
                         <tr className="h-[28px]" style={{ verticalAlign: 'middle' }}>
-                          <td className="border border-slate-400 bg-[#DCE6F1] font-medium px-2 w-1/3" style={{ verticalAlign: 'middle' }}>
+                          <td colSpan={2} className="border border-slate-400 bg-[#DCE6F1] font-medium px-2 w-2/3" style={{ verticalAlign: 'middle' }}>
                             [4] Total Salary
                           </td>
                           <td className="border border-slate-400 bg-[#DCE6F1] font-medium px-2 w-1/3" style={{ verticalAlign: 'middle' }}>
                             [5] * Non Taxable Salary
                           </td>
-                          <td className="border border-slate-400 bg-white px-2 w-1/3" style={{ verticalAlign: 'middle' }}></td>
                         </tr>
                         <tr className="h-[42px]" style={{ verticalAlign: 'middle' }}>
-                          <td className="border border-slate-400 p-1.5" style={{ verticalAlign: 'middle' }}>
+                          <td colSpan={2} className="border border-slate-400 p-1.5 w-2/3" style={{ verticalAlign: 'middle' }}>
                             <input
                               type="text"
                               value={receiptForm.total_salary}
@@ -2287,7 +2286,7 @@ export default function AdminPage() {
                               className="bg-blue-50/60 border border-slate-400 px-2 py-1 w-full text-[12px] text-right font-mono font-bold"
                             />
                           </td>
-                          <td className="border border-slate-400 p-1.5" style={{ verticalAlign: 'middle' }}>
+                          <td className="border border-slate-400 p-1.5 w-1/3" style={{ verticalAlign: 'middle' }}>
                             <input
                               type="text"
                               value={receiptForm.non_taxable_salary}
@@ -2301,7 +2300,6 @@ export default function AdminPage() {
                               className="bg-[#D9EE99] border border-slate-400 px-2 py-1 w-full text-[12px] text-right font-mono"
                             />
                           </td>
-                          <td className="border border-slate-400 p-1.5" style={{ verticalAlign: 'middle' }}></td>
                         </tr>
 
                         {/* Row 2: [6] Payable Income Tax | [7] Local Income Tax | [8] Total tax */}

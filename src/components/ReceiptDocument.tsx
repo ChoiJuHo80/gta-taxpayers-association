@@ -546,20 +546,20 @@ export default function ReceiptDocument({ receipt, containerRef }: ReceiptDocume
         <tbody>
           {/* Row 1: [4] Total Salary | [5] * Non Taxable Salary */}
           <tr className="bg-[#DCE6F1] h-[26px]" style={{ verticalAlign: 'middle' }}>
-            <td className="border border-slate-400 font-medium px-2 w-1/3" style={{ verticalAlign: 'middle' }}>
+            <td colSpan={2} className="border border-slate-400 font-medium px-2 w-2/3" style={{ verticalAlign: 'middle' }}>
               <div className="flex items-center justify-center min-h-[24px] font-medium">[4] Total Salary</div>
             </td>
-            <td colSpan={2} className="border border-slate-400 font-medium px-2 w-2/3" style={{ verticalAlign: 'middle' }}>
+            <td className="border border-slate-400 font-medium px-2 w-1/3" style={{ verticalAlign: 'middle' }}>
               <div className="flex items-center justify-center min-h-[24px] font-medium">[5] * Non Taxable Salary</div>
             </td>
           </tr>
           <tr className="h-[36px]" style={{ verticalAlign: 'middle' }}>
-            <td className="border border-slate-400 px-2 font-semibold w-1/3" style={{ verticalAlign: 'middle' }}>
+            <td colSpan={2} className="border border-slate-400 px-2 font-semibold w-2/3" style={{ verticalAlign: 'middle' }}>
               <div className="flex items-center justify-center min-h-[34px] font-semibold">
                 {computedTotalSalary > 0 ? formatNum(computedTotalSalary, true) : ''}
               </div>
             </td>
-            <td colSpan={2} className="border border-slate-400 px-2 w-2/3" style={{ verticalAlign: 'middle' }}>
+            <td className="border border-slate-400 px-2 w-1/3" style={{ verticalAlign: 'middle' }}>
               <div className="flex items-center justify-center min-h-[34px]">
                 {nonTaxableSalary && nonTaxableSalary !== '0' ? formatNum(nonTaxableSalary, true) : ''}
               </div>
