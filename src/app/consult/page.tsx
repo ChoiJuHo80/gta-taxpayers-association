@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FileText, Upload, CheckCircle2, AlertCircle, Download, DollarSign, KeyRound, MapPin, Search, FileSpreadsheet, Camera, Sparkles, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
+import { parseApplicationExcel } from '@/lib/excelFormParser';
 
 declare global {
   interface Window {
@@ -145,203 +146,34 @@ export default function ConsultPage() {
     if (!e.target.files || !e.target.files[0]) return;
     const file = e.target.files[0];
     setAutoFillLoading(true);
-    setAutoFillMessage({ text: `엑셀 파일(${file.name}) 분석 중...`, type: 'info' });
+    setAutoFillMessage({ text: `엑셀 파일(${file.name}) 정밀 분석 및 자동 입력 중...`, type: 'info' });
 
     try {
       const data = await file.arrayBuffer();
-      const wb = XLSX.read(data, { type: 'array' });
-      
-      const sheetName = wb.SheetNames.find(n => n === 'ENG' || n === 'KOR' || n === 'Sheet1') || wb.SheetNames[0];
-      const ws = wb.Sheets[sheetName];
-      if (!ws) throw new Error('엑셀 시트를 찾을 수 없습니다.');
+      const result = parseApplicationExcel(data);
 
-      const getRowVals = (rowNum: number) => {
-        const row: { col: string; colIdx: number; val: any }[] = [];
-        for (let c = 0; c < 28; c++) {
-          const colName = XLSX.utils.encode_col(c);
-          const cell = ws[`${colName}${rowNum}`];
-          if (cell && cell.v !== undefined && String(cell.v).trim() !== '') {
-            row.push({ col: colName, colIdx: c, val: cell.v });
-          }
-        }
-        return row;
-      };
-
-      const newFields: Partial<typeof formData> = {};
-      let filledCount = 0;
-
-      for (let r = 5; r <= 40; r++) {
-        const row = getRowVals(r);
-        if (row.length === 0) continue;
-        const rowText = row.map(c => String(c.val)).join(' ');
-
-        // 1. Applicant Name & Nationality
-        if (/Applicant'?s?\s*name|성함/i.test(rowText)) {
-          const natIdx = row.findIndex(c => /Nationality/i.test(String(c.val)));
-          if (natIdx > 0) {
-            const nameCell = row.slice(1, natIdx).find(c => String(c.val).trim() !== '');
-            if (nameCell) {
-              const uName = String(nameCell.val).trim().toUpperCase();
-              newFields.applicantName = uName;
-              newFields.signature = uName;
-              filledCount++;
-            }
-            const natCell = row.slice(natIdx + 1).find(c => String(c.val).trim() !== '');
-            if (natCell) {
-              newFields.nationality = String(natCell.val).trim();
-              filledCount++;
-            }
-          } else {
-            const nameCell = row.slice(1).find(c => String(c.val).trim() !== '');
-            if (nameCell) {
-              const uName = String(nameCell.val).trim().toUpperCase();
-              newFields.applicantName = uName;
-              newFields.signature = uName;
-              filledCount++;
-            }
-          }
-        }
-
-        // 2. Alien Registration Number / 주민등록번호
-        if (/Alien Registration Number|주민등록번호|외국인등록번호/i.test(rowText)) {
-          const valCell = row.slice(1).find(c => String(c.val).trim() !== '');
-          if (valCell) {
-            newFields.alienRegNo = String(valCell.val).trim();
-            filledCount++;
-          }
-        }
-
-        // 3. Address / 주소
-        if (/Address|주소/i.test(rowText) && !/e-mail/i.test(rowText)) {
-          const valCell = row.slice(1).find(c => String(c.val).trim() !== '');
-          if (valCell) {
-            newFields.address = String(valCell.val).trim();
-            filledCount++;
-          }
-        }
-
-        // 3.5 E-mail
-        if (/e-mail|이메일/i.test(rowText)) {
-          const valCell = row.slice(1).find(c => String(c.val).trim() !== '');
-          if (valCell) {
-            newFields.email = String(valCell.val).trim();
-            filledCount++;
-          }
-        }
-
-        // 4. Company / 회사명
-        if (/Company|회사명/i.test(rowText) && !/worked for other/i.test(rowText)) {
-          const valCell = row.slice(1).find(c => String(c.val).trim() !== '');
-          if (valCell) {
-            newFields.company = String(valCell.val).trim();
-            filledCount++;
-          }
-        }
-
-        // 5. Work place & Project Name
-        if (/Work place/i.test(rowText)) {
-          const projIdx = row.findIndex(c => /Project Name/i.test(String(c.val)));
-          if (projIdx > 0) {
-            const wpCell = row.slice(1, projIdx).find(c => String(c.val).trim() !== '');
-            if (wpCell) {
-              newFields.workPlace = String(wpCell.val).trim();
-              filledCount++;
-            }
-            const projCell = row.slice(projIdx + 1).find(c => String(c.val).trim() !== '');
-            if (projCell) {
-              newFields.projectName = String(projCell.val).trim();
-              filledCount++;
-            }
-          } else {
-            const wpCell = row.slice(1).find(c => String(c.val).trim() !== '');
-            if (wpCell) {
-              newFields.workPlace = String(wpCell.val).trim();
-              filledCount++;
-            }
-          }
-        }
-
-        // 6. Telephone / Mobile / 연락처
-        if (/Telephone|Mobile|연락처/i.test(rowText)) {
-          const valCell = row.slice(1).find(c => String(c.val).trim() !== '');
-          if (valCell) {
-            newFields.phone = String(valCell.val).trim();
-            filledCount++;
-          }
-        }
-
-        // 7. Date of Stay & Work / 근무계약기간
-        if (/Date of Stay|근무계약기간/i.test(rowText)) {
-          const dateMatches = rowText.match(/(\d{1,4})[./-](\d{1,2})[./-](\d{1,4})/g);
-          if (dateMatches && dateMatches.length >= 2) {
-            const parseDateParts = (dStr: string) => {
-              const p = dStr.split(/[./-]/);
-              if (p[0].length === 4) return { y: p[0], m: p[1].padStart(2, '0'), d: p[2].padStart(2, '0') };
-              return { y: p[2], m: p[1].padStart(2, '0'), d: p[0].padStart(2, '0') };
-            };
-            const dFrom = parseDateParts(dateMatches[0]);
-            const dTo = parseDateParts(dateMatches[1]);
-            newFields.dateFromYear = dFrom.y;
-            newFields.dateFromMonth = dFrom.m;
-            newFields.dateFromDay = dFrom.d;
-            newFields.dateToYear = dTo.y;
-            newFields.dateToMonth = dTo.m;
-            newFields.dateToDay = dTo.d;
-            filledCount += 2;
-          }
-        }
-
-        // 8. Marital Status & Spouse
-        if (/Married|기혼/i.test(rowText) && (/[vVoOxX■☑✔]/.test(rowText) || rowText.includes('Married'))) {
-          if (row.some(c => /[vVoOxX■☑✔]/.test(String(c.val)))) {
-            newFields.maritalStatus = 'Married';
-            filledCount++;
-          }
-        }
-        if (/Spouse’?s?\s*Name|배우자\s*이름/i.test(rowText)) {
-          const dobIdx = row.findIndex(c => /Date of Birth|생년월일/i.test(String(c.val)));
-          if (dobIdx > 0) {
-            const spCell = row.slice(1, dobIdx).find(c => String(c.val).trim() !== '');
-            if (spCell) {
-              newFields.spouseName = String(spCell.val).trim();
-              newFields.maritalStatus = 'Married';
-              filledCount++;
-            }
-            const dobCell = row.slice(dobIdx + 1).find(c => String(c.val).trim() !== '');
-            if (dobCell) {
-              newFields.spouseDob = String(dobCell.val).trim();
-              filledCount++;
-            }
-          }
-        }
-
-        // 9. Class B Income
-        if (/Basic Salary|기본급/i.test(rowText)) {
-          const valCell = row.slice(1).find(c => !isNaN(Number(String(c.val).replace(/,/g, ''))));
-          if (valCell) {
-            newFields.salaryBasic = String(valCell.val).trim();
-            filledCount++;
-          }
-        }
-        if (/Overseas allowance|해외수당/i.test(rowText)) {
-          const valCell = row.slice(1).find(c => !isNaN(Number(String(c.val).replace(/,/g, ''))));
-          if (valCell) {
-            newFields.salaryAllowance = String(valCell.val).trim();
-            filledCount++;
-          }
-        }
-        if (/Bonus|상여금/i.test(rowText)) {
-          const valCell = row.slice(1).find(c => !isNaN(Number(String(c.val).replace(/,/g, ''))));
-          if (valCell) {
-            newFields.salaryBonus = String(valCell.val).trim();
-            filledCount++;
-          }
-        }
+      if (!result.success || result.filledCount === 0) {
+        setAutoFillMessage({
+          text: `⚠️ ${result.message}`,
+          type: 'error',
+        });
+        return;
       }
 
-      setFormData(prev => ({ ...prev, ...newFields }));
+      setFormData(prev => ({
+        ...prev,
+        ...result.fields,
+        // If children list exists, update children & count
+        ...(result.fields.children && result.fields.children.length > 0
+          ? {
+              childrenCount: String(result.fields.children.length),
+              children: result.fields.children,
+            }
+          : {}),
+      }));
+
       setAutoFillMessage({
-        text: `✅ 엑셀 파일(${file.name})에서 ${filledCount}개 항목이 성공적으로 자동 입력되었습니다!`,
+        text: `✅ 엑셀 시트 [${result.detectedSheet}]에서 ${result.filledCount}개 항목이 성공적으로 자동 입력되었습니다! (이름, 외국인등록번호, 주소, 급여 등 확인 완료)`,
         type: 'success',
       });
     } catch (err: any) {
