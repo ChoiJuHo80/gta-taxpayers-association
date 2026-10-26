@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { createConsultation, createMember, hashPassword } from '@/lib/db';
 import { parseApplicationExcel } from '@/lib/excelFormParser';
+import { sendContactEmailNotification } from '@/lib/mailer';
 
 export async function POST(request: Request) {
   try {
@@ -175,6 +176,22 @@ ${createdMember ? `\n[Auto-Registered GTA Member]: #${createdMember.id} (${creat
       console.error('Failed to create consultation from contact form:', consultErr);
     }
 
+    // Send email notification to gta@gtakorea.org with attached file (if any)
+    let emailResult = null;
+    try {
+      emailResult = await sendContactEmailNotification({
+        name,
+        email,
+        subject,
+        message,
+        attachedFile: fileBuffer && originalFileName ? { name: originalFileName, buffer: fileBuffer } : null,
+        autoFillSummary,
+        consultationId: savedConsultation ? savedConsultation.id : undefined,
+      });
+    } catch (mailErr) {
+      console.error('Error sending contact email notification:', mailErr);
+    }
+
     console.log('=== [GTA Contact Us Email Notification] ===');
     console.log(`Recipient: gta@gtakorea.org`);
     console.log(`From: ${name} <${email}>`);
@@ -185,6 +202,9 @@ ${createdMember ? `\n[Auto-Registered GTA Member]: #${createdMember.id} (${creat
     }
     if (createdMember) {
       console.log(`Auto Member Created: #${createdMember.id}`);
+    }
+    if (emailResult) {
+      console.log(`Email Sent: ${emailResult.success ? 'SUCCESS (' + emailResult.messageId + ')' : 'FAILED (' + emailResult.error + ')'}`);
     }
     console.log('============================================');
 
