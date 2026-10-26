@@ -370,7 +370,7 @@ export default function ContactUsPage() {
                   type="file"
                   id="contact-file-input"
                   className="hidden"
-                  accept=".xlsx,.xls,.pdf,.doc,.docx,.png,.jpg,.jpeg"
+                  accept=".xlsx,.xls,.csv,.pdf,.doc,.docx,.png,.jpg,.jpeg"
                   onChange={e => {
                     if (e.target.files && e.target.files[0]) {
                       handleFileSelect(e.target.files[0]);

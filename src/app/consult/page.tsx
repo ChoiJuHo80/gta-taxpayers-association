@@ -160,20 +160,23 @@ export default function ConsultPage() {
         return;
       }
 
+      const f = result.fields;
       setFormData(prev => ({
         ...prev,
-        ...result.fields,
+        ...f,
+        // If spouseName exists, ensure maritalStatus is Married
+        maritalStatus: f.spouseName ? 'Married' : f.maritalStatus || prev.maritalStatus,
         // If children list exists, update children & count
-        ...(result.fields.children && result.fields.children.length > 0
+        ...(f.children && f.children.length > 0
           ? {
-              childrenCount: String(result.fields.children.length),
-              children: result.fields.children,
+              childrenCount: String(f.children.length),
+              children: f.children,
             }
           : {}),
       }));
 
       setAutoFillMessage({
-        text: `✅ 엑셀 시트 [${result.detectedSheet}]에서 ${result.filledCount}개 항목이 성공적으로 자동 입력되었습니다! (이름, 외국인등록번호, 주소, 급여 등 확인 완료)`,
+        text: `✅ 엑셀 시트 [${result.detectedSheet}]에서 ${result.filledCount}개 항목이 성공적으로 자동 입력되었습니다! (${f.applicantName || '신청자'}, ${f.alienRegNo || ''}, 급여, 배우자, 자녀 등)`,
         type: 'success',
       });
     } catch (err: any) {
@@ -545,13 +548,13 @@ ${childrenLines}
               </div>
 
               <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-                {/* Excel Import Button */}
+                {/* Excel/CSV Import Button */}
                 <label className="bg-white hover:bg-slate-50 text-emerald-700 hover:text-emerald-800 border border-emerald-300 font-bold text-xs px-4 py-2.5 rounded-xl shadow-xs flex items-center space-x-2 cursor-pointer transition-all hover:scale-105 active:scale-95">
                   <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                  <span>엑셀 파일 불러오기 (.xlsx)</span>
+                  <span>엑셀/CSV 파일 불러오기 (.xlsx, .csv)</span>
                   <input
                     type="file"
-                    accept=".xlsx,.xls"
+                    accept=".xlsx,.xls,.csv"
                     className="hidden"
                     onChange={handleExcelImport}
                     disabled={autoFillLoading}

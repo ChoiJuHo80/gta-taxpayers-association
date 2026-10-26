@@ -378,8 +378,15 @@ function extractSheetData(ws: XLSX.WorkSheet, sheetName: string): { fields: Pars
     // 6. Telephone: K13, Mobile: K14
     const telVal = cleanStr(getCellVal(ws, 'K13'));
     const mobVal = cleanStr(getCellVal(ws, 'K14'));
-    const phoneVal = mobVal && !isPlaceholder(mobVal) ? mobVal : telVal && !isPlaceholder(telVal) ? telVal : '';
+    let phoneVal = mobVal && !isPlaceholder(mobVal) ? mobVal : telVal && !isPlaceholder(telVal) ? telVal : '';
     if (phoneVal) {
+      // Normalize Korean mobile: e.g. 010-25794682 or 01025794682 -> 010-2579-4682
+      const digits = phoneVal.replace(/[^0-9]/g, '');
+      if (digits.length === 11 && digits.startsWith('010')) {
+        phoneVal = `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+      } else if (digits.length === 10 && digits.startsWith('01')) {
+        phoneVal = `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+      }
       fields.phone = phoneVal;
       score++;
     }
@@ -397,6 +404,16 @@ function extractSheetData(ws: XLSX.WorkSheet, sheetName: string): { fields: Pars
       fields.dateToMonth = dTo.m;
       fields.dateToDay = dTo.d;
       score++;
+    }
+    // Fallback: If stay dates are empty, check application signature date at Q39 / P39
+    if (!fields.dateFromYear) {
+      const sigDate = parseDate(getCellVal(ws, 'Q39'), getCellW(ws, 'Q39')) || parseDate(getCellVal(ws, 'P39'), getCellW(ws, 'P39'));
+      if (sigDate) {
+        fields.dateFromYear = sigDate.y;
+        fields.dateFromMonth = sigDate.m;
+        fields.dateFromDay = sigDate.d;
+        score++;
+      }
     }
     // 2004 이전 근무 여부: Row 16
     const b2004Val = cleanStr(getCellVal(ws, 'S16')) || cleanStr(getCellVal(ws, 'V16'));
