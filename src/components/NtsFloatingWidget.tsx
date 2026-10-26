@@ -1,10 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { ExternalLink, X } from 'lucide-react';
 
 export default function NtsFloatingWidget() {
+  const pathname = usePathname();
   const [minimized, setMinimized] = useState(false);
+
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
 
   return (
     <div className="fixed bottom-6 right-4 sm:top-52 sm:bottom-auto sm:right-8 z-40 animate-in slide-in-from-bottom-5 sm:slide-in-from-top-5 duration-300">

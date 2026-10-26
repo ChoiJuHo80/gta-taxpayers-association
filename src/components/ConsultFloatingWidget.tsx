@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { FileText, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { translations, Language } from '@/lib/i18n';
 
 export default function ConsultFloatingWidget() {
+  const pathname = usePathname();
   const [lang, setLang] = useState<Language>('en');
 
   useEffect(() => {
@@ -19,6 +21,10 @@ export default function ConsultFloatingWidget() {
     window.addEventListener('langChange' as any, handleLangChange);
     return () => window.removeEventListener('langChange' as any, handleLangChange);
   }, []);
+
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
 
   const t = translations[lang];
 
