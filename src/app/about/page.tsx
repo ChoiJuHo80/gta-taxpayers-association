@@ -182,7 +182,7 @@ function AboutContent() {
             </p>
             <div className="pt-4 text-right">
               <span className="font-extrabold text-slate-900 text-base">
-                {lang === 'ko' ? '거제시 납세자회 대표 최 주 호' : 'Representative Juho Choi, Geoje Taxpayers Association'}
+                {lang === 'ko' ? '거제시 납세자회 대표 김 세 광' : 'Representative Kim Se-Kwang, Geoje Taxpayers Association'}
               </span>
             </div>
           </div>

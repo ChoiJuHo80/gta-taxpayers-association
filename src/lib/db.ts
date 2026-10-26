@@ -118,7 +118,7 @@ export interface TaxReceipt {
 let usersStore: User[] = [
   {
     id: 'USR-001',
-    fullName: '최주호',
+    fullName: '김세광',
     phone: '055-688-2141',
     email: 'admin@gtakorea.org',
     passwordHash: hashPassword('8992'),
