@@ -57,8 +57,16 @@ function TaxGuideContent() {
           <BookOpen className="w-4 h-4 text-gta-600" />
           <span>Tax Guide</span>
         </div>
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
-          {lang === 'ko' ? '외국인 세무 가이드' : 'Expatriate Tax Guide & Table'}
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight break-keep leading-tight">
+          {lang === 'ko' ? (
+            <>
+              외국인 세무 가이드<br />&amp; 공제 서식
+            </>
+          ) : (
+            <>
+              Expatriate Tax Guide<br />&amp; Tax Deduction Items
+            </>
+          )}
         </h1>
         <p className="text-slate-600 leading-relaxed text-base">
           Step-by-step tax workflow, document check-list, monthly tax calculation table ($1=KRW 1,300), and deduction items.
@@ -363,6 +371,17 @@ function TaxGuideContent() {
       {/* TAB 4: Tax Deduction Item (Brochure Page 6~7) */}
       {activeTab === 'tax-deduction' && (
         <div className="space-y-8 animate-in fade-in duration-200">
+          <div className="text-center max-w-2xl mx-auto space-y-2 mb-6">
+            <h2 className="text-3xl font-extrabold text-slate-900 break-keep leading-tight">
+              Personal Deduction &amp;<br />Tax Deduction Items
+            </h2>
+            <p className="text-slate-600 text-sm break-keep">
+              {lang === 'ko'
+                ? '한국 세법상 외국인 근로자에게 적용되는 인적공제 및 특별소득공제 상세 안내입니다.'
+                : 'Guide on personal deduction and special tax deduction items under Korean tax law.'}
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
               <h3 className="text-xl font-extrabold text-slate-900 border-b border-slate-200 pb-3 flex items-center space-x-2">

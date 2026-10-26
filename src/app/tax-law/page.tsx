@@ -47,8 +47,16 @@ function TaxLawContent() {
           <Scale className="w-4 h-4 text-gta-600" />
           <span>Tax Law</span>
         </div>
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
-          {lang === 'ko' ? '한국 세법 및 조세 조약' : 'Korean Tax Law & Foreign Tax Treaties'}
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight break-keep leading-tight">
+          {lang === 'ko' ? (
+            <>
+              한국 세법 및<br />조세 조약
+            </>
+          ) : (
+            <>
+              Korean Tax Law &amp;<br />Foreign Tax Treaties
+            </>
+          )}
         </h1>
         <p className="text-slate-600 leading-relaxed text-base">
           Key regulations of Korean income tax law for expatriates and tax treaty network with 99 countries.
