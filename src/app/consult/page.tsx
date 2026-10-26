@@ -131,18 +131,8 @@ export default function ConsultPage() {
   // Download official Excel (.xlsx) form file
   const handleDownloadExcelForm = () => {
     const a = document.createElement('a');
-    a.href = '/api/download/application-form?format=xlsx';
+    a.href = '/api/download/application-form';
     a.download = '2026_GTA_Application_form.xlsx';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
-  // Download official PDF form file
-  const handleDownloadPdfForm = () => {
-    const a = document.createElement('a');
-    a.href = '/api/download/application-form?format=pdf';
-    a.download = '2026_GTA_Application_form.pdf';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -540,20 +530,11 @@ ${childrenLines}
               <button
                 type="button"
                 onClick={handleDownloadExcelForm}
-                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold text-xs px-3.5 py-2 rounded-xl transition-all flex items-center space-x-1.5 shadow-xs cursor-pointer"
+                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center space-x-1.5 shadow-xs cursor-pointer"
                 title="Download official GTA admission form (.xlsx)"
               >
                 <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                <span>서식 다운로드 (.XLSX)</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleDownloadPdfForm}
-                className="bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-300 font-bold text-xs px-3.5 py-2 rounded-xl transition-all flex items-center space-x-1.5 shadow-xs cursor-pointer"
-                title="Download official GTA admission form (.pdf)"
-              >
-                <FileText className="w-4 h-4 text-sky-600" />
-                <span>서식 다운로드 (.PDF)</span>
+                <span>공식 서식 다운로드 (.XLSX)</span>
               </button>
             </div>
           </div>
