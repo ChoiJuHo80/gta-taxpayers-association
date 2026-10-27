@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, category, content, isPinned, isPopup, popupStartDate, popupEndDate, author, authorEmail } = body;
+    const { title, category, content, isPinned, isPopup, popupStartDate, popupEndDate, imageUrl, attachments, author, authorEmail } = body;
 
     if (!title || !content) {
       return NextResponse.json({ success: false, error: 'Title and content are required.' }, { status: 400 });
@@ -35,6 +35,8 @@ export async function POST(request: Request) {
       isPopup: !!isPopup,
       popupStartDate: popupStartDate || undefined,
       popupEndDate: popupEndDate || undefined,
+      imageUrl: imageUrl || undefined,
+      attachments: Array.isArray(attachments) ? attachments : undefined,
       author: author || 'GTA',
       authorEmail: authorEmail || 'gta@gtakorea.org',
     });

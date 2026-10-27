@@ -29,6 +29,13 @@ export interface Consultation {
   createdAt: string;
 }
 
+export interface NoticeAttachment {
+  name: string;
+  size?: number;
+  data?: string;
+  url?: string;
+}
+
 export interface Notice {
   id: string;
   title: string;
@@ -40,6 +47,8 @@ export interface Notice {
   isPopup?: boolean;
   popupStartDate?: string;
   popupEndDate?: string;
+  imageUrl?: string;
+  attachments?: NoticeAttachment[];
   views: number;
   createdAt: string;
 }
@@ -950,6 +959,7 @@ export async function getNotices(): Promise<Notice[]> {
              is_pinned as "isPinned", is_popup as "isPopup",
              TO_CHAR(popup_start_date, 'YYYY-MM-DD') as "popupStartDate",
              TO_CHAR(popup_end_date, 'YYYY-MM-DD') as "popupEndDate",
+             image_url as "imageUrl", attachments,
              views, created_at as "createdAt"
       FROM notices ORDER BY is_pinned DESC, created_at DESC
     `);
@@ -965,6 +975,7 @@ export async function getActivePopupNotices(): Promise<Notice[]> {
              is_pinned as "isPinned", is_popup as "isPopup",
              TO_CHAR(popup_start_date, 'YYYY-MM-DD') as "popupStartDate",
              TO_CHAR(popup_end_date, 'YYYY-MM-DD') as "popupEndDate",
+             image_url as "imageUrl", attachments,
              views, created_at as "createdAt"
       FROM notices 
       WHERE is_popup = true 
@@ -990,6 +1001,7 @@ export async function getNoticeById(id: string): Promise<Notice | undefined> {
              is_pinned as "isPinned", is_popup as "isPopup",
              TO_CHAR(popup_start_date, 'YYYY-MM-DD') as "popupStartDate",
              TO_CHAR(popup_end_date, 'YYYY-MM-DD') as "popupEndDate",
+             image_url as "imageUrl", attachments,
              views, created_at as "createdAt"
       FROM notices WHERE id = $1
     `, [id]);
@@ -1005,12 +1017,13 @@ export async function createNotice(data: Omit<Notice, 'id' | 'views' | 'createdA
   const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
   if (pool) {
     const res = await pool.query(`
-      INSERT INTO notices (id, title, author, author_email, category, content, is_pinned, is_popup, popup_start_date, popup_end_date, views, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 0, NOW())
+      INSERT INTO notices (id, title, author, author_email, category, content, is_pinned, is_popup, popup_start_date, popup_end_date, image_url, attachments, views, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 0, NOW())
       RETURNING id, title, author, author_email as "authorEmail", category, content, 
                 is_pinned as "isPinned", is_popup as "isPopup",
                 TO_CHAR(popup_start_date, 'YYYY-MM-DD') as "popupStartDate",
                 TO_CHAR(popup_end_date, 'YYYY-MM-DD') as "popupEndDate",
+                image_url as "imageUrl", attachments,
                 views, created_at as "createdAt"
     `, [
       newId, 
@@ -1022,7 +1035,9 @@ export async function createNotice(data: Omit<Notice, 'id' | 'views' | 'createdA
       !!data.isPinned,
       !!data.isPopup,
       data.popupStartDate || null,
-      data.popupEndDate || null
+      data.popupEndDate || null,
+      data.imageUrl || null,
+      data.attachments ? JSON.stringify(data.attachments) : null
     ]);
     return res.rows[0];
   }

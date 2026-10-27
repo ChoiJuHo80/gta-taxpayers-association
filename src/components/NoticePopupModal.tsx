@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Notice } from '@/lib/db';
-import { Megaphone, X, Calendar, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { Notice, NoticeAttachment } from '@/lib/db';
+import { Megaphone, X, Calendar, ChevronLeft, ChevronRight, Paperclip, Download, FileDown } from 'lucide-react';
 
 export default function NoticePopupModal() {
   const pathname = usePathname();
@@ -75,16 +75,59 @@ export default function NoticePopupModal() {
     setIsOpen(false);
   };
 
+  const handleDownloadFile = (att: NoticeAttachment) => {
+    if (att.data) {
+      try {
+        if (att.data.startsWith('data:')) {
+          const a = document.createElement('a');
+          a.href = att.data;
+          a.download = att.name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          return;
+        }
+        const byteCharacters = atob(att.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = att.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return;
+      } catch (e) {
+        console.error('Failed to download base64 attachment:', e);
+      }
+    }
+    if (att.url) {
+      const a = document.createElement('a');
+      a.href = att.url;
+      a.download = att.name;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 print:hidden">
       <div 
-        className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200"
+        className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
         aria-labelledby="popup-notice-title"
       >
         {/* Header */}
-        <div className="bg-linear-to-r from-gta-900 to-blue-900 text-white px-6 py-4 flex items-center justify-between">
+        <div className="bg-linear-to-r from-gta-900 to-blue-900 text-white px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-2.5">
             <div className="bg-amber-400 text-gta-950 p-1.5 rounded-lg">
               <Megaphone className="w-4 h-4" />
@@ -137,9 +180,60 @@ export default function NoticePopupModal() {
             </h3>
           </div>
 
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 text-xs sm:text-sm text-slate-700 whitespace-pre-line leading-relaxed max-h-60 overflow-y-auto">
+          {/* Popup Image Display */}
+          {currentNotice.imageUrl && (
+            <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center max-h-72">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={currentNotice.imageUrl}
+                alt={currentNotice.title}
+                className="w-full max-h-72 object-contain rounded-2xl"
+              />
+            </div>
+          )}
+
+          {/* Content Text */}
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 text-xs sm:text-sm text-slate-700 whitespace-pre-line leading-relaxed max-h-52 overflow-y-auto">
             {currentNotice.content}
           </div>
+
+          {/* Attachments Download List */}
+          {currentNotice.attachments && currentNotice.attachments.length > 0 && (
+            <div className="bg-blue-50/70 p-3.5 rounded-2xl border border-blue-200/80 space-y-2">
+              <div className="flex items-center space-x-1.5 text-xs font-bold text-blue-900">
+                <Paperclip className="w-3.5 h-3.5 text-blue-700" />
+                <span>첨부파일 다운로드 ({currentNotice.attachments.length}개)</span>
+              </div>
+              <div className="space-y-1.5">
+                {currentNotice.attachments.map((att, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-blue-100 text-xs shadow-2xs hover:border-blue-300 transition-colors"
+                  >
+                    <div className="flex items-center space-x-2 truncate mr-2">
+                      <FileDown className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span className="font-semibold text-slate-800 truncate" title={att.name}>
+                        {att.name}
+                      </span>
+                      {att.size && (
+                        <span className="text-[10px] text-slate-400 font-mono shrink-0">
+                          ({(att.size / 1024).toFixed(1)} KB)
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadFile(att)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] px-2.5 py-1 rounded-lg shrink-0 flex items-center space-x-1 cursor-pointer transition-colors shadow-2xs"
+                    >
+                      <Download className="w-3 h-3" />
+                      <span>다운로드</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Pagination Navigation if multiple notices */}
           {activeNotices.length > 1 && (
@@ -190,7 +284,7 @@ export default function NoticePopupModal() {
         </div>
 
         {/* Footer Actions */}
-        <div className="bg-slate-100 px-6 py-3.5 border-t border-slate-200 flex items-center justify-between text-xs">
+        <div className="bg-slate-100 px-6 py-3.5 border-t border-slate-200 flex items-center justify-between text-xs shrink-0">
           <label className="inline-flex items-center space-x-2 text-slate-600 font-semibold cursor-pointer select-none">
             <input
               type="checkbox"
