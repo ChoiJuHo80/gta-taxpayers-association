@@ -57,19 +57,21 @@ function TaxGuideContent() {
           <BookOpen className="w-4 h-4 text-gta-600" />
           <span>Tax Guide</span>
         </div>
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight break-keep leading-tight">
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
+          {lang === 'ko' ? '외국인 세무 가이드' : 'Expatriate Tax Guide & Table'}
+        </h1>
+        <p className="text-slate-600 leading-relaxed text-base">
           {lang === 'ko' ? (
             <>
-              외국인 세무 가이드<br />&amp; 공제 서식
+              단계별 세무 절차, 필요 서류 체크리스트,<br className="hidden sm:inline" />
+              월 급여 세액 계산표($1=KRW 1,300) 및 소득공제 항목 안내입니다.
             </>
           ) : (
             <>
-              Expatriate Tax Guide<br />&amp; Tax Deduction Items
+              Step-by-step tax workflow, document check-list,<br className="hidden sm:inline" />
+              monthly tax calculation table ($1=KRW 1,300), and deduction items.
             </>
           )}
-        </h1>
-        <p className="text-slate-600 leading-relaxed text-base">
-          Step-by-step tax workflow, document check-list, monthly tax calculation table ($1=KRW 1,300), and deduction items.
         </p>
       </div>
 
@@ -372,10 +374,10 @@ function TaxGuideContent() {
       {activeTab === 'tax-deduction' && (
         <div className="space-y-8 animate-in fade-in duration-200">
           <div className="text-center max-w-2xl mx-auto space-y-2 mb-6">
-            <h2 className="text-3xl font-extrabold text-slate-900 break-keep leading-tight">
-              Personal Deduction &amp;<br />Tax Deduction Items
+            <h2 className="text-3xl font-extrabold text-slate-900">
+              Personal Deduction &amp; Tax Deduction Items
             </h2>
-            <p className="text-slate-600 text-sm break-keep">
+            <p className="text-slate-600 text-sm">
               {lang === 'ko'
                 ? '한국 세법상 외국인 근로자에게 적용되는 인적공제 및 특별소득공제 상세 안내입니다.'
                 : 'Guide on personal deduction and special tax deduction items under Korean tax law.'}
@@ -392,7 +394,10 @@ function TaxGuideContent() {
               <div className="space-y-4 text-sm text-slate-700">
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                   <div className="font-bold text-slate-900">A. Basic Deduction</div>
-                  <p className="text-xs text-slate-600">KRW 1,500,000 per person (Taxpayer, Spouse, and Dependents under 20 years old / aged 60+)</p>
+                  <p className="text-xs text-slate-600">
+                    KRW 1,500,000 per person<br />
+                    (Taxpayer, Spouse, and Dependents under 20 years old / aged 60+)
+                  </p>
                 </div>
 
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
@@ -421,7 +426,10 @@ function TaxGuideContent() {
                 </div>
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                   <div className="font-bold text-slate-900">Deductible Categories</div>
-                  <div className="text-slate-600">Medical expenses in Korea, Educational expenses, Korean Credit Card / Debit Card Expenses, Pension / Insurance premiums.</div>
+                  <div className="text-slate-600">
+                    Medical expenses in Korea, Educational expenses, Korean Credit Card /<br />
+                    Debit Card Expenses, Pension / Insurance premiums.
+                  </div>
                 </div>
               </div>
             </div>

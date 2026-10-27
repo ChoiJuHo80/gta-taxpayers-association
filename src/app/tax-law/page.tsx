@@ -47,16 +47,8 @@ function TaxLawContent() {
           <Scale className="w-4 h-4 text-gta-600" />
           <span>Tax Law</span>
         </div>
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight break-keep leading-tight">
-          {lang === 'ko' ? (
-            <>
-              한국 세법 및<br />조세 조약
-            </>
-          ) : (
-            <>
-              Korean Tax Law &amp;<br />Foreign Tax Treaties
-            </>
-          )}
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
+          {lang === 'ko' ? '한국 세법 및 조세 조약' : 'Korean Tax Law & Foreign Tax Treaties'}
         </h1>
         <p className="text-slate-600 leading-relaxed text-base">
           Key regulations of Korean income tax law for expatriates and tax treaty network with 99 countries.
@@ -166,7 +158,8 @@ function TaxLawContent() {
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-start space-x-2">
               <Info className="w-4 h-4 text-gta-600 shrink-0 mt-0.5" />
               <span>
-                Foreign engineers and professionals can choose either Progressive Tax Rate (with all deductions) or 19% Flat Income Tax Rate (+ 1.9% Local Resident Tax = total 20.9%) whichever results in lower tax payable.
+                Foreign engineers and professionals can choose either Progressive Tax Rate (with all deductions) or 19% Flat Income Tax Rate (+ 1.9% Local Resident Tax = total 20.9%)<br className="hidden sm:inline" />
+                whichever results in lower tax payable.
               </span>
             </div>
           </div>

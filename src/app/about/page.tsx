@@ -41,19 +41,21 @@ function AboutContent() {
           <Building className="w-4 h-4 text-gta-600" />
           <span>ABOUT US</span>
         </div>
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight break-keep leading-tight">
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
+          {lang === 'ko' ? '협회 소개 & 안내' : 'About Geoje Taxpayers Association'}
+        </h1>
+        <p className="text-slate-600 leading-relaxed text-base">
           {lang === 'ko' ? (
             <>
-              협회 소개 및<br />이용 안내
+              거제 납세자의 권익 보호와 공정한 세무 행정을 위해 함께합니다.<br />
+              전문 세무사 그룹의 상담 지원 및 최신 세무 자료를 제공합니다.
             </>
           ) : (
             <>
-              About Geoje<br />Taxpayers Association
+              We work together to protect taxpayer rights and ensure fair tax administration in Geoje.<br />
+              Providing expert tax counseling and updated tax resources.
             </>
           )}
-        </h1>
-        <p className="text-slate-600 leading-relaxed text-base">
-          {t.footerDesc}
         </p>
       </div>
 
@@ -117,8 +119,8 @@ function AboutContent() {
                   <span>🏛️ NTS National Tax Service Portal ↗</span>
                 </a>
               </div>
-              <h2 className="text-3xl sm:text-4xl font-black break-keep leading-tight">
-                Foreigner’s Best Tax Partner<br />Geoje Taxpayers Association
+              <h2 className="text-3xl sm:text-4xl font-black">
+                Foreigner’s Best Tax Partner GTA
               </h2>
               <p className="text-slate-200 text-base leading-relaxed">
                 GTA was authorized by the National Tax Service of Republic of Korea and organized on June 16th, 2005. We were organized to assist and advice for foreigners’ Income tax matters.
@@ -193,9 +195,7 @@ function AboutContent() {
       {activeTab === 'benefit' && (
         <div className="space-y-8 animate-in fade-in duration-200">
           <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-3xl font-extrabold text-slate-900 break-keep leading-tight">
-              Benefit of GTA Members<br />(3% Additional Tax Deduction)
-            </h2>
+            <h2 className="text-3xl font-extrabold text-slate-900">Benefit of GTA members</h2>
             <p className="text-slate-600 text-sm">
               GTA endeavors to reduce your tax burden and provide cost-effective tax solutions.
             </p>
