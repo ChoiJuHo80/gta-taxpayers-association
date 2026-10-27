@@ -141,7 +141,7 @@ export async function sendContactEmailNotification({
             Authorization: `Bearer ${resendApiKey}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(buildPayload(fallbackEmail, fromAddress)),
+          body: JSON.stringify(buildPayload([fallbackEmail], fromAddress)),
         });
         data = await res.json();
       }

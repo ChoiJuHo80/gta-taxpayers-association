@@ -818,8 +818,30 @@ export async function deleteReceipt(id: number): Promise<boolean> {
 }
 
 // Consultation Services
+export async function purgeOldConsultations(months: number = 6): Promise<number> {
+  if (pool) {
+    try {
+      const res = await pool.query(
+        `DELETE FROM consultations WHERE created_at < NOW() - ($1 || ' months')::INTERVAL`,
+        [months]
+      );
+      if (res.rowCount && res.rowCount > 0) {
+        console.log(`[db] Auto-purged ${res.rowCount} consultation records older than ${months} months`);
+      }
+      return res.rowCount || 0;
+    } catch (e) {
+      console.error('Failed to purge old consultations:', e);
+      return 0;
+    }
+  }
+  return 0;
+}
+
 export async function getConsultations(): Promise<Consultation[]> {
   if (pool) {
+    // Automatically purge inquiries older than 6 months
+    await purgeOldConsultations(6);
+
     const res = await pool.query(`
       SELECT id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, admin_memo as "adminMemo", attachments, created_at as "createdAt"
       FROM consultations ORDER BY created_at DESC LIMIT 300
@@ -855,6 +877,9 @@ export async function lookupConsultation(phone: string, rawPwd: string): Promise
 
 export async function createConsultation(data: Omit<Consultation, 'id' | 'status' | 'createdAt'>): Promise<Consultation> {
   if (pool) {
+    // Automatically purge old records over 6 months on new inquiry
+    await purgeOldConsultations(6);
+
     const newId = `GTA-2026-${Date.now().toString().slice(-4)}`;
     const res = await pool.query(`
       INSERT INTO consultations (id, applicant_name, phone, category, title, content, password_hash, status, attachments, created_at)

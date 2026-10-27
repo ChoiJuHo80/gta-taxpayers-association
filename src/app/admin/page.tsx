@@ -2143,8 +2143,11 @@ export default function AdminPage() {
                 </span>
                 <div>
                   <h2 className="text-lg font-bold text-slate-900">온라인 문의 및 신청서 접수함</h2>
-                  <p className="text-xs text-slate-500">
-                    홈페이지 Contact Us 및 가입 신청서를 통해 접수된 실시간 내역과 첨부파일을 관리합니다.
+                  <p className="text-xs text-slate-500 flex flex-wrap items-center gap-1.5 mt-0.5">
+                    <span>홈페이지 Contact Us 및 가입 신청서를 통해 접수된 실시간 내역과 첨부파일을 관리합니다.</span>
+                    <span className="inline-flex items-center text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                      ✨ 6개월 경과 데이터 자동 영구 삭제 보장
+                    </span>
                   </p>
                 </div>
               </div>
