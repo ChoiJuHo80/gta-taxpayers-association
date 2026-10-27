@@ -23,37 +23,7 @@ export async function sendContactEmailNotification({
   consultationId,
 }: SendContactEmailParams): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    const host = process.env.SMTP_HOST || 'mail.gtakorea.org';
-    const port = Number(process.env.SMTP_PORT) || 25;
-    const user = process.env.SMTP_USER || 'gta@gtakorea.org';
-    const pass = process.env.SMTP_PASS || 'dkagh1950';
-
-    const transportOptions: any = {
-      host,
-      port,
-      secure: port === 465,
-      connectionTimeout: 3000,
-      greetingTimeout: 3000,
-      socketTimeout: 3000,
-      tls: {
-        rejectUnauthorized: false,
-      },
-    };
-
-    // Add auth if pass is configured and not empty
-    if (process.env.SMTP_AUTH === 'true') {
-      (transportOptions as any).auth = { user, pass };
-    }
-
-    const transporter = nodemailer.createTransport(transportOptions);
-
-    const attachments = [];
-    if (attachedFile && attachedFile.buffer && attachedFile.name) {
-      attachments.push({
-        filename: attachedFile.name,
-        content: attachedFile.buffer,
-      });
-    }
+    const textContent = `[GTA 홈페이지 Contact Us 문의]\n\n이름: ${name}\n이메일: ${email}\n제목: ${subject}\n\n문의 내용:\n${message}\n\n${autoFillSummary ? `신청서 추출 정보:\n${autoFillSummary}\n\n` : ''}${attachedFile ? `첨부파일: ${attachedFile.name}\n` : ''}`;
 
     const htmlContent = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
@@ -113,12 +83,88 @@ export async function sendContactEmailNotification({
       </div>
     `;
 
+    // 1. If RESEND_API_KEY is configured, send via Resend Cloud API (100% reliable on Vercel)
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (resendApiKey) {
+      const recipient = process.env.NOTIFICATION_EMAIL || 'gta@gtakorea.org';
+      const fromAddress = process.env.RESEND_FROM || 'GTA 알림 <onboarding@resend.dev>';
+
+      const payload: any = {
+        from: fromAddress,
+        to: [recipient],
+        reply_to: `${name} <${email}>`,
+        subject: `[GTA 온라인 문의] ${subject} - ${name}`,
+        html: htmlContent,
+        text: textContent,
+      };
+
+      if (attachedFile && attachedFile.buffer && attachedFile.name) {
+        payload.attachments = [
+          {
+            filename: attachedFile.name,
+            content: attachedFile.buffer.toString('base64'),
+          },
+        ];
+      }
+
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('[mailer] Resend API error:', data);
+        return { success: false, error: data?.message || 'Resend delivery error' };
+      }
+
+      console.log('[mailer] Successfully sent via Resend to', recipient, data?.id);
+      return { success: true, messageId: data?.id };
+    }
+
+    // 2. Fallback to direct SMTP
+    const host = process.env.SMTP_HOST || 'mail.gtakorea.org';
+    const port = Number(process.env.SMTP_PORT) || 25;
+    const user = process.env.SMTP_USER || 'gta@gtakorea.org';
+    const pass = process.env.SMTP_PASS || 'dkagh1950';
+
+    const transportOptions: any = {
+      host,
+      port,
+      secure: port === 465,
+      connectionTimeout: 3000,
+      greetingTimeout: 3000,
+      socketTimeout: 3000,
+      tls: {
+        rejectUnauthorized: false,
+      },
+    };
+
+    // Add auth if pass is configured and not empty
+    if (process.env.SMTP_AUTH === 'true') {
+      (transportOptions as any).auth = { user, pass };
+    }
+
+    const transporter = nodemailer.createTransport(transportOptions);
+
+    const attachments = [];
+    if (attachedFile && attachedFile.buffer && attachedFile.name) {
+      attachments.push({
+        filename: attachedFile.name,
+        content: attachedFile.buffer,
+      });
+    }
+
     const info = await transporter.sendMail({
       from: `"${name} (GTA 홈페이지 문의)" <gta@gtakorea.org>`,
       to: 'gta@gtakorea.org',
       replyTo: `${name} <${email}>`,
       subject: `[GTA 온라인 문의] ${subject} - ${name}`,
-      text: `[GTA 홈페이지 Contact Us 문의]\n\n이름: ${name}\n이메일: ${email}\n제목: ${subject}\n\n문의 내용:\n${message}\n\n${autoFillSummary ? `신청서 추출 정보:\n${autoFillSummary}\n\n` : ''}${attachedFile ? `첨부파일: ${attachedFile.name}\n` : ''}`,
+      text: textContent,
       html: htmlContent,
       attachments,
     });
@@ -126,7 +172,7 @@ export async function sendContactEmailNotification({
     console.log('[mailer] Successfully sent contact inquiry email to gta@gtakorea.org:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error: any) {
-    console.error('[mailer] Failed to send email via SMTP:', error?.message || error);
-    return { success: false, error: error?.message || 'SMTP transmission error' };
+    console.error('[mailer] Failed to send email:', error?.message || error);
+    return { success: false, error: error?.message || 'Email transmission error' };
   }
 }
