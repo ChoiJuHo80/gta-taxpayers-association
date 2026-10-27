@@ -91,10 +91,10 @@ export async function sendContactEmailNotification({
       const targetEmail = process.env.NOTIFICATION_EMAIL || 'gta@gtakorea.org';
       const fallbackEmail = 'raenisise@naver.com';
 
-      const buildPayload = (toAddr: string, fromAddr: string) => {
+      const buildPayload = (toAddrs: string[], fromAddr: string) => {
         const payload: any = {
           from: fromAddr,
-          to: [toAddr],
+          to: toAddrs,
           reply_to: `${name} <${email}>`,
           subject: `[GTA 온라인 문의] ${subject} - ${name}`,
           html: htmlContent,
@@ -112,7 +112,8 @@ export async function sendContactEmailNotification({
         return payload;
       };
 
-      // First attempt: try sending to targetEmail (e.g. gta@gtakorea.org)
+      // Send to both official webmail and verified admin email
+      const primaryRecipients = ['gta@gtakorea.org', 'raenisise@naver.com'];
       let fromAddress = process.env.RESEND_FROM || 'GTA 알림 <gta@gtakorea.org>';
       let res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -120,7 +121,7 @@ export async function sendContactEmailNotification({
           Authorization: `Bearer ${resendApiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(buildPayload(targetEmail, fromAddress)),
+        body: JSON.stringify(buildPayload(primaryRecipients, fromAddress)),
       });
 
       let data = await res.json();
