@@ -1535,45 +1535,48 @@ export default function AdminPage() {
             }}
             className="bg-slate-100 p-4 rounded-2xl border border-slate-300 shadow-xs flex flex-col lg:flex-row justify-between items-center gap-3"
           >
-            <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-slate-700 shrink-0">
-              <span className="text-sm font-black text-slate-900 mr-2 whitespace-nowrap shrink-0">- Member List</span>
-              {(
-                [
-                  { value: 'name', label: 'name' },
-                  { value: 'number', label: 'number' },
-                  { value: 'phone', label: 'phone' },
-                ] as const
-              ).map(opt => (
-                <label key={opt.value} className="inline-flex items-center space-x-1.5 cursor-pointer whitespace-nowrap shrink-0">
-                  <input
-                    type="radio"
-                    name="memberSearchField"
-                    value={opt.value}
-                    checked={memberSearchField === opt.value}
-                    onChange={() => setMemberSearchField(opt.value)}
-                    className="w-4 h-4 text-gta-600"
-                  />
-                  <span>{opt.label}</span>
-                </label>
-              ))}
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="text-sm font-black text-slate-900 whitespace-nowrap shrink-0">- Member List</span>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-2 w-full lg:w-auto flex-1 lg:max-w-xl justify-end">
-              <div className="relative w-full">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+            <div className="flex flex-wrap lg:flex-nowrap items-center gap-3 w-full lg:w-auto justify-end">
+              <div className="flex items-center space-x-3 text-xs font-bold text-slate-700 shrink-0">
+                {(
+                  [
+                    { value: 'name', label: 'name' },
+                    { value: 'number', label: 'number' },
+                    { value: 'phone', label: 'phone' },
+                  ] as const
+                ).map(opt => (
+                  <label key={opt.value} className="inline-flex items-center space-x-1.5 cursor-pointer whitespace-nowrap shrink-0">
+                    <input
+                      type="radio"
+                      name="memberSearchField"
+                      value={opt.value}
+                      checked={memberSearchField === opt.value}
+                      onChange={() => setMemberSearchField(opt.value)}
+                      className="w-4 h-4 text-gta-600 focus:ring-gta-500 cursor-pointer"
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="relative w-full sm:w-80 lg:w-96 shrink-0">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="회원 이름(name), 등록번호(number), 연락처(phone) 검색..."
+                  placeholder="회원 이름(name), 등록번호(number), 연락처(phone)"
                   value={memberSearchInput}
                   onChange={e => setMemberSearchInput(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-gta-500 bg-white"
                 />
               </div>
 
-              <div className="flex items-center space-x-2 w-full sm:w-auto justify-end shrink-0">
+              <div className="flex items-center space-x-2 shrink-0">
                 <button
                   type="submit"
-                  className="bg-gta-600 hover:bg-gta-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow cursor-pointer whitespace-nowrap shrink-0"
+                  className="bg-gta-900 hover:bg-slate-800 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow cursor-pointer whitespace-nowrap shrink-0"
                 >
                   검색
                 </button>
@@ -1590,17 +1593,6 @@ export default function AdminPage() {
                     초기화
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedReceiptMember(null);
-                    setReceiptsPage(1);
-                    setActiveTab('receipts');
-                  }}
-                  className="bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl cursor-pointer whitespace-nowrap shrink-0"
-                >
-                  영수증전체보기
-                </button>
               </div>
             </div>
           </form>
@@ -1781,39 +1773,19 @@ export default function AdminPage() {
       {/* ========================================================================= */}
       {activeTab === 'receipts' && (
         <div className="w-full space-y-3 print:hidden bg-white p-4 sm:p-6 rounded-xl border border-amber-300 shadow-xs">
-          {/* Header Row: "- Receipt List" on left, Radio Search on right (Yellow Theme) */}
-          <div className="flex flex-wrap lg:flex-nowrap justify-between items-center gap-3 p-3 bg-amber-50/80 rounded-xl border border-amber-200">
-            <div className="flex flex-wrap items-center gap-2 min-w-0">
-              <span className="text-[15px] font-bold text-slate-900 whitespace-nowrap shrink-0">- Receipt List</span>
+          <div className="flex flex-col lg:flex-row justify-between items-center gap-3 p-4 bg-amber-50/80 rounded-2xl border border-amber-200 shadow-xs">
+            <div className="flex flex-wrap items-center gap-2.5 min-w-0 shrink-0">
+              <span className="text-sm font-black text-slate-900 whitespace-nowrap shrink-0">- Receipt List</span>
               {selectedReceiptMember && (
-                <span className="text-xs font-bold text-blue-800 bg-blue-50 px-3 py-1 rounded border border-blue-200 whitespace-nowrap">
+                <span className="text-xs font-bold text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 whitespace-nowrap">
                   {selectedReceiptMember.name} ({selectedReceiptMember.number})
                 </span>
               )}
               <button
                 type="button"
-                onClick={() => setActiveTab('members')}
-                className="text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 px-3 py-1 rounded-xs cursor-pointer whitespace-nowrap shrink-0"
-              >
-                ← 회원목록
-              </button>
-              {selectedReceiptMember && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedReceiptMember(null);
-                    setReceiptsPage(1);
-                  }}
-                  className="text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 px-3 py-1 rounded-xs cursor-pointer whitespace-nowrap shrink-0"
-                >
-                  전체 영수증 보기
-                </button>
-              )}
-              <button
-                type="button"
                 onClick={handleDownloadSelectedReceiptsPdf}
                 disabled={isBatchGenerating || selectedReceiptList.length === 0}
-                className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-extrabold text-xs px-3 py-1.5 rounded-xs shadow flex items-center space-x-1.5 transition-all cursor-pointer disabled:cursor-not-allowed whitespace-nowrap shrink-0"
+                className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-extrabold text-xs px-3.5 py-2 rounded-xl shadow-xs flex items-center space-x-1.5 transition-all cursor-pointer disabled:cursor-not-allowed whitespace-nowrap shrink-0"
                 title="체크된 영수증들을 하나의 PDF 파일로 묶어서 일괄 다운로드"
               >
                 <FileDown className="w-3.5 h-3.5 shrink-0" />
@@ -1829,7 +1801,7 @@ export default function AdminPage() {
               <button
                 type="button"
                 onClick={() => handleDownloadReceiptsExcel(selectedReceiptList.length > 0)}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-3 py-1.5 rounded-xs shadow flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-3.5 py-2 rounded-xl shadow-xs flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
                 title={
                   selectedReceiptList.length > 0
                     ? `선택된 ${selectedReceiptList.length}건 영수증 엑셀 다운로드`
@@ -1852,9 +1824,9 @@ export default function AdminPage() {
                 setReceiptsPage(1);
                 setReceiptQuery(receiptSearchInput);
               }}
-              className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 text-xs text-black shrink-0"
+              className="flex flex-wrap lg:flex-nowrap items-center gap-3 w-full lg:w-auto justify-end shrink-0"
             >
-              <div className="flex items-center space-x-2.5 shrink-0">
+              <div className="flex items-center space-x-3 text-xs font-bold text-slate-700 shrink-0">
                 {(
                   [
                     { value: 'name', label: 'name' },
@@ -1862,44 +1834,53 @@ export default function AdminPage() {
                     { value: 'phone', label: 'phone' },
                   ] as const
                 ).map(opt => (
-                  <label key={opt.value} className="inline-flex items-center space-x-1 cursor-pointer font-semibold whitespace-nowrap shrink-0">
+                  <label key={opt.value} className="inline-flex items-center space-x-1.5 cursor-pointer whitespace-nowrap shrink-0">
                     <input
                       type="radio"
-                      name="search_mode"
+                      name="receiptSearchField"
                       value={opt.value}
                       checked={receiptSearchField === opt.value}
                       onChange={() => setReceiptSearchField(opt.value)}
+                      className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                     />
                     <span>{opt.label}</span>
                   </label>
                 ))}
               </div>
-              <input
-                type="text"
-                value={receiptSearchInput}
-                onChange={e => setReceiptSearchInput(e.target.value)}
-                placeholder="name / number / phone"
-                className="border border-slate-400 px-2.5 py-1 text-xs w-44 sm:w-48 rounded-xs shrink-0 bg-white"
-              />
-              <button
-                type="submit"
-                className="bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 text-white font-bold text-xs px-4 py-1 rounded-xs cursor-pointer whitespace-nowrap shrink-0"
-              >
-                검색
-              </button>
-              {receiptQuery && (
+
+              <div className="relative w-full sm:w-80 lg:w-96 shrink-0">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="회원 이름(name), 등록번호(number), 연락처(phone)"
+                  value={receiptSearchInput}
+                  onChange={e => setReceiptSearchInput(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 bg-white"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2 shrink-0">
                 <button
-                  type="button"
-                  onClick={() => {
-                    setReceiptSearchInput('');
-                    setReceiptQuery('');
-                    setReceiptsPage(1);
-                  }}
-                  className="bg-white hover:bg-slate-100 border border-slate-400 text-black font-bold text-xs px-2.5 py-1 cursor-pointer whitespace-nowrap shrink-0"
+                  type="submit"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow cursor-pointer whitespace-nowrap shrink-0"
                 >
-                  초기화
+                  검색
                 </button>
-              )}
+                {(receiptQuery || selectedReceiptMember) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReceiptSearchInput('');
+                      setReceiptQuery('');
+                      setSelectedReceiptMember(null);
+                      setReceiptsPage(1);
+                    }}
+                    className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs px-3.5 py-2.5 rounded-xl cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    초기화
+                  </button>
+                )}
+              </div>
             </form>
           </div>
 
