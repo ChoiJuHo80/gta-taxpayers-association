@@ -215,7 +215,7 @@ export default function Home() {
                 <MapPin className="w-5 h-5 text-[#1d3b6b] mt-0.5 shrink-0" />
                 <div>
                   <span className="font-bold text-slate-900">Address: </span>
-                  <span className="text-slate-600">#107, 3696 Geoje-daero, Geoje-city, Gyeongsangnam-do, Korea</span>
+                  <span className="text-slate-600">#107, 3696 Geoje-daero, Geoje-si, Gyeongsangnam-do, Korea</span>
                 </div>
               </div>
               <div className="flex items-start space-x-3">

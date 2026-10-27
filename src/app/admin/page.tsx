@@ -35,7 +35,7 @@ import {
   ExternalLink,
   Calendar,
 } from 'lucide-react';
-import { Consultation, Notice, ApplicationMember, TaxReceipt } from '@/lib/db';
+import { Consultation, Notice, ApplicationMember, TaxReceipt, NoticeAttachment } from '@/lib/db';
 import ReceiptDocument, { downloadReceiptPdf, downloadReceiptsBundlePdf, printReceiptDocument } from '@/components/ReceiptDocument';
 
 const CURRENCIES = ['USD', 'EURO', 'NOK', 'GBP', 'DKK', 'CAD', 'AUD', 'SGD', 'SEK', 'JPY', 'KRW'] as const;
@@ -328,8 +328,9 @@ export default function AdminPage() {
   const [consultationSearchQuery, setConsultationSearchQuery] = useState('');
   const [consultationStatusFilter, setConsultationStatusFilter] = useState<'전체' | '접수' | '진행중' | '완료'>('전체');
 
-  // Notice Creation Modal State
+  // Notice Creation & Edit Modal State
   const [showNoticeModal, setShowNoticeModal] = useState(false);
+  const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
   const [newNoticeTitle, setNewNoticeTitle] = useState('');
   const [newNoticeCategory, setNewNoticeCategory] = useState<'Notice' | '공지' | '세무자료' | 'FAQ'>('Notice');
   const [newNoticeAuthor, setNewNoticeAuthor] = useState('GTA');
@@ -344,8 +345,46 @@ export default function AdminPage() {
     return d.toISOString().slice(0, 10);
   });
   const [newNoticeImageUrl, setNewNoticeImageUrl] = useState('');
-  const [newNoticeAttachments, setNewNoticeAttachments] = useState<{ name: string; size: number; data: string }[]>([]);
+  const [newNoticeAttachments, setNewNoticeAttachments] = useState<NoticeAttachment[]>([]);
   const [previewNotice, setPreviewNotice] = useState<Notice | null>(null);
+
+  const handleOpenCreateNotice = () => {
+    setEditingNoticeId(null);
+    setNewNoticeTitle('');
+    setNewNoticeCategory('Notice');
+    setNewNoticeAuthor('GTA');
+    setNewNoticeAuthorEmail('gta@gtakorea.org');
+    setNewNoticeContent('');
+    setNewNoticeIsPinned(false);
+    setNewNoticeIsPopup(true);
+    setNewNoticePopupStartDate(new Date().toISOString().slice(0, 10));
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    setNewNoticePopupEndDate(d.toISOString().slice(0, 10));
+    setNewNoticeImageUrl('');
+    setNewNoticeAttachments([]);
+    setShowNoticeModal(true);
+  };
+
+  const handleOpenEditNotice = (n: Notice) => {
+    setEditingNoticeId(n.id);
+    setNewNoticeTitle(n.title);
+    setNewNoticeCategory(n.category as any);
+    setNewNoticeAuthor(n.author || 'GTA');
+    setNewNoticeAuthorEmail(n.authorEmail || 'gta@gtakorea.org');
+    setNewNoticeContent(n.content);
+    setNewNoticeIsPinned(!!n.isPinned);
+    setNewNoticeIsPopup(!!n.isPopup);
+    setNewNoticePopupStartDate(n.popupStartDate || new Date().toISOString().slice(0, 10));
+    setNewNoticePopupEndDate(n.popupEndDate || (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      return d.toISOString().slice(0, 10);
+    })());
+    setNewNoticeImageUrl(n.imageUrl || '');
+    setNewNoticeAttachments(n.attachments || []);
+    setShowNoticeModal(true);
+  };
 
   const handleSetPopupDuration = (days: number) => {
     const start = new Date();
@@ -1188,26 +1227,33 @@ export default function AdminPage() {
     e.preventDefault();
     if (!newNoticeTitle.trim() || !newNoticeContent.trim()) return;
     try {
-      const res = await fetch('/api/notices', {
-        method: 'POST',
+      const payload = {
+        title: newNoticeTitle,
+        category: newNoticeCategory,
+        author: newNoticeAuthor,
+        authorEmail: newNoticeAuthorEmail,
+        content: newNoticeContent,
+        isPinned: newNoticeIsPinned,
+        isPopup: newNoticeIsPopup,
+        popupStartDate: newNoticeIsPopup ? newNoticePopupStartDate : null,
+        popupEndDate: newNoticeIsPopup ? newNoticePopupEndDate : null,
+        imageUrl: newNoticeImageUrl || null,
+        attachments: newNoticeAttachments.length > 0 ? newNoticeAttachments : null,
+      };
+
+      const url = editingNoticeId ? `/api/notices/${editingNoticeId}` : '/api/notices';
+      const method = editingNoticeId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: newNoticeTitle,
-          category: newNoticeCategory,
-          author: newNoticeAuthor,
-          authorEmail: newNoticeAuthorEmail,
-          content: newNoticeContent,
-          isPinned: newNoticeIsPinned,
-          isPopup: newNoticeIsPopup,
-          popupStartDate: newNoticeIsPopup ? newNoticePopupStartDate : null,
-          popupEndDate: newNoticeIsPopup ? newNoticePopupEndDate : null,
-          imageUrl: newNoticeImageUrl || null,
-          attachments: newNoticeAttachments.length > 0 ? newNoticeAttachments : null,
-        }),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (json.success) {
         setShowNoticeModal(false);
+        const wasEditing = !!editingNoticeId;
+        setEditingNoticeId(null);
         setNewNoticeTitle('');
         setNewNoticeContent('');
         setNewNoticeIsPinned(false);
@@ -1215,12 +1261,16 @@ export default function AdminPage() {
         setNewNoticeImageUrl('');
         setNewNoticeAttachments([]);
         fetchNotices();
-        alert('공지사항이 성공적으로 등록되었습니다.' + (newNoticeIsPopup ? '\n고객 화면에서 지정 기간 동안 팝업창으로 공지됩니다.' : ''));
+        if (wasEditing) {
+          alert('공지사항이 성공적으로 수정되었습니다.');
+        } else {
+          alert('공지사항이 성공적으로 등록되었습니다.' + (newNoticeIsPopup ? '\n고객 화면에서 지정 기간 동안 팝업창으로 공지됩니다.' : ''));
+        }
       } else {
-        alert(json.error || '공지사항 등록에 실패했습니다.');
+        alert(json.error || (editingNoticeId ? '공지사항 수정에 실패했습니다.' : '공지사항 등록에 실패했습니다.'));
       }
     } catch (err) {
-      alert('공지사항 등록 중 오류가 발생했습니다.');
+      alert('공지사항 저장 중 오류가 발생했습니다.');
     }
   };
 
@@ -2208,7 +2258,7 @@ export default function AdminPage() {
             </div>
 
             <button
-              onClick={() => setShowNoticeModal(true)}
+              onClick={handleOpenCreateNotice}
               className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-lg flex items-center space-x-2 transition-all shrink-0 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -2228,7 +2278,7 @@ export default function AdminPage() {
                     <th className="px-4 py-3.5 w-24">Author</th>
                     <th className="px-4 py-3.5 text-center w-32">Date</th>
                     <th className="px-4 py-3.5 text-center w-20">Hits</th>
-                    <th className="px-4 py-3.5 text-right w-36">Action</th>
+                    <th className="px-4 py-3.5 text-right w-44">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
@@ -2283,7 +2333,7 @@ export default function AdminPage() {
                               </div>
                             ) : isFuture ? (
                               <div className="inline-flex flex-col items-center space-y-1">
-                                <span className="bg-blue-100 text-blue-800 border border-blue-200 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                                <span className="bg-blue-100 text-blue-800 border border-blue-200 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
                                   팝업 대기
                                 </span>
                                 <div className="text-[10px] text-slate-500 font-mono">
@@ -2292,7 +2342,7 @@ export default function AdminPage() {
                               </div>
                             ) : (
                               <div className="inline-flex flex-col items-center space-y-1">
-                                <span className="bg-slate-100 text-slate-500 border border-slate-200 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                                <span className="bg-slate-100 text-slate-500 border border-slate-200 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
                                   기간 만료
                                 </span>
                                 <div className="text-[10px] text-slate-400 font-mono">
@@ -2311,6 +2361,15 @@ export default function AdminPage() {
                         <td className="px-4 py-3.5 text-center font-mono text-xs font-bold text-slate-700">{n.views}</td>
                         <td className="px-4 py-3.5 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditNotice(n)}
+                              title="공지사항 내용 수정"
+                              className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 inline-flex items-center space-x-1 cursor-pointer transition-colors"
+                            >
+                              <Edit3 className="w-3.5 h-3.5 text-slate-600" />
+                              <span className="hidden sm:inline">수정</span>
+                            </button>
                             <button
                               type="button"
                               onClick={() => setPreviewNotice(n)}
@@ -3847,10 +3906,27 @@ export default function AdminPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 print:hidden">
           <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-xl w-full space-y-5 max-h-[92vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-lg font-bold text-slate-900">새 공지사항 작성</h3>
+              <div className="flex items-center space-x-2">
+                {editingNoticeId ? (
+                  <span className="p-1.5 bg-amber-100 text-amber-800 rounded-lg">
+                    <Edit3 className="w-4 h-4" />
+                  </span>
+                ) : (
+                  <span className="p-1.5 bg-blue-100 text-blue-800 rounded-lg">
+                    <Megaphone className="w-4 h-4" />
+                  </span>
+                )}
+                <h3 className="text-lg font-bold text-slate-900">
+                  {editingNoticeId ? '공지사항 수정 (Edit Notice)' : '새 공지사항 작성'}
+                </h3>
+              </div>
               <button
-                onClick={() => setShowNoticeModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-sm font-bold"
+                type="button"
+                onClick={() => {
+                  setEditingNoticeId(null);
+                  setShowNoticeModal(false);
+                }}
+                className="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -3980,9 +4056,11 @@ export default function AdminPage() {
                         <div className="flex items-center space-x-2 truncate mr-2">
                           <Paperclip className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span className="truncate font-medium text-slate-700">{file.name}</span>
-                          <span className="text-[10px] text-slate-400 font-mono shrink-0">
-                            ({(file.size / 1024).toFixed(1)} KB)
-                          </span>
+                          {file.size !== undefined && (
+                            <span className="text-[10px] text-slate-400 font-mono shrink-0">
+                              ({(file.size / 1024).toFixed(1)} KB)
+                            </span>
+                          )}
                         </div>
                         <button
                           type="button"
@@ -4070,8 +4148,11 @@ export default function AdminPage() {
               <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowNoticeModal(false)}
-                  className="px-4 py-2 bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                  onClick={() => {
+                    setEditingNoticeId(null);
+                    setShowNoticeModal(false);
+                  }}
+                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   취소
                 </button>
@@ -4079,7 +4160,7 @@ export default function AdminPage() {
                   type="submit"
                   className="px-5 py-2.5 bg-blue-600 text-white font-extrabold text-xs rounded-xl hover:bg-blue-700 shadow-lg cursor-pointer"
                 >
-                  공지사항 등록하기
+                  {editingNoticeId ? '수정 내용 저장하기' : '공지사항 등록하기'}
                 </button>
               </div>
             </form>

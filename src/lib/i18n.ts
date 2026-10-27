@@ -212,7 +212,7 @@ export const translations = {
     mapTitle: 'Geoje Taxpayers Association Office Location',
     mapDesc: 'If in-person consultation is required, we support office visits via advance appointment.',
     mapAddrHeader: 'Address',
-    mapAddr: '#107, 3696 Geoje-daero, Geoje-city, Gyeongsangnam-do, Korea',
+    mapAddr: '#107, 3696 Geoje-daero, Geoje-si, Gyeongsangnam-do, Korea',
     mapPhoneHeader: 'Phone Inquiries',
     mapPhone: '+82(0)55-688-2141 (Hours: Weekdays 09:00 ~ 18:00)',
     mapFaxHeader: 'Fax',
@@ -262,7 +262,7 @@ export const translations = {
     footerNotices: 'Tax Resources & FAQ',
     footerContactTitle: 'SUPPORT & LOCATION',
     footerPhone: '+82(0)55-688-2141 (Main Phone)',
-    footerAddress: '#107, 3696 Geoje-daero, Geoje-city, Gyeongsangnam-do, Korea',
+    footerAddress: '#107, 3696 Geoje-daero, Geoje-si, Gyeongsangnam-do, Korea',
 
     // Admin Page
     adminSplashTitle: 'GTA Geoje Taxpayers Association',

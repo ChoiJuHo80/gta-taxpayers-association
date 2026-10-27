@@ -216,7 +216,7 @@ export default function ContactUsPage() {
               <div className="space-y-1">
                 <h4 className="font-bold text-white text-xs uppercase text-slate-400">Office Address</h4>
                 <p className="font-medium text-slate-200 text-xs leading-normal">
-                  #107, 3696 Geoje-daero, Geoje-city, Gyeongnam-do, Korea
+                  #107, 3696 Geoje-daero, Geoje-si, Gyeongsangnam-do, Korea
                 </p>
               </div>
             </div>

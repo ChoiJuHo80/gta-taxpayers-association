@@ -290,7 +290,7 @@ function AboutContent() {
                   <span>{t.mapAddrHeader}</span>
                 </div>
                 <p className="text-xs text-slate-700 font-semibold leading-snug">
-                  #107, 3696 Geoje-daero, Geoje-city, Gyeongnam-do, Korea
+                  #107, 3696 Geoje-daero, Geoje-si, Gyeongsangnam-do, Korea
                 </p>
               </div>
 

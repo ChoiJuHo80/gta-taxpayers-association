@@ -110,7 +110,7 @@ export default function Footer() {
               </li>
               <li className="flex items-start space-x-2">
                 <MapPin className="w-4 h-4 text-[#1d3b6b] shrink-0 mt-0.5" />
-                <span>#107, 3696 Geoje-daero, Geoje-city, Korea</span>
+                <span>#107, 3696 Geoje-daero, Geoje-si, Gyeongsangnam-do, Korea</span>
               </li>
             </ul>
           </div>

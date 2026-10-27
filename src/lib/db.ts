@@ -1051,6 +1051,61 @@ export async function createNotice(data: Omit<Notice, 'id' | 'views' | 'createdA
   return newNotice;
 }
 
+export async function updateNotice(
+  id: string,
+  data: Partial<Omit<Notice, 'id' | 'views' | 'createdAt'>>
+): Promise<Notice | undefined> {
+  if (pool) {
+    const existingRes = await pool.query(`SELECT * FROM notices WHERE id = $1`, [id]);
+    const ex = existingRes.rows[0];
+    if (!ex) return undefined;
+
+    const title = data.title !== undefined ? data.title : ex.title;
+    const category = data.category !== undefined ? data.category : ex.category;
+    const content = data.content !== undefined ? data.content : ex.content;
+    const author = data.author !== undefined ? data.author : ex.author;
+    const authorEmail = data.authorEmail !== undefined ? data.authorEmail : ex.author_email;
+    const isPinned = data.isPinned !== undefined ? data.isPinned : ex.is_pinned;
+    const isPopup = data.isPopup !== undefined ? data.isPopup : ex.is_popup;
+    const popupStartDate = data.popupStartDate !== undefined ? (data.popupStartDate || null) : ex.popup_start_date;
+    const popupEndDate = data.popupEndDate !== undefined ? (data.popupEndDate || null) : ex.popup_end_date;
+    const imageUrl = data.imageUrl !== undefined ? (data.imageUrl || null) : ex.image_url;
+    const attachments = data.attachments !== undefined
+      ? (data.attachments ? JSON.stringify(data.attachments) : null)
+      : (ex.attachments ? (typeof ex.attachments === 'string' ? ex.attachments : JSON.stringify(ex.attachments)) : null);
+
+    const res = await pool.query(`
+      UPDATE notices 
+      SET title = $1, category = $2, content = $3, author = $4, author_email = $5,
+          is_pinned = $6, is_popup = $7, popup_start_date = $8, popup_end_date = $9,
+          image_url = $10, attachments = $11
+      WHERE id = $12
+      RETURNING id, title, author, author_email as "authorEmail", category, content, 
+                is_pinned as "isPinned", is_popup as "isPopup",
+                TO_CHAR(popup_start_date, 'YYYY-MM-DD') as "popupStartDate",
+                TO_CHAR(popup_end_date, 'YYYY-MM-DD') as "popupEndDate",
+                image_url as "imageUrl", attachments,
+                views, created_at as "createdAt"
+    `, [title, category, content, author, authorEmail, isPinned, isPopup, popupStartDate, popupEndDate, imageUrl, attachments, id]);
+    return res.rows[0];
+  }
+  const notice = noticesStore.find(n => n.id === id);
+  if (notice) {
+    if (data.title !== undefined) notice.title = data.title;
+    if (data.category !== undefined) notice.category = data.category;
+    if (data.content !== undefined) notice.content = data.content;
+    if (data.author !== undefined) notice.author = data.author;
+    if (data.authorEmail !== undefined) notice.authorEmail = data.authorEmail;
+    if (data.isPinned !== undefined) notice.isPinned = data.isPinned;
+    if (data.isPopup !== undefined) notice.isPopup = data.isPopup;
+    if (data.popupStartDate !== undefined) notice.popupStartDate = data.popupStartDate;
+    if (data.popupEndDate !== undefined) notice.popupEndDate = data.popupEndDate;
+    if (data.imageUrl !== undefined) notice.imageUrl = data.imageUrl;
+    if (data.attachments !== undefined) notice.attachments = data.attachments;
+  }
+  return notice;
+}
+
 export async function updateNoticePopup(
   id: string, 
   isPopup: boolean, 
