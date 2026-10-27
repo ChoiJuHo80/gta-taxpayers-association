@@ -167,8 +167,8 @@ export default function LookupPage() {
 
         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
           <div className="font-bold text-slate-800">📌 Login Guide for GTA Members:</div>
-          <div>• <strong>Name:</strong> Write down your full name in CAPITAL letters and spaces as shown on your KOR Residence Card (or Membership Card ID).</div>
-          <div>• <strong>Registration Number:</strong> Write down your Registration Number (e.g., <code>800101-3000000</code>) or Membership Password.</div>
+          <div>• <strong>Name:</strong> Write down your full name in CAPITAL letters and spaces as shown on your KOR Residence Card.</div>
+          <div>• <strong>Registration Number:</strong> Write down your Registration Number (e.g., <code>800101-3000000</code>).</div>
         </div>
 
         {errorMsg && (

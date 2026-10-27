@@ -72,7 +72,7 @@ export default function NoticesPage() {
             author: 'GTA',
             authorEmail: 'gta@gtakorea.org',
             category: 'Notice',
-            content: 'Thank you for your joining GTA.(Geoje Taxpayers Association)\n\nIf you would like to check your Receipt for payment of tax,\nPlease Login to our website.\n\nNAME: Write down your full name with capital letters and blank such as your KOR residence card. (or Membership Card ID)\n(ex: HONG GILDONG)\n\nNUMBER: Write down your Registration Number with hyphen. (or Membership Card Password)\n(ex: 800101-3000000)',
+            content: 'Thank you for your joining GTA.(Geoje Taxpayers Association)\n\nIf you would like to check your Receipt for payment of tax,\nPlease Login to our website.\n\nNAME: Write down your full name with capital letters and blank such as your KOR residence card.\n(ex: HONG GILDONG)\n\nNUMBER: Write down your Registration Number with hyphen.\n(ex: 800101-3000000)',
             isPinned: true,
             views: 12396,
             createdAt: '2007-02-15 17:26:36',
