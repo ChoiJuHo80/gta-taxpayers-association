@@ -113,7 +113,7 @@ export async function sendContactEmailNotification({
       };
 
       // First attempt: try sending to targetEmail (e.g. gta@gtakorea.org)
-      let fromAddress = process.env.RESEND_FROM || 'GTA 알림 <contact@gtakorea.org>';
+      let fromAddress = process.env.RESEND_FROM || 'GTA 알림 <gta@gtakorea.org>';
       let res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
