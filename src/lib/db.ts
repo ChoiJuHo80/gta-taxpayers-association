@@ -37,6 +37,9 @@ export interface Notice {
   category: '공지' | '세무자료' | 'FAQ' | 'Notice';
   content: string;
   isPinned: boolean;
+  isPopup?: boolean;
+  popupStartDate?: string;
+  popupEndDate?: string;
   views: number;
   createdAt: string;
 }
@@ -943,7 +946,11 @@ export async function deleteConsultation(id: string): Promise<boolean> {
 export async function getNotices(): Promise<Notice[]> {
   if (pool) {
     const res = await pool.query(`
-      SELECT id, title, author, author_email as "authorEmail", category, content, is_pinned as "isPinned", views, created_at as "createdAt"
+      SELECT id, title, author, author_email as "authorEmail", category, content, 
+             is_pinned as "isPinned", is_popup as "isPopup",
+             TO_CHAR(popup_start_date, 'YYYY-MM-DD') as "popupStartDate",
+             TO_CHAR(popup_end_date, 'YYYY-MM-DD') as "popupEndDate",
+             views, created_at as "createdAt"
       FROM notices ORDER BY is_pinned DESC, created_at DESC
     `);
     if (res.rows.length > 0) return res.rows;
@@ -951,11 +958,39 @@ export async function getNotices(): Promise<Notice[]> {
   return noticesStore;
 }
 
+export async function getActivePopupNotices(): Promise<Notice[]> {
+  if (pool) {
+    const res = await pool.query(`
+      SELECT id, title, author, author_email as "authorEmail", category, content, 
+             is_pinned as "isPinned", is_popup as "isPopup",
+             TO_CHAR(popup_start_date, 'YYYY-MM-DD') as "popupStartDate",
+             TO_CHAR(popup_end_date, 'YYYY-MM-DD') as "popupEndDate",
+             views, created_at as "createdAt"
+      FROM notices 
+      WHERE is_popup = true 
+        AND (popup_start_date IS NULL OR popup_start_date <= CURRENT_DATE)
+        AND (popup_end_date IS NULL OR popup_end_date >= CURRENT_DATE)
+      ORDER BY is_pinned DESC, created_at DESC
+    `);
+    return res.rows;
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  return noticesStore.filter(n => 
+    n.isPopup && 
+    (!n.popupStartDate || n.popupStartDate <= today) && 
+    (!n.popupEndDate || n.popupEndDate >= today)
+  );
+}
+
 export async function getNoticeById(id: string): Promise<Notice | undefined> {
   if (pool) {
     await pool.query(`UPDATE notices SET views = views + 1 WHERE id = $1`, [id]);
     const res = await pool.query(`
-      SELECT id, title, author, author_email as "authorEmail", category, content, is_pinned as "isPinned", views, created_at as "createdAt"
+      SELECT id, title, author, author_email as "authorEmail", category, content, 
+             is_pinned as "isPinned", is_popup as "isPopup",
+             TO_CHAR(popup_start_date, 'YYYY-MM-DD') as "popupStartDate",
+             TO_CHAR(popup_end_date, 'YYYY-MM-DD') as "popupEndDate",
+             views, created_at as "createdAt"
       FROM notices WHERE id = $1
     `, [id]);
     if (res.rows.length > 0) return res.rows[0];
@@ -970,10 +1005,25 @@ export async function createNotice(data: Omit<Notice, 'id' | 'views' | 'createdA
   const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
   if (pool) {
     const res = await pool.query(`
-      INSERT INTO notices (id, title, author, author_email, category, content, is_pinned, views, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, 0, NOW())
-      RETURNING id, title, author, author_email as "authorEmail", category, content, is_pinned as "isPinned", views, created_at as "createdAt"
-    `, [newId, data.title, data.author || 'GTA', data.authorEmail || 'gta@gtakorea.org', data.category, data.content, data.isPinned]);
+      INSERT INTO notices (id, title, author, author_email, category, content, is_pinned, is_popup, popup_start_date, popup_end_date, views, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 0, NOW())
+      RETURNING id, title, author, author_email as "authorEmail", category, content, 
+                is_pinned as "isPinned", is_popup as "isPopup",
+                TO_CHAR(popup_start_date, 'YYYY-MM-DD') as "popupStartDate",
+                TO_CHAR(popup_end_date, 'YYYY-MM-DD') as "popupEndDate",
+                views, created_at as "createdAt"
+    `, [
+      newId, 
+      data.title, 
+      data.author || 'GTA', 
+      data.authorEmail || 'gta@gtakorea.org', 
+      data.category, 
+      data.content, 
+      !!data.isPinned,
+      !!data.isPopup,
+      data.popupStartDate || null,
+      data.popupEndDate || null
+    ]);
     return res.rows[0];
   }
   const newNotice: Notice = {
@@ -984,6 +1034,36 @@ export async function createNotice(data: Omit<Notice, 'id' | 'views' | 'createdA
   };
   noticesStore.unshift(newNotice);
   return newNotice;
+}
+
+export async function updateNoticePopup(
+  id: string, 
+  isPopup: boolean, 
+  popupStartDate?: string, 
+  popupEndDate?: string
+): Promise<Notice | undefined> {
+  if (pool) {
+    const res = await pool.query(`
+      UPDATE notices 
+      SET is_popup = $1, 
+          popup_start_date = $2, 
+          popup_end_date = $3 
+      WHERE id = $4
+      RETURNING id, title, author, author_email as "authorEmail", category, content, 
+                is_pinned as "isPinned", is_popup as "isPopup",
+                TO_CHAR(popup_start_date, 'YYYY-MM-DD') as "popupStartDate",
+                TO_CHAR(popup_end_date, 'YYYY-MM-DD') as "popupEndDate",
+                views, created_at as "createdAt"
+    `, [isPopup, popupStartDate || null, popupEndDate || null, id]);
+    return res.rows[0];
+  }
+  const notice = noticesStore.find(n => n.id === id);
+  if (notice) {
+    notice.isPopup = isPopup;
+    notice.popupStartDate = popupStartDate;
+    notice.popupEndDate = popupEndDate;
+  }
+  return notice;
 }
 
 export async function deleteNotice(id: string): Promise<boolean> {

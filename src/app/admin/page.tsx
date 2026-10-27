@@ -33,6 +33,7 @@ import {
   Send,
   Eye,
   ExternalLink,
+  Calendar,
 } from 'lucide-react';
 import { Consultation, Notice, ApplicationMember, TaxReceipt } from '@/lib/db';
 import ReceiptDocument, { downloadReceiptPdf, downloadReceiptsBundlePdf, printReceiptDocument } from '@/components/ReceiptDocument';
@@ -335,6 +336,22 @@ export default function AdminPage() {
   const [newNoticeAuthorEmail, setNewNoticeAuthorEmail] = useState('gta@gtakorea.org');
   const [newNoticeContent, setNewNoticeContent] = useState('');
   const [newNoticeIsPinned, setNewNoticeIsPinned] = useState(false);
+  const [newNoticeIsPopup, setNewNoticeIsPopup] = useState(true);
+  const [newNoticePopupStartDate, setNewNoticePopupStartDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [newNoticePopupEndDate, setNewNoticePopupEndDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return d.toISOString().slice(0, 10);
+  });
+  const [previewNotice, setPreviewNotice] = useState<Notice | null>(null);
+
+  const handleSetPopupDuration = (days: number) => {
+    const start = new Date();
+    const end = new Date();
+    end.setDate(end.getDate() + days);
+    setNewNoticePopupStartDate(start.toISOString().slice(0, 10));
+    setNewNoticePopupEndDate(end.toISOString().slice(0, 10));
+  };
 
   const fetchMembers = useCallback(async (q: string, p: number, field: string = 'all') => {
     setMembersLoading(true);
@@ -1136,6 +1153,9 @@ export default function AdminPage() {
           authorEmail: newNoticeAuthorEmail,
           content: newNoticeContent,
           isPinned: newNoticeIsPinned,
+          isPopup: newNoticeIsPopup,
+          popupStartDate: newNoticeIsPopup ? newNoticePopupStartDate : null,
+          popupEndDate: newNoticeIsPopup ? newNoticePopupEndDate : null,
         }),
       });
       const json = await res.json();
@@ -1144,10 +1164,42 @@ export default function AdminPage() {
         setNewNoticeTitle('');
         setNewNoticeContent('');
         setNewNoticeIsPinned(false);
+        setNewNoticeIsPopup(true);
         fetchNotices();
+        alert('공지사항이 성공적으로 등록되었습니다.' + (newNoticeIsPopup ? '\n고객 화면에서 지정 기간 동안 팝업창으로 공지됩니다.' : ''));
+      } else {
+        alert(json.error || '공지사항 등록에 실패했습니다.');
       }
     } catch (err) {
-      alert('Error creating notice');
+      alert('공지사항 등록 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleToggleNoticePopup = async (notice: Notice) => {
+    const newPopupState = !notice.isPopup;
+    try {
+      const res = await fetch('/api/notices', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: notice.id,
+          isPopup: newPopupState,
+          popupStartDate: notice.popupStartDate || new Date().toISOString().slice(0, 10),
+          popupEndDate: notice.popupEndDate || (() => {
+            const d = new Date();
+            d.setDate(d.getDate() + 7);
+            return d.toISOString().slice(0, 10);
+          })(),
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        fetchNotices();
+      } else {
+        alert(json.error || '팝업 설정 변경에 실패했습니다.');
+      }
+    } catch (err) {
+      alert('팝업 설정 변경 중 오류가 발생했습니다.');
     }
   };
 
@@ -2121,46 +2173,114 @@ export default function AdminPage() {
                 <thead className="bg-slate-100 text-slate-700 text-xs uppercase font-bold border-b border-slate-200">
                   <tr>
                     <th className="px-4 py-3.5 text-center w-16">Status</th>
-                    <th className="px-4 py-3.5 w-32">Category</th>
+                    <th className="px-4 py-3.5 w-28">Category</th>
                     <th className="px-6 py-3.5">Title</th>
-                    <th className="px-4 py-3.5 w-32">Author</th>
-                    <th className="px-4 py-3.5 text-center w-36">Date</th>
-                    <th className="px-4 py-3.5 text-center w-24">Hits</th>
-                    <th className="px-4 py-3.5 text-right w-24">Action</th>
+                    <th className="px-4 py-3.5 w-44 text-center">고객 팝업 알림</th>
+                    <th className="px-4 py-3.5 w-24">Author</th>
+                    <th className="px-4 py-3.5 text-center w-32">Date</th>
+                    <th className="px-4 py-3.5 text-center w-20">Hits</th>
+                    <th className="px-4 py-3.5 text-right w-36">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {notices.map(n => (
-                    <tr key={n.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3.5 text-center">
-                        {n.isPinned && (
-                          <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center space-x-1">
-                            <Pin className="w-3 h-3" />
-                            <span>HOT</span>
+                  {notices.map(n => {
+                    const todayStr = new Date().toISOString().slice(0, 10);
+                    const isActive = n.isPopup && (!n.popupStartDate || n.popupStartDate <= todayStr) && (!n.popupEndDate || n.popupEndDate >= todayStr);
+                    const isFuture = n.isPopup && n.popupStartDate && n.popupStartDate > todayStr;
+                    const isPast = n.isPopup && n.popupEndDate && n.popupEndDate < todayStr;
+
+                    return (
+                      <tr key={n.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3.5 text-center">
+                          {n.isPinned && (
+                            <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center space-x-1">
+                              <Pin className="w-3 h-3" />
+                              <span>HOT</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2 py-0.5 rounded border border-blue-200">
+                            {n.category}
                           </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2 py-0.5 rounded border border-blue-200">
-                          {n.category}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3.5 font-bold text-slate-900">{n.title}</td>
-                      <td className="px-4 py-3.5 text-xs text-slate-600">{n.author || 'GTA'}</td>
-                      <td className="px-4 py-3.5 text-center font-mono text-xs text-slate-500">
-                        {n.createdAt.split(' ')[0]}
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-mono text-xs font-bold text-slate-700">{n.views}</td>
-                      <td className="px-4 py-3.5 text-right">
-                        <button
-                          onClick={() => handleDeleteNotice(n.id)}
-                          className="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-6 py-3.5 font-bold text-slate-900">{n.title}</td>
+                        <td className="px-4 py-3.5 text-center">
+                          {n.isPopup ? (
+                            isActive ? (
+                              <div className="inline-flex flex-col items-center space-y-1">
+                                <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[11px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center space-x-1.5 shadow-xs">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                  <span>팝업 진행중</span>
+                                </span>
+                                <div className="text-[10px] text-slate-500 font-mono">
+                                  {n.popupStartDate || '상시'} ~ {n.popupEndDate || '상시'}
+                                </div>
+                              </div>
+                            ) : isFuture ? (
+                              <div className="inline-flex flex-col items-center space-y-1">
+                                <span className="bg-blue-100 text-blue-800 border border-blue-200 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                                  팝업 대기
+                                </span>
+                                <div className="text-[10px] text-slate-500 font-mono">
+                                  {n.popupStartDate} 시작
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="inline-flex flex-col items-center space-y-1">
+                                <span className="bg-slate-100 text-slate-500 border border-slate-200 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                                  기간 만료
+                                </span>
+                                <div className="text-[10px] text-slate-400 font-mono">
+                                  ~{n.popupEndDate}
+                                </div>
+                              </div>
+                            )
+                          ) : (
+                            <span className="text-slate-400 text-xs font-medium">일반 공지</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5 text-xs text-slate-600">{n.author || 'GTA'}</td>
+                        <td className="px-4 py-3.5 text-center font-mono text-xs text-slate-500">
+                          {n.createdAt.split(' ')[0]}
+                        </td>
+                        <td className="px-4 py-3.5 text-center font-mono text-xs font-bold text-slate-700">{n.views}</td>
+                        <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewNotice(n)}
+                              title="고객 화면 팝업 미리보기"
+                              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-indigo-200 inline-flex items-center space-x-1 cursor-pointer transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">미리보기</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleNoticePopup(n)}
+                              title={n.isPopup ? '팝업 끄기' : '팝업 켜기'}
+                              className={`text-xs font-bold px-2.5 py-1.5 rounded-lg border inline-flex items-center space-x-1 cursor-pointer transition-colors ${
+                                n.isPopup
+                                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
+                                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                              }`}
+                            >
+                              <span>{n.isPopup ? '팝업ON' : '팝업OFF'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteNotice(n.id)}
+                              title="삭제"
+                              className="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-lg transition-colors cursor-pointer border border-red-200"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -3713,12 +3833,81 @@ export default function AdminPage() {
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">공지 내용</label>
                 <textarea
-                  rows={6}
+                  rows={5}
                   required
                   value={newNoticeContent}
                   onChange={e => setNewNoticeContent(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm"
                 />
+              </div>
+
+              {/* Customer Popup Notice Configuration */}
+              <div className="bg-amber-50/90 p-4 rounded-2xl border border-amber-200/90 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="inline-flex items-center space-x-2 font-bold text-xs text-slate-800 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={newNoticeIsPopup}
+                      onChange={e => setNewNoticeIsPopup(e.target.checked)}
+                      className="w-4 h-4 text-amber-600 rounded cursor-pointer"
+                    />
+                    <span>📢 고객화면 팝업창으로 공지하기 (Notice Popup)</span>
+                  </label>
+                  {newNoticeIsPopup && (
+                    <span className="text-[11px] font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-full">
+                      팝업 활성화
+                    </span>
+                  )}
+                </div>
+
+                {newNoticeIsPopup && (
+                  <div className="space-y-2.5 pt-2 border-t border-amber-200/70">
+                    <p className="text-[11px] text-slate-600">
+                      고객이 홈페이지 접속 시 별도의 팝업창으로 해당 공지사항이 자동 노출됩니다.
+                    </p>
+
+                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 text-xs">
+                      <div className="flex-1 min-w-[130px]">
+                        <span className="block text-[11px] font-bold text-slate-700 mb-1">팝업 시작일</span>
+                        <input
+                          type="date"
+                          value={newNoticePopupStartDate}
+                          onChange={e => setNewNoticePopupStartDate(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+                      <span className="text-slate-400 mt-4 sm:mt-5 font-bold">~</span>
+                      <div className="flex-1 min-w-[130px]">
+                        <span className="block text-[11px] font-bold text-slate-700 mb-1">팝업 종료일</span>
+                        <input
+                          type="date"
+                          value={newNoticePopupEndDate}
+                          onChange={e => setNewNoticePopupEndDate(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <span className="text-[11px] font-bold text-slate-600 mr-1">노출 기간 간편 설정:</span>
+                      {[
+                        { label: '+3일간', days: 3 },
+                        { label: '+7일 (1주일)', days: 7 },
+                        { label: '+14일 (2주일)', days: 14 },
+                        { label: '+30일 (1개월)', days: 30 },
+                      ].map(preset => (
+                        <button
+                          key={preset.days}
+                          type="button"
+                          onClick={() => handleSetPopupDuration(preset.days)}
+                          className="text-[11px] font-bold px-2.5 py-1 bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
@@ -3737,6 +3926,77 @@ export default function AdminPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Notice Popup Preview Modal for Admin */}
+      {previewNotice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs print:hidden animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
+            {/* Header */}
+            <div className="bg-linear-to-r from-gta-900 to-blue-900 text-white px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <div className="bg-amber-400 text-gta-950 p-1.5 rounded-lg">
+                  <Megaphone className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold text-amber-300 tracking-wider uppercase block">
+                    GTA Official Notice (미리보기)
+                  </span>
+                  <h4 className="text-sm font-extrabold text-white">
+                    고객 팝업 알림 화면
+                  </h4>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewNotice(null)}
+                className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                    {previewNotice.category}
+                  </span>
+                  {previewNotice.popupStartDate && previewNotice.popupEndDate && (
+                    <span className="text-[11px] font-semibold text-slate-500 flex items-center space-x-1">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                      <span>
+                        공지 기간: {previewNotice.popupStartDate} ~ {previewNotice.popupEndDate}
+                      </span>
+                    </span>
+                  )}
+                </div>
+
+                <h3 className="text-base sm:text-lg font-black text-slate-900 leading-snug">
+                  {previewNotice.title}
+                </h3>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 text-xs sm:text-sm text-slate-700 whitespace-pre-line leading-relaxed max-h-60 overflow-y-auto">
+                {previewNotice.content}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-slate-100 px-6 py-3.5 border-t border-slate-200 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-medium">
+                [미리보기] 고객 화면에서는 &apos;오늘 하루 열지 않음&apos; 기능이 지원됩니다.
+              </span>
+              <button
+                type="button"
+                onClick={() => setPreviewNotice(null)}
+                className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer"
+              >
+                닫기
+              </button>
+            </div>
           </div>
         </div>
       )}
