@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Shield, Phone, Mail, MapPin } from 'lucide-react';
+import { Shield, Phone, Mail, MapPin, Printer } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { translations, Language } from '@/lib/i18n';
 import GtaLogo from '@/components/GtaLogo';
@@ -99,6 +99,10 @@ export default function Footer() {
               <li className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 text-[#1d3b6b] shrink-0" />
                 <span>+82(0)55-688-2141</span>
+              </li>
+              <li className="flex items-center space-x-2">
+                <Printer className="w-4 h-4 text-[#1d3b6b] shrink-0" />
+                <span>Fax : +82(0)55-688-2142</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Mail className="w-4 h-4 text-[#1d3b6b] shrink-0" />
