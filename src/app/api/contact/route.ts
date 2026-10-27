@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     let email = '';
     let subject = '';
     let message = '';
-    let attachedFileInfo: { name: string; size: number; encryptedPath: string } | null = null;
+    let attachedFileInfo: { name: string; size: number; encryptedPath: string; data?: string } | null = null;
     let fileBuffer: Buffer | null = null;
     let originalFileName = '';
 
@@ -30,20 +30,12 @@ export async function POST(request: Request) {
         const arrayBuf = await uploadedFile.arrayBuffer();
         fileBuffer = Buffer.from(arrayBuf);
 
-        // Save file to public/uploads/contact
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'contact');
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-        }
-
-        const safeName = `${Date.now()}_${uploadedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-        const targetPath = path.join(uploadDir, safeName);
-        fs.writeFileSync(targetPath, fileBuffer);
-
+        // Store file in base64 directly in consultation record (safe for serverless environments)
         attachedFileInfo = {
           name: uploadedFile.name,
           size: uploadedFile.size,
-          encryptedPath: `uploads/contact/${safeName}`,
+          data: fileBuffer.toString('base64'),
+          encryptedPath: '',
         };
       }
     } else {

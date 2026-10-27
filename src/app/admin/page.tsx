@@ -27,6 +27,12 @@ import {
   FileDown,
   DollarSign,
   Upload,
+  Mail,
+  Inbox,
+  Paperclip,
+  Send,
+  Eye,
+  ExternalLink,
 } from 'lucide-react';
 import { Consultation, Notice, ApplicationMember, TaxReceipt } from '@/lib/db';
 import ReceiptDocument, { downloadReceiptPdf, downloadReceiptsBundlePdf, printReceiptDocument } from '@/components/ReceiptDocument';
@@ -155,6 +161,34 @@ function parseCommaNum(val: string): number {
   const clean = String(val || '').replace(/,/g, '').trim();
   const num = parseFloat(clean);
   return isNaN(num) ? 0 : num;
+}
+
+function extractEmailFromConsultation(c: Consultation): string {
+  if (c.phone && c.phone.includes('@')) return c.phone.trim();
+  const match = c.content.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  return match ? match[0] : '';
+}
+
+function extractPhoneFromConsultation(c: Consultation): string {
+  if (c.phone && !c.phone.includes('@')) return c.phone;
+  const match = c.content.match(/(?:Phone|연락처)\s*:\s*([^\n\r]+)/i);
+  return match ? match[1].trim() : '-';
+}
+
+function formatConsultationDate(dateStr?: string): string {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `${y}-${m}-${day} ${hh}:${mm}`;
+    }
+  } catch (e) {}
+  return dateStr.substring(0, 16);
 }
 
 const YEAR_OPTIONS = Array.from({ length: 35 }, (_, i) => 2002 + i);
@@ -289,6 +323,9 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editStatus, setEditStatus] = useState<'접수' | '진행중' | '완료'>('접수');
   const [editMemo, setEditMemo] = useState('');
+  const [selectedConsultation, setSelectedConsultation] = useState<Consultation | null>(null);
+  const [consultationSearchQuery, setConsultationSearchQuery] = useState('');
+  const [consultationStatusFilter, setConsultationStatusFilter] = useState<'전체' | '접수' | '진행중' | '완료'>('전체');
 
   // Notice Creation Modal State
   const [showNoticeModal, setShowNoticeModal] = useState(false);
@@ -1125,21 +1162,89 @@ export default function AdminPage() {
     }
   };
 
-  const handleUpdateStatus = async (id: string) => {
+  const handleUpdateStatus = async (id: string, customStatus?: '접수' | '진행중' | '완료', customMemo?: string) => {
+    const statusToSave = customStatus || editStatus;
+    const memoToSave = customMemo !== undefined ? customMemo : editMemo;
     try {
       const res = await fetch(`/api/consultations/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: editStatus, adminMemo: editMemo }),
+        body: JSON.stringify({ status: statusToSave, adminMemo: memoToSave }),
       });
       const json = await res.json();
       if (json.success) {
+        if (selectedConsultation && selectedConsultation.id === id) {
+          setSelectedConsultation({
+            ...selectedConsultation,
+            status: statusToSave,
+            adminMemo: memoToSave,
+          });
+        }
         setEditingId(null);
         fetchConsultations();
+        alert('상태 및 관리자 메모가 저장되었습니다.');
+      } else {
+        alert(json.message || '저장에 실패했습니다.');
       }
     } catch (err) {
-      alert('Update Error');
+      alert('저장 중 오류가 발생했습니다.');
     }
+  };
+
+  const handleDeleteConsultation = async (id: string) => {
+    if (!confirm('해당 문의/접수 내역을 영구 삭제하시겠습니까?\n삭제 후에는 복구할 수 없습니다.')) return;
+    try {
+      const res = await fetch(`/api/consultations/${id}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (json.success) {
+        if (selectedConsultation?.id === id) {
+          setSelectedConsultation(null);
+        }
+        setEditingId(null);
+        fetchConsultations();
+        alert('성공적으로 삭제되었습니다.');
+      } else {
+        alert(json.message || '삭제에 실패했습니다.');
+      }
+    } catch (err) {
+      alert('삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleDownloadAttachment = (att: { name: string; size?: number; data?: string; encryptedPath?: string }) => {
+    if (att.data) {
+      try {
+        const byteCharacters = atob(att.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = att.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        return;
+      } catch (err) {
+        console.error('Download error:', err);
+      }
+    }
+    if (att.encryptedPath) {
+      const link = document.createElement('a');
+      link.href = att.encryptedPath;
+      link.download = att.name;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+    alert('첨부파일 데이터를 찾을 수 없습니다.');
   };
 
   const handleDownloadExcel = () => {
@@ -1268,6 +1373,7 @@ export default function AdminPage() {
                 receiptSearchField
               );
               fetchNotices();
+              fetchConsultations();
             }}
             className="bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1 cursor-pointer whitespace-nowrap shrink-0"
           >
@@ -1339,6 +1445,24 @@ export default function AdminPage() {
           <span>🧾 영수증 내역 및 관리</span>
           <span className="bg-amber-600 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
             {receiptsTotal.toLocaleString()}
+          </span>
+        </button>
+
+        <button
+          onClick={() => {
+            fetchConsultations();
+            setActiveTab('consultations');
+          }}
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap shrink-0 ${
+            activeTab === 'consultations'
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'bg-blue-50 text-blue-900 border border-blue-200 hover:bg-blue-100'
+          }`}
+        >
+          <Mail className="w-4 h-4 shrink-0" />
+          <span>📨 온라인 문의 및 신청서 접수함</span>
+          <span className="bg-blue-800 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">
+            {consultations.length}
           </span>
         </button>
 
@@ -2001,6 +2125,261 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 4: ONLINE INQUIRIES & APPLICATION FORMS INBOX */}
+      {/* ========================================================================= */}
+      {activeTab === 'consultations' && (
+        <div className="space-y-6 print:hidden">
+          {/* Header & Stats Banner */}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="bg-blue-600 text-white p-2 rounded-xl">
+                  <Mail className="w-5 h-5" />
+                </span>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">온라인 문의 및 신청서 접수함</h2>
+                  <p className="text-xs text-slate-500">
+                    홈페이지 Contact Us 및 가입 신청서를 통해 접수된 실시간 내역과 첨부파일을 관리합니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fetchConsultations()}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3.5 py-2.5 rounded-xl border border-slate-300 flex items-center space-x-1.5 transition-all cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                <span>새로고침</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Filter & Search Bar */}
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
+            {/* Status Filter Tabs */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {(['전체', '접수', '진행중', '완료'] as const).map(st => {
+                const count =
+                  st === '전체' ? consultations.length : consultations.filter(c => c.status === st).length;
+                const isActive = consultationStatusFilter === st;
+                return (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setConsultationStatusFilter(st)}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${
+                      isActive
+                        ? st === '접수'
+                          ? 'bg-amber-500 text-white shadow-xs'
+                          : st === '진행중'
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : st === '완료'
+                          ? 'bg-emerald-600 text-white shadow-xs'
+                          : 'bg-slate-800 text-white shadow-xs'
+                        : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>{st}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                        isActive ? 'bg-black/20 text-white' : 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Search Input */}
+            <div className="relative max-w-sm w-full">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                placeholder="신청자명, 연락처, 이메일, 제목 검색..."
+                value={consultationSearchQuery}
+                onChange={e => setConsultationSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 bg-white rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {consultationSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setConsultationSearchQuery('')}
+                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 p-0.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Consultations Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            {loading ? (
+              <div className="py-16 text-center text-slate-500 text-sm flex flex-col items-center justify-center space-y-2">
+                <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
+                <span>접수함 데이터를 불러오는 중입니다...</span>
+              </div>
+            ) : (() => {
+              const filtered = consultations.filter(c => {
+                if (consultationStatusFilter !== '전체' && c.status !== consultationStatusFilter) {
+                  return false;
+                }
+                if (consultationSearchQuery.trim()) {
+                  const q = consultationSearchQuery.toLowerCase();
+                  const inName = (c.applicantName || '').toLowerCase().includes(q);
+                  const inPhone = (c.phone || '').toLowerCase().includes(q);
+                  const inTitle = (c.title || '').toLowerCase().includes(q);
+                  const inContent = (c.content || '').toLowerCase().includes(q);
+                  return inName || inPhone || inTitle || inContent;
+                }
+                return true;
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="py-16 text-center text-slate-400 text-sm flex flex-col items-center justify-center space-y-2">
+                    <Inbox className="w-10 h-10 text-slate-300" />
+                    <p className="font-semibold text-slate-600">접수된 문의 내역이 없습니다.</p>
+                    <p className="text-xs text-slate-400">조건에 맞는 문의가 없거나 아직 접수된 내역이 없습니다.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs sm:text-sm">
+                    <thead className="bg-slate-100 text-slate-700 text-xs uppercase font-bold border-b border-slate-200">
+                      <tr>
+                        <th className="px-4 py-3.5 text-center w-20">상태</th>
+                        <th className="px-4 py-3.5 w-36">접수일시</th>
+                        <th className="px-4 py-3.5 w-28">구분</th>
+                        <th className="px-4 py-3.5 w-32">신청자명</th>
+                        <th className="px-4 py-3.5 w-44">연락처 / 이메일</th>
+                        <th className="px-6 py-3.5">문의 및 신청 제목</th>
+                        <th className="px-4 py-3.5 text-center w-28">첨부파일</th>
+                        <th className="px-4 py-3.5 text-right w-28">관리</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {filtered.map(c => {
+                        const email = extractEmailFromConsultation(c);
+                        const phone = extractPhoneFromConsultation(c);
+                        const hasAttachments = c.attachments && c.attachments.length > 0;
+                        return (
+                          <tr
+                            key={c.id}
+                            className="hover:bg-blue-50/50 transition-colors cursor-pointer"
+                            onClick={() => {
+                              setSelectedConsultation(c);
+                              setEditStatus(c.status);
+                              setEditMemo(c.adminMemo || '');
+                            }}
+                          >
+                            <td className="px-4 py-3.5 text-center">
+                              <span
+                                className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full inline-block ${
+                                  c.status === '접수'
+                                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                    : c.status === '진행중'
+                                    ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                                    : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                }`}
+                              >
+                                {c.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                              {formatConsultationDate(c.createdAt)}
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span
+                                className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+                                  c.category === 'Application Form'
+                                    ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                                    : 'bg-slate-100 text-slate-700 border border-slate-200'
+                                }`}
+                              >
+                                {c.category}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5 font-bold text-slate-900">{c.applicantName}</td>
+                            <td className="px-4 py-3.5 text-xs text-slate-600">
+                              <div className="font-mono text-slate-800 font-semibold">{phone}</div>
+                              {email && (
+                                <a
+                                  href={`mailto:${email}`}
+                                  onClick={e => e.stopPropagation()}
+                                  className="text-[11px] text-blue-600 hover:underline flex items-center space-x-1 mt-0.5"
+                                  title="이메일 보내기"
+                                >
+                                  <Mail className="w-3 h-3 inline shrink-0" />
+                                  <span className="truncate max-w-[140px]">{email}</span>
+                                </a>
+                              )}
+                            </td>
+                            <td className="px-6 py-3.5">
+                              <div className="font-bold text-slate-900 line-clamp-1">{c.title}</div>
+                              <div className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+                                {c.content.replace(/===.*?===/g, '').replace(/\n+/g, ' ').trim()}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3.5 text-center" onClick={e => e.stopPropagation()}>
+                              {hasAttachments ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadAttachment(c.attachments![0])}
+                                  className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 text-[11px] font-bold px-2 py-1 rounded-lg inline-flex items-center space-x-1 cursor-pointer transition-colors"
+                                  title={`클릭하여 다운로드: ${c.attachments![0].name}`}
+                                >
+                                  <Paperclip className="w-3 h-3 shrink-0" />
+                                  <span className="truncate max-w-[80px]">{c.attachments![0].name}</span>
+                                </button>
+                              ) : (
+                                <span className="text-slate-300 text-xs">-</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3.5 text-right whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                              <div className="flex items-center justify-end space-x-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedConsultation(c);
+                                    setEditStatus(c.status);
+                                    setEditMemo(c.adminMemo || '');
+                                  }}
+                                  className="bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-blue-200 transition-colors cursor-pointer flex items-center space-x-1"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  <span>상세</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteConsultation(c.id)}
+                                  className="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-lg border border-red-200 transition-colors cursor-pointer"
+                                  title="삭제"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -3320,49 +3699,183 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Consultation Edit Modal */}
-      {editingId && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 print:hidden">
-          <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-md w-full space-y-4">
-            <h3 className="text-lg font-bold text-slate-900">상담 처리 상태 &amp; 메모 등록</h3>
-            <p className="text-xs text-slate-500">ID: {editingId}</p>
+      {/* Consultation Detail & Status Management Modal */}
+      {selectedConsultation && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto print:hidden">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full my-6 p-6 sm:p-8 space-y-6 max-h-[92vh] overflow-y-auto border border-slate-200">
+            {/* Modal Header */}
+            <div className="flex justify-between items-start border-b border-slate-200 pb-4">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span
+                    className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${
+                      selectedConsultation.status === '접수'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                        : selectedConsultation.status === '진행중'
+                        ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                        : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    }`}
+                  >
+                    {selectedConsultation.status}
+                  </span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                    {selectedConsultation.category}
+                  </span>
+                  <span className="text-xs font-mono text-slate-400">ID: {selectedConsultation.id}</span>
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 mt-2">
+                  {selectedConsultation.title}
+                </h3>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  접수일시: {formatConsultationDate(selectedConsultation.createdAt)}
+                </p>
+              </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">상태 변경</label>
-              <select
-                value={editStatus}
-                onChange={e => setEditStatus(e.target.value as any)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"
+              <button
+                type="button"
+                onClick={() => setSelectedConsultation(null)}
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-slate-100 cursor-pointer"
               >
-                <option value="접수">접수 (Received)</option>
-                <option value="진행중">진행중 (In Progress)</option>
-                <option value="완료">완료 (Completed)</option>
-              </select>
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">관리자 메모</label>
-              <textarea
-                rows={4}
-                value={editMemo}
-                onChange={e => setEditMemo(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"
-              />
+            {/* Applicant Summary Card */}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div>
+                <span className="text-slate-400 block text-[11px]">신청인 성명</span>
+                <span className="font-bold text-slate-900 text-sm">{selectedConsultation.applicantName}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">연락처 (Phone)</span>
+                <span className="font-semibold text-slate-800 font-mono">
+                  {extractPhoneFromConsultation(selectedConsultation)}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">이메일 (Email)</span>
+                <span className="font-semibold text-slate-800 font-mono">
+                  {extractEmailFromConsultation(selectedConsultation) || '-'}
+                </span>
+              </div>
             </div>
 
-            <div className="flex justify-end space-x-2 pt-2">
-              <button
-                onClick={() => setEditingId(null)}
-                className="px-4 py-2 bg-slate-200 text-slate-700 font-bold text-xs rounded-lg"
-              >
-                취소
-              </button>
-              <button
-                onClick={() => handleUpdateStatus(editingId)}
-                className="px-4 py-2 bg-gta-600 text-white font-bold text-xs rounded-lg hover:bg-gta-700"
-              >
-                저장하기
-              </button>
+            {/* Quick Action: Reply via Email */}
+            {extractEmailFromConsultation(selectedConsultation) && (
+              <div className="flex justify-end">
+                <a
+                  href={`mailto:${extractEmailFromConsultation(selectedConsultation)}?subject=${encodeURIComponent(
+                    `[GTA 한국납세자연합회] Re: ${selectedConsultation.title}`
+                  )}`}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs px-4 py-2 rounded-xl shadow flex items-center space-x-1.5 transition-all"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>고객에게 이메일 바로 답장하기</span>
+                </a>
+              </div>
+            )}
+
+            {/* Content Details */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700">접수 본문 및 자동 추출 데이터</label>
+              <div className="bg-slate-900 text-slate-100 p-4 rounded-2xl text-xs font-mono whitespace-pre-wrap leading-relaxed max-h-80 overflow-y-auto border border-slate-800 shadow-inner">
+                {selectedConsultation.content}
+              </div>
+            </div>
+
+            {/* Attachments Section */}
+            {selectedConsultation.attachments && selectedConsultation.attachments.length > 0 && (
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-700">첨부파일 (Attached Files)</label>
+                <div className="space-y-2">
+                  {selectedConsultation.attachments.map((att, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-3.5 bg-emerald-50/70 border border-emerald-300 rounded-2xl"
+                    >
+                      <div className="flex items-center space-x-3 overflow-hidden">
+                        <span className="p-2 bg-emerald-600 text-white rounded-xl">
+                          <Paperclip className="w-4 h-4" />
+                        </span>
+                        <div className="overflow-hidden">
+                          <p className="font-bold text-xs text-slate-900 truncate">{att.name}</p>
+                          <p className="text-[11px] text-slate-500 font-mono">
+                            {att.size ? `${(att.size / 1024).toFixed(1)} KB` : '첨부파일'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadAttachment(att)}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2 rounded-xl shadow flex items-center space-x-1.5 transition-all shrink-0 cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>파일 다운로드</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Admin Status & Memo Form */}
+            <div className="space-y-3 pt-4 border-t border-slate-200">
+              <h4 className="text-xs font-bold text-slate-800">관리자 처리 상태 및 메모</h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-slate-600 mb-1">상태 변경</label>
+                  <select
+                    value={editStatus}
+                    onChange={e => setEditStatus(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold bg-white"
+                  >
+                    <option value="접수">접수 (Received - 신규 접수 대기)</option>
+                    <option value="진행중">진행중 (In Progress - 검토 및 처리 중)</option>
+                    <option value="완료">완료 (Completed - 상담 및 등록 완료)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-slate-600 mb-1">관리자 메모 입력</label>
+                  <input
+                    type="text"
+                    value={editMemo}
+                    placeholder="담당자명, 처리 내용 등 메모..."
+                    onChange={e => setEditMemo(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap justify-between items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleDeleteConsultation(selectedConsultation.id)}
+                  className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl border border-red-200 flex items-center space-x-1 cursor-pointer transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>이 문의 내역 영구 삭제</span>
+                </button>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedConsultation(null)}
+                    className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                  >
+                    닫기
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateStatus(selectedConsultation.id, editStatus, editMemo)}
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow cursor-pointer transition-colors"
+                  >
+                    저장하기
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -25,7 +25,7 @@ export interface Consultation {
   passwordHash: string;
   status: '접수' | '진행중' | '완료';
   adminMemo?: string;
-  attachments?: { name: string; size: number; encryptedPath: string }[];
+  attachments?: { name: string; size: number; encryptedPath?: string; data?: string }[];
   createdAt: string;
 }
 
@@ -821,7 +821,7 @@ export async function deleteReceipt(id: number): Promise<boolean> {
 export async function getConsultations(): Promise<Consultation[]> {
   if (pool) {
     const res = await pool.query(`
-      SELECT id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, admin_memo as "adminMemo", created_at as "createdAt"
+      SELECT id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, admin_memo as "adminMemo", attachments, created_at as "createdAt"
       FROM consultations ORDER BY created_at DESC LIMIT 300
     `);
     return res.rows;
@@ -832,7 +832,7 @@ export async function getConsultations(): Promise<Consultation[]> {
 export async function getConsultationById(id: string): Promise<Consultation | undefined> {
   if (pool) {
     const res = await pool.query(`
-      SELECT id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, admin_memo as "adminMemo", created_at as "createdAt"
+      SELECT id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, admin_memo as "adminMemo", attachments, created_at as "createdAt"
       FROM consultations WHERE id = $1
     `, [id]);
     return res.rows[0];
@@ -845,7 +845,7 @@ export async function lookupConsultation(phone: string, rawPwd: string): Promise
   const cleanPhone = phone.replace(/[^0-9]/g, '');
   if (pool) {
     const res = await pool.query(`
-      SELECT id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, admin_memo as "adminMemo", created_at as "createdAt"
+      SELECT id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, admin_memo as "adminMemo", attachments, created_at as "createdAt"
       FROM consultations WHERE REPLACE(phone, '-', '') = $1 AND password_hash = $2
     `, [cleanPhone, hash]);
     return res.rows;
@@ -857,10 +857,10 @@ export async function createConsultation(data: Omit<Consultation, 'id' | 'status
   if (pool) {
     const newId = `GTA-2026-${Date.now().toString().slice(-4)}`;
     const res = await pool.query(`
-      INSERT INTO consultations (id, applicant_name, phone, category, title, content, password_hash, status, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, '접수', NOW())
-      RETURNING id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, created_at as "createdAt"
-    `, [newId, data.applicantName, data.phone, data.category, data.title, data.content, data.passwordHash]);
+      INSERT INTO consultations (id, applicant_name, phone, category, title, content, password_hash, status, attachments, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, '접수', $8, NOW())
+      RETURNING id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, attachments, created_at as "createdAt"
+    `, [newId, data.applicantName, data.phone, data.category, data.title, data.content, data.passwordHash, JSON.stringify(data.attachments || [])]);
     return res.rows[0];
   }
   const newId = `GTA-2026-${String(consultationsStore.length + 1).padStart(3, '0')}`;
@@ -879,7 +879,7 @@ export async function updateConsultationStatus(id: string, status: '접수' | '�
   if (pool) {
     const res = await pool.query(`
       UPDATE consultations SET status = $1, admin_memo = $2 WHERE id = $3
-      RETURNING id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, admin_memo as "adminMemo", created_at as "createdAt"
+      RETURNING id, applicant_name as "applicantName", phone, category, title, content, password_hash as "passwordHash", status, admin_memo as "adminMemo", attachments, created_at as "createdAt"
     `, [status, adminMemo || null, id]);
     return res.rows[0];
   }
@@ -891,6 +891,19 @@ export async function updateConsultationStatus(id: string, status: '접수' | '�
     }
   }
   return item;
+}
+
+export async function deleteConsultation(id: string): Promise<boolean> {
+  if (pool) {
+    await pool.query(`DELETE FROM consultations WHERE id = $1`, [id]);
+    return true;
+  }
+  const idx = consultationsStore.findIndex(c => c.id === id);
+  if (idx !== -1) {
+    consultationsStore.splice(idx, 1);
+    return true;
+  }
+  return false;
 }
 
 export async function getNotices(): Promise<Notice[]> {
