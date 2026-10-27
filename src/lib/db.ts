@@ -557,11 +557,12 @@ export async function getReceipts(params: {
   field?: string;
   page?: number;
   limit?: number;
+  ids?: number[];
 }): Promise<{ receipts: TaxReceipt[]; total: number; page: number; limit: number }> {
   if (!pool) return { receipts: [], total: 0, page: 1, limit: 30 };
 
   const page = Math.max(1, params.page || 1);
-  const limit = Math.min(200, Math.max(1, params.limit || 30));
+  const limit = Math.min(20000, Math.max(1, params.limit || 30));
   const offset = (page - 1) * limit;
 
   const q = (params.query || '').trim();
@@ -572,6 +573,14 @@ export async function getReceipts(params: {
     (CASE WHEN r.taxation_period ~ '^[0-9]+$' THEN r.taxation_period::bigint ELSE 0 END) DESC,
     r.id DESC
   `;
+
+  if (params.ids && params.ids.length > 0) {
+    const res = await pool.query(
+      `SELECT r.* FROM receipt r WHERE r.id = ANY($1::int[]) ORDER BY ${receiptOrderBy}`,
+      [params.ids]
+    );
+    return { receipts: res.rows, total: res.rows.length, page: 1, limit: res.rows.length };
+  }
 
   if (params.memberNum && !q) {
     const countRes = await pool.query(

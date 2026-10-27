@@ -1247,14 +1247,42 @@ export default function AdminPage() {
     alert('첨부파일 데이터를 찾을 수 없습니다.');
   };
 
-  const handleDownloadExcel = () => {
+  const handleDownloadMembersExcel = () => {
     const q = (memberQuery || memberSearchInput).trim();
     const params = new URLSearchParams();
+    params.set('type', 'members');
     params.set('field', memberSearchField);
     if (q) {
       params.set('query', q);
     }
     window.location.href = `/api/admin/excel?${params.toString()}`;
+  };
+
+  const handleDownloadReceiptsExcel = (onlySelected: boolean = false) => {
+    const params = new URLSearchParams();
+    params.set('type', 'receipts');
+
+    if (onlySelected && selectedReceiptList.length > 0) {
+      params.set('ids', selectedReceiptList.map(r => r.id).join(','));
+    } else {
+      if (selectedReceiptMember) {
+        params.set('memberNum', String(selectedReceiptMember.id));
+      }
+      const q = (receiptQuery || receiptSearchInput).trim();
+      if (q) {
+        params.set('query', q);
+        params.set('field', receiptSearchField);
+      }
+    }
+    window.location.href = `/api/admin/excel?${params.toString()}`;
+  };
+
+  const handleDownloadExcel = () => {
+    if (activeTab === 'receipts') {
+      handleDownloadReceiptsExcel(selectedReceiptList.length > 0);
+    } else {
+      handleDownloadMembersExcel();
+    }
   };
 
   // =========================================================================
@@ -1391,11 +1419,23 @@ export default function AdminPage() {
 
           <button
             onClick={handleDownloadExcel}
-            title="전체 회원검색 및 영수증 발급 탭의 선택 옵션에 따른 회원 목록 엑셀 다운로드"
+            title={
+              activeTab === 'receipts'
+                ? selectedReceiptList.length > 0
+                  ? `선택된 ${selectedReceiptList.length}건 영수증 엑셀 다운로드`
+                  : '영수증 목록 엑셀 다운로드'
+                : '회원 목록 엑셀 다운로드'
+            }
             className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold text-xs px-3.5 py-2.5 rounded-xl shadow flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
           >
             <FileSpreadsheet className="w-4 h-4 shrink-0" />
-            <span>엑셀 다운로드</span>
+            <span>
+              {activeTab === 'receipts'
+                ? selectedReceiptList.length > 0
+                  ? `선택 영수증 엑셀 (${selectedReceiptList.length}건)`
+                  : '영수증 엑셀 다운로드'
+                : '회원 목록 엑셀 다운로드'}
+            </span>
           </button>
 
           <button
@@ -1783,6 +1823,24 @@ export default function AdminPage() {
                     : isBatchGenerating
                     ? 'PDF 생성 중...'
                     : `선택 영수증 PDF 일괄 저장 (${selectedReceiptList.length}건)`}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDownloadReceiptsExcel(selectedReceiptList.length > 0)}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-3 py-1.5 rounded-xs shadow flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                title={
+                  selectedReceiptList.length > 0
+                    ? `선택된 ${selectedReceiptList.length}건 영수증 엑셀 다운로드`
+                    : '현재 검색 및 필터 조건의 영수증 목록 엑셀 다운로드'
+                }
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  {selectedReceiptList.length > 0
+                    ? `선택 영수증 엑셀 (${selectedReceiptList.length}건)`
+                    : '영수증 엑셀 다운로드'}
                 </span>
               </button>
             </div>
