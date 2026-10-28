@@ -89,7 +89,6 @@ export async function sendContactEmailNotification({
       Buffer.from('cmVfNFE2Qlh4RVBfRG9XZThQY3Y1ODU1U0hpb280YzhBOG5U', 'base64').toString('ascii');
     if (resendApiKey) {
       const targetEmail = process.env.NOTIFICATION_EMAIL || 'gta@gtakorea.org';
-      const fallbackEmail = 'raenisise@naver.com';
 
       const buildPayload = (toAddrs: string[], fromAddr: string) => {
         const payload: any = {
@@ -112,8 +111,8 @@ export async function sendContactEmailNotification({
         return payload;
       };
 
-      // Send to both official webmail and verified admin email
-      const primaryRecipients = ['gta@gtakorea.org', 'raenisise@naver.com'];
+      // Send exclusively to official webmail (gta@gtakorea.org)
+      const primaryRecipients = [targetEmail];
       let fromAddress = process.env.RESEND_FROM || 'GTA 알림 <gta@gtakorea.org>';
       let res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -126,14 +125,14 @@ export async function sendContactEmailNotification({
 
       let data = await res.json();
 
-      // If domain not yet verified (403), fallback automatically to verified account email (raenisise@naver.com)
+      // If domain not yet verified (403), fallback from address to onboarding@resend.dev
       if (
         !res.ok &&
         (res.status === 403 ||
           String(data?.message).includes('domain is not verified') ||
           String(data?.message).includes('only send testing emails'))
       ) {
-        console.warn('[mailer] gtakorea.org not yet verified on Resend. Falling back to verified admin email:', fallbackEmail);
+        console.warn('[mailer] Retrying with onboarding@resend.dev to official email:', targetEmail);
         fromAddress = 'GTA 알림 <onboarding@resend.dev>';
         res = await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -141,7 +140,7 @@ export async function sendContactEmailNotification({
             Authorization: `Bearer ${resendApiKey}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(buildPayload([fallbackEmail], fromAddress)),
+          body: JSON.stringify(buildPayload([targetEmail], fromAddress)),
         });
         data = await res.json();
       }
