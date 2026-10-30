@@ -210,7 +210,7 @@ export default function AdminPage() {
   const [membersPage, setMembersPage] = useState(1);
   const [memberQuery, setMemberQuery] = useState('');
   const [memberSearchInput, setMemberSearchInput] = useState('');
-  const [memberSearchField, setMemberSearchField] = useState<'name' | 'number' | 'phone'>('name');
+  const [memberSearchField, setMemberSearchField] = useState<'no' | 'name' | 'number' | 'phone'>('name');
   const [membersLoading, setMembersLoading] = useState(false);
 
   // Member Edit Modal (Full Application Form)
@@ -253,7 +253,7 @@ export default function AdminPage() {
   const [receiptsPage, setReceiptsPage] = useState(1);
   const [receiptQuery, setReceiptQuery] = useState('');
   const [receiptSearchInput, setReceiptSearchInput] = useState('');
-  const [receiptSearchField, setReceiptSearchField] = useState<'name' | 'number' | 'phone'>('name');
+  const [receiptSearchField, setReceiptSearchField] = useState<'no' | 'name' | 'number' | 'phone'>('name');
   const [receiptsLoading, setReceiptsLoading] = useState(false);
 
   // Batch PDF Selection State
@@ -1694,6 +1694,7 @@ export default function AdminPage() {
               <div className="flex items-center space-x-3 text-xs font-bold text-slate-700 shrink-0">
                 {(
                   [
+                    { value: 'no', label: 'no (회원번호)' },
                     { value: 'name', label: 'name' },
                     { value: 'number', label: 'number' },
                     { value: 'phone', label: 'phone' },
@@ -1717,7 +1718,7 @@ export default function AdminPage() {
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="회원 이름(name), 등록번호(number), 연락처(phone)"
+                  placeholder="회원번호(no), 이름(name), 등록번호(number), 연락처(phone)"
                   value={memberSearchInput}
                   onChange={e => setMemberSearchInput(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-gta-500 bg-white"
@@ -1980,6 +1981,7 @@ export default function AdminPage() {
               <div className="flex items-center space-x-3 text-xs font-bold text-slate-700 shrink-0">
                 {(
                   [
+                    { value: 'no', label: 'no (회원번호)' },
                     { value: 'name', label: 'name' },
                     { value: 'number', label: 'number' },
                     { value: 'phone', label: 'phone' },
@@ -2003,7 +2005,7 @@ export default function AdminPage() {
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="회원 이름(name), 등록번호(number), 연락처(phone)"
+                  placeholder="회원번호(no), 이름(name), 등록번호(number), 연락처(phone)"
                   value={receiptSearchInput}
                   onChange={e => setReceiptSearchInput(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 bg-white"

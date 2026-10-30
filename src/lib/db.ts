@@ -291,20 +291,22 @@ export async function searchMembers(params: {
         OR CAST(id AS TEXT) = $3
         OR CAST(seq_no AS TEXT) = $3
       `;
-      if (field === 'name') {
+      let queryParams: any[] = [likeQ, cleanQ, q];
+
+      if (field === 'no') {
+        const noVal = q.replace(/[^0-9]/g, '').trim() || q;
+        whereClause = `CAST(seq_no AS TEXT) = $1 OR phon ILIKE $2`;
+        queryParams = [noVal, `%(${noVal})%`];
+      } else if (field === 'name') {
         whereClause = `name ILIKE $1 OR name2 ILIKE $1`;
+        queryParams = [likeQ];
       } else if (field === 'number') {
-        whereClause = `number ILIKE $1 OR REPLACE(number, '-', '') ILIKE $2 OR name3 ILIKE $1 OR REPLACE(name3, '-', '') ILIKE $2 OR CAST(seq_no AS TEXT) = $3 OR CAST(id AS TEXT) = $3`;
+        whereClause = `number ILIKE $1 OR REPLACE(number, '-', '') ILIKE $2 OR name3 ILIKE $1 OR REPLACE(name3, '-', '') ILIKE $2`;
+        queryParams = [likeQ, cleanQ];
       } else if (field === 'phone') {
         whereClause = `phon ILIKE $1 OR REPLACE(phon, '-', '') ILIKE $2`;
+        queryParams = [likeQ, cleanQ];
       }
-
-      const queryParams =
-        field === 'name'
-          ? [likeQ]
-          : field === 'phone'
-          ? [likeQ, cleanQ]
-          : [likeQ, cleanQ, q];
 
       const countRes = await pool.query(
         `WITH numbered AS (
@@ -622,7 +624,30 @@ export async function getReceipts(params: {
     `;
     let queryParams: any[] = [likeQ, cleanQ, q];
 
-    if (field === 'name') {
+    if (field === 'no') {
+      const noVal = q.replace(/[^0-9]/g, '').trim() || q;
+      const memRes = await pool.query(
+        `WITH numbered AS (
+           SELECT a.id, a.number, a.phon, ROW_NUMBER() OVER (ORDER BY a.id ASC)::int AS seq_no
+           FROM applicationform a
+         )
+         SELECT id, number FROM numbered
+         WHERE CAST(seq_no AS TEXT) = $1 OR phon ILIKE $2`,
+        [noVal, `%(${noVal})%`]
+      );
+      const targetIds = memRes.rows.map(m => String(m.id));
+      const targetCleanNos = memRes.rows
+        .map(m => String(m.number || '').replace(/-/g, '').trim())
+        .filter(Boolean);
+
+      whereClause = `(
+        r.member_num = ANY($1::text[])
+        OR (r.resident_no2 <> '' AND REPLACE(r.resident_no2, '-', '') = ANY($2::text[]))
+        OR r.management_no ILIKE $3
+        OR r.management_no = $4
+      )`;
+      queryParams = [targetIds, targetCleanNos, `%-${noVal}`, noVal];
+    } else if (field === 'name') {
       whereClause = `r.name ILIKE $1`;
       queryParams = [likeQ];
     } else if (field === 'number' || field === 'resident_no2') {
