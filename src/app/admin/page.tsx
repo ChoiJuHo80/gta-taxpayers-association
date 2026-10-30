@@ -210,7 +210,7 @@ export default function AdminPage() {
   const [membersPage, setMembersPage] = useState(1);
   const [memberQuery, setMemberQuery] = useState('');
   const [memberSearchInput, setMemberSearchInput] = useState('');
-  const [memberSearchField, setMemberSearchField] = useState<'no' | 'name' | 'number' | 'phone'>('name');
+  const [memberSearchField, setMemberSearchField] = useState<'no' | 'name' | 'number' | 'phone'>('no');
   const [membersLoading, setMembersLoading] = useState(false);
 
   // Member Edit Modal (Full Application Form)
@@ -253,7 +253,7 @@ export default function AdminPage() {
   const [receiptsPage, setReceiptsPage] = useState(1);
   const [receiptQuery, setReceiptQuery] = useState('');
   const [receiptSearchInput, setReceiptSearchInput] = useState('');
-  const [receiptSearchField, setReceiptSearchField] = useState<'no' | 'name' | 'number' | 'phone'>('name');
+  const [receiptSearchField, setReceiptSearchField] = useState<'no' | 'name' | 'number' | 'phone'>('no');
   const [receiptsLoading, setReceiptsLoading] = useState(false);
 
   // Batch PDF Selection State
@@ -457,7 +457,7 @@ export default function AdminPage() {
   }, []);
 
   const fetchReceipts = useCallback(
-    async (q: string, p: number, memberNum?: string, field: string = 'name') => {
+    async (q: string, p: number, memberNum?: string, field: string = 'no') => {
       setReceiptsLoading(true);
       try {
         const params = new URLSearchParams();
